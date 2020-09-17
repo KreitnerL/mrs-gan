@@ -1,0 +1,16 @@
+torch
+numpy
+scipy
+matlab
+tensorboardx
+matplotlib
+sklearn
+pywavelets
+
+#pickle
+
+statsmodels
+
+#collections
+#types
+#os

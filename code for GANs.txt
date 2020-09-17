@@ -1,0 +1,196 @@
+'''
+My framework is based off of the following repository:
+https://github.com/EliasVansteenkiste/CycleGANwithPerceptionLoss
+
+
+
+The visdom code he included is not working with my code at the 
+moment. To visualize the progress, I use scp to send the loss 
+folder back to my workstation where I can take a look at the plots.
+
+The summary is set up for my particular use. You will need to change 
+the _summary declaration in the initialize function and the metrics
+in the evaluate function. You probably won't need self.index.
+
+The Autoencoder.py is from an older repository and is not currently 
+compatible with the rest of the fraemwork. You can use is as a 
+reference for making your own. I would use the FittingModel.py as
+the basis and then convert it to an AE. The code will at least show
+you what an AE looks like and how they work. The define.py file
+will need to be revisited so that you can use the architectures you
+want. It is structured the way it is so that I can train additional 
+helper architectures (like an AE for perception loss) all in the 
+same repository with the same code base.
+
+The FittingModel.py code is from my current research and is NOT for 
+redistribution. I am including it so you have something to start with
+and can see how everything works together.
+
+The following code is snippets from a cycleGAN I tested a while back.
+This was the original repository I used when learning pytorch, 
+python, and ML/DL. My current framework is several iterations after
+I stopped using this. You should be able to incorporate these items
+easily.
+'''
+
+        print('------------ Networks initialized ------------')
+        self.num_params = 0
+        print_network(self, self.netG)
+        if self.isTrain:
+            print_network(self, self.netD)
+        print('Total number of GAN network parameters: %d' % self.num_params)
+
+        # Save to the disk
+        file_name = os.path.join(self.opt.checkpoints_dir, 'model_architecture.txt')
+        with open(file_name, 'wt') as opt_file:
+            opt_file.write('------------- Architecture --------------\n')
+            opt_file.write('-------------  Generator   --------------\n')
+            opt_file.write(print_network(self,self.netG, file=True))
+            opt_file.write('------------ Discriminator --------------\n')
+            opt_file.write(print_network(self,self.netD, file=True))
+            opt_file.write('Total number of GAN network parameters: %d\n' % (self.num_params / 2))
+            opt_file.write('----------------- End -------------------\n')
+
+        print('----------------------------------------------')
+'''
+This is the structure for a GAN. Even though cycleGANs have 2 of each, 
+they are identical so they only need to be printed once. This section
+of code also saves the architecture to a text file saved in the 
+checkpoints folder
+'''
+
+
+
+    def update_learning_rate(self): # Cycle, non-cycle: TTUR, no_TTUR
+        if self.opt.no_TTUR:
+            lrd = self.opt.lr / self.opt.niter_decay
+            lr = [self.old_lr - lrd, self.old_lr - lrd]
+        else:
+            glrd = self.opt.glr / self.opt.niter_gen_decay
+            dlrd = self.opt.dlr / self.opt.niter_dis_decay
+            lr = [self.old_glr - glrd, self.old_dlr - dlrd]
+
+        self.opt.glr, self.opt.dlr = lr[0], lr[1]
+
+        for param_group in self.optimizer_D.param_groups:
+            param_group['lr'] = lr[1]
+        for param_group in self.optimizer_G.param_groups:
+            param_group['lr'] = lr[0]
+
+        if self.opt.no_TTUR:
+            print('update learning rate: %f -> %f' % (self.old_lr, lr[0]))
+            self.old_lr = lr[0]
+        else:
+            print('Update Generator Learning Rate: %f -> %f' % (self.old_glr, lr[0]))
+            print('Update Discriminator Learning Rate: %f -> %f' % (self.old_dlr, lr[1]))
+            self.old_glr = lr[0]
+            self.old_dlr = lr[1]
+'''
+With GANs it is useful to use a two-timescale update rule (TTUR). This
+allows you to simplify the code and update each network the same amount 
+of times, but they will learn differently by using different learning 
+rates. If you use this, you will likely have to add the options back to 
+the options files.
+'''
+
+
+    def optimize_parameters(self): #
+        if len(self.opt.gpu_ids)>0:
+            assert(torch.cuda.is_available())
+
+        # Forward
+        self.forward()
+
+        # Discriminator
+        self.optimizer_D.zero_grad()
+        self.backward_D()
+        self.optimizer_D.step()
+
+        # Generator
+        self.optimizer_G.zero_grad()
+        self.backward_G()
+        self.optimizer_G.step()
+'''
+This should be pretty straight foreward. The generator and discriminator
+networks will have different optimizers and therefore need to be called
+separately.
+'''
+
+
+    def backward_D(self, back=True):
+        self.requires_grad(self.netD, True)
+        # self.requires_grad(self.netG, False)
+
+        # Train with real data
+        pred_real = self.netD.forward(self.data)
+        pred_fake = self.netD.forward(self.noise.detach())
+        self.pred_real = pred_real#.copy()
+        self.pred_fake = pred_fake#.copy()
+
+       # Wasserstein Loss
+        # TODO: try making them variables! https://discuss.pytorch.org/t/problem-runtimeerror-element-0-of-tensors-does-not-require-grad-and-does-not-have-a-grad-fn/28079
+        pred_fake = pred_fake.mean()
+        pred_real = pred_real.mean()# * -1
+        if back:
+            pred_fake.backward(one, retain_graph=True)
+            pred_real.backward(mone, retain_graph=True)
+        self.scale = abs(pred_real - pred_fake) / abs(pred_real)# + pred_fake)  test 10.28.19
+        self.wl = torch.abs(pred_real - pred_fake) * self.opt.lambda_wasserstein
+
+        # Gradient Penalty
+        gp = self.GP.backward_D(self.netD, self.data.data, self.noise.data, len(self.data), self.opt.gpu_ids)
+        if self.opt.one_sided_gp:
+            self.gp = max(0, gp)
+        else:
+            self.gp = gp
+
+        if self.opt.scaled_lambda_gp:
+            self.scaled_gp = self.gp * self.opt.lambda_gp * self.scale# + self.loss_D_CEL
+            self.loss_D = self.wl + self.scaled_gp
+        else:
+            self.loss_D = self.wl + (self.gp * self.opt.lambda_gp)
+
+        if back:
+            self.gp.backward(retain_graph=True)
+            self.loss_D.backward(retain_graph=True)
+
+        if self.opt.plot_grads:
+            plot_grad_flow(self.netD, self.debugdir)
+
+    def backward_G(self, back=True):
+        self.requires_grad(self.netD, False)
+        # self.requires_grad(self.netG, True)
+
+        # Train with real data
+        pred_fake = self.netD.forward(self.noise)
+
+        # Wasserstein Loss
+        pred_fake = pred_fake.mean()
+        self.loss_G = -pred_fake#.copy()
+
+        # Perceptual Feature Loss
+        if self.opt.perception:
+            self.feat_loss = self.criterionFeat(self.netFeat(self.data), self.netFeat(self.noise))
+            self.scaled_fl = self.feat_loss * self.opt.lambda_feat_loss * (1 - self.scale)#(1 / self.scale)**(1/3)
+            self.loss_G += self.scaled_fl
+
+
+        # GAN Loss
+        self.loss_G += self.criterionGAN(pred_fake, True) * self.opt.lambda_ganloss   # had tuple(self.pred_fake)
+        if back:
+            pred_fake.backward(mone, retain_graph=True)
+            self.loss_G.backward(retain_graph=True)
+        if self.opt.plot_grads:
+            plot_grad_flow(self.netG, self.debugdir)
+        if self.opt.perception:
+            self.feat_loss = self.feat_loss.detach()
+            self.scaled_fl = self.scaled_fl.detach()
+'''
+These were the loss functions that I had. With Wasserstein GANs, it got
+confusing for me trying to keep everything straight regarding the outputs
+and the loss. If you are interested, take a look at spectral normalization.
+This takes some effort to implement, but it eliminates the need for the 
+gradient penalty loss in the discriminator.
+'''
+
+
