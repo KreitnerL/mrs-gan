@@ -1,3 +1,6 @@
+# This file lists all the different architecture implementation for a model
+# To try other architectures simply call define with another option.
+
 # from modules.loss_networks import *
 # from modules.autoencoder_networks import *
 # from modules.networks import *

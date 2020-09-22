@@ -1,3 +1,6 @@
+# Options that are used specifically to configure testing.
+# If an options is not set, its default will be used.
+
 from .base_options import BaseOptions
 
 

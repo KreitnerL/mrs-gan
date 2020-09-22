@@ -1,3 +1,6 @@
+# Basic options that are used to configure either training, validation or testing.
+# If an options is not set, its default will be used.
+
 import argparse
 import os
 

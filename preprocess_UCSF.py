@@ -1,3 +1,6 @@
+# Convert DCM file to matlab file. Calls the activatedSpectra.m file.
+# Matlab file will later be loaded by the DataLoader.
+
 """
 This file sorts through the hierarchy of the UCSF dataset I received.
 It looks for the UCSF data (vs LCM data) and uses the pre-processed, baseline-normalized spectra ('*proc.dcm'),

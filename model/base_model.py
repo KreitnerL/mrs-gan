@@ -1,3 +1,5 @@
+# Implementation of all basic functionality a model should have.
+
 import os
 import pickle
 import shutil

@@ -1,3 +1,5 @@
+# NOT USED
+
 '''
 https://github.com/meliketoy/wide-resnet.pytorch/blob/master/networks/wide_resnet.py
 '''

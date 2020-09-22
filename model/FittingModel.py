@@ -1,3 +1,6 @@
+# NOT USED
+# Example implementation of a network using define.py
+
 import copy
 import math
 import os
