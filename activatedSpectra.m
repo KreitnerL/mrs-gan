@@ -1,3 +1,6 @@
+% Convert DCM file to matlab file. Called by preprocess_UCSF.py
+% Matlab file will later be loaded by the DataLoader
+
 function [ data_real, data_imag ] = activatedSpectra( path1, path2 ) 
 %ACTIVATEDSPECTRA Summary of this function goes here
 %   Detailed explanation goes here

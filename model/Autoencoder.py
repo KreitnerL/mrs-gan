@@ -1,3 +1,7 @@
+# NOT USED
+# The Autoencoder uses a network to transform an image into a sparse embedding
+# to extract features. The Decoder network should be able to reconstruct the original image from the image.
+
 import argparse
 import os
 import pickle

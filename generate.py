@@ -1,3 +1,6 @@
+# NOT USED
+# Early version of creating synthetic samples using a given parameter config
+
 import argparse
 import os
 

@@ -1,3 +1,6 @@
+# File to run a test with a pre-trained network. 
+# TODO May not be working right now, compare with train
+
 import time
 import torch
 from data.data_loader import CreateDataLoader

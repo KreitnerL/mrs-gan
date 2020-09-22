@@ -1,3 +1,7 @@
+# NOT USED
+# A collection of all available options for training, validating and testing.
+# This was later split into base_options and test-/train_options to keep track of things.
+
 import argparse
 import os
 

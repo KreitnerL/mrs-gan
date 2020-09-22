@@ -1,4 +1,5 @@
-
+% NOT USED
+% Example of how to use DCM files.
 
 file = '/home/john/Documents/Research/Datasets/UCSF_TUM_MRSI/phantom spectra/DICOM/phan_lac_fbcomb_sum_cp_cor.dcm';
 info = dicominfo(file);
