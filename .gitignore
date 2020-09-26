@@ -1,4 +1,4 @@
 .vscode
-datasets/
+datasets/**/
 checkpoints/
 **/*.pyc
