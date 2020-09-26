@@ -43,8 +43,7 @@ class Visualizer():
                 nrows = int(np.ceil(len(visuals.items()) / ncols))
                 images = []
                 idx = 0
-                for label, object in visuals.items():
-                    image_numpy = object[0]
+                for label, image_numpy in visuals.items():
                     label_html_row += '<td>%s</td>' % label
                     images.append(image_numpy.transpose([2, 0, 1]))
                     idx += 1
@@ -66,14 +65,16 @@ class Visualizer():
                               opts=dict(title=title + ' labels'))
             else:
                 idx = 1
-                for label, object in visuals.items():
-                    image_numpy = object[0]
+                for label, image_numpy in visuals.items():
                     #image_numpy = np.flipud(image_numpy)
                     self.vis.image(image_numpy.transpose([2,0,1]), opts=dict(title=label),
                                        win=self.display_id + idx)
                     idx += 1
 
         if self.use_html: # save images to a html file
+            for label, image_numpy in visuals.items():
+                img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
+                util.save_image(image_numpy, img_path)
             # update website
             webpage = html.HTML(self.web_dir, 'Experiment name = %s' % self.name, reflesh=1)
             for n in range(epoch, 0, -1):
@@ -82,9 +83,8 @@ class Visualizer():
                 txts = []
                 links = []
 
-                for label, object in visuals.items():
-                    image_numpy, img_path = object[0], object[1]
-                    # img_path = 'epoch%.3d_%s.png' % (n, label)
+                for label, image_numpy in visuals.items():
+                    img_path = 'epoch%.3d_%s.png' % (n, label)
                     ims.append(img_path)
                     txts.append(label)
                     links.append(img_path)
@@ -96,7 +96,7 @@ class Visualizer():
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X':[],'Y':[], 'legend':list(errors.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
-        self.plot_data['Y'].append([errors[k] for k in self.plot_data['legend']])
+        self.plot_data['Y'].append([errors[k].cpu().data.numpy() for k in self.plot_data['legend']])
         self.vis.line(
             X=np.stack([np.array(self.plot_data['X'])]*len(self.plot_data['legend']),1),
             Y=np.array(self.plot_data['Y']),

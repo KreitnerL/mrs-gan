@@ -1,7 +1,6 @@
 import torch.utils.data as data
-# import torchvision.transforms as transforms
 from PIL import Image
-import numpy as np
+import torchvision.transforms as transforms
 
 class BaseDataset(data.Dataset):
     def __init__(self):
@@ -18,39 +17,30 @@ class BaseDataset(data.Dataset):
             mag = self.magnitude()
             return mag
 
-    # def magnitude(self):#, sample):
-    #     mag = 0
-    #     sample = np.amax(self.sampler)
-    #     while sample / 10 > 1:
-    #         mag += 1
-    #         sample /= 10
-    #     return mag
+# TODO May be unecessary
+def get_transform(opt):
+    transform_list = []
+    if opt.resize_or_crop == 'resize_and_crop':
+        osize = [opt.loadSize, opt.loadSize]
+        transform_list.append(transforms.Resize(osize, Image.BICUBIC))
+        transform_list.append(transforms.RandomCrop(opt.fineSize))
+    elif opt.resize_or_crop == 'crop':
+        transform_list.append(transforms.RandomCrop(opt.fineSize))
+    elif opt.resize_or_crop == 'scale_width':
+        transform_list.append(transforms.Lambda(
+            lambda img: __scale_width(img, opt.fineSize)))
+    elif opt.resize_or_crop == 'scale_width_and_crop':
+        transform_list.append(transforms.Lambda(
+            lambda img: __scale_width(img, opt.loadSize)))
+        transform_list.append(transforms.RandomCrop(opt.fineSize))
 
-# def get_transform(opt):
-#     transform_list = []
-#     if opt.resize_or_crop == 'resize_and_crop':
-#         osize = [opt.loadSize, opt.loadSize]
-#         transform_list.append(transforms.Scale(osize, Image.BICUBIC))
-#         transform_list.append(transforms.RandomCrop(opt.fineSize))
-#     elif opt.resize_or_crop == 'crop':
-#         transform_list.append(transforms.RandomCrop(opt.fineSize))
-#     elif opt.resize_or_crop == 'scale_width':
-#         transform_list.append(transforms.Lambda(
-#             lambda img: __scale_width(img, opt.fineSize)))
-#     elif opt.resize_or_crop == 'scale_width_and_crop':
-#         transform_list.append(transforms.Lambda(
-#             lambda img: __scale_width(img, opt.loadSize)))
-#         transform_list.append(transforms.RandomCrop(opt.fineSize))
-#     # elif opt.resize_or_crop == None:
-#     #     break
-#     #
-#     if opt.isTrain and not opt.no_flip:
-#         transform_list.append(transforms.RandomHorizontalFlip())
-#
-#     transform_list += [transforms.ToTensor(),
-#                        transforms.Normalize((0.5, 0.5, 0.5),
-#                                             (0.5, 0.5, 0.5))]
-#     return transforms.Compose(transform_list)
+    if opt.isTrain and not opt.no_flip:
+        transform_list.append(transforms.RandomHorizontalFlip())
+
+    transform_list += [transforms.ToTensor(),
+                       transforms.Normalize((0.5, 0.5, 0.5),
+                                            (0.5, 0.5, 0.5))]
+    return transforms.Compose(transform_list)
 
 def __scale_width(img, target_width):
     ow, oh = img.size
@@ -59,5 +49,3 @@ def __scale_width(img, target_width):
     w = target_width
     h = int(target_width * oh / ow)
     return img.resize((w, h), Image.BICUBIC)
-
-

@@ -44,38 +44,6 @@ def normalizeSpectra(input, max, min, low, high):
 
     return out
 
-
-# def normalizeSpectraL2(input):
-
-
-
-# def splitSpectra(spectra, size, opt):
-#     length, d, specLength = size[0], size[1], size[2]
-#     print('Splitting dataset into phases...')
-#     print('     train: {}%, validate: {}%, test: {}%'.format(int((1-opt.val_split-opt.test_split)*100), int(opt.val_split*100), int(opt.test_split*100)))
-#     train, val, test = splitData(opt, length, opt.val_split, opt.test_split)
-#     path = os.path.join(opt.save_dir,'data/sizes')
-#     contents = np.array([len(train), len(val), len(test), specLength, d])
-#     np.savetxt(path,contents,delimiter=',',fmt='%d')
-#     fp = np.memmap(os.path.join(opt.save_dir,'data/train.dat'),dtype='double',mode='w+',shape=(len(train),d,specLength))
-#     fp[:] = spectra[train,:,:]
-#     del fp
-#     print('Train memory map saved')
-#     if opt.val_split!=0:
-#         fp = np.memmap(os.path.join(opt.save_dir,'data/val.dat'),dtype='double',mode='w+',shape=(len(val),d,specLength))
-#         fp[:] = spectra[val,:,:]
-#         del fp
-#         print('Validation memory map saved')
-#     if opt.test_split!=0:
-#         fp = np.memmap(os.path.join(opt.save_dir,'data/test.dat'),dtype='double',mode='w+',shape=(len(test),d,specLength))
-#         fp[:] = spectra[test,:,:]
-#         del fp
-#         print('Test memory map saved')
-#     else:
-#         print('Test memory map skipped')
-#
-#     return np.memmap(os.path.join(opt.save_dir,'data/train.dat'),dtype='double',mode='r',shape=(len(train),d,specLength))
-
 def sample(dir,string,shape,tensor):
     fp = np.memmap(os.path.join(dir,string),dtype='float64',mode='w+',shape=shape)#length,specLength,2))
     fp[:] = tensor[:]; del fp

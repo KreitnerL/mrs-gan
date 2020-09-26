@@ -5,47 +5,57 @@
 # directory as well as the subdirectories
 ###############################################################################
 
+import torch.utils.data as data
+
+from PIL import Image
 import os
 import os.path
-
-import torch.utils.data as data
-# from pandas import read_csv
-
 from util import util
+from pandas import read_csv
 
-# import pydicom
-# from pydicom.data import get_testdata_files
+IMG_EXTENSIONS = [
+    '.jpg', '.JPG', '.jpeg', '.JPEG',
+    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+]
+DATA_EXTENSIONS = [
+    'proc.dcm','.mat','.h5'
+]
 
-IMG_EXTENSIONS = ['proc.dcm','.mat','.h5']
+data_is_image=False
+
+def is_data_file(filename, extensions):
+    return any(filename.endswith(extension) for extension in extensions)
 
 
-def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
-
-
-def make_dataset(dir, opt):
-    data = []
-    count = 0
+def make_dataset(dir, opt=None):
+    images = []
+    global data_is_image
     if os.path.exists(dir):
         assert os.path.isdir(dir), '{} is not a valid directory'.format(dir)
     else:
         util.mkdir(dir)
 
-    for root, dirs, fnames in sorted(os.walk(dir)):
-        # print('root, dirs, fnames = ',[root, dirs, fnames])
-        # if root.endswith(opt.folder_ext):
+    for root, _, fnames in sorted(os.walk(dir)):
         for fname in fnames:
-            count += 1
-            for i in range(len(opt.file_ext)):
-                if fname.endswith(opt.file_ext[i]):
-                    # print('count = ', count)
-                    path = os.path.join(root, fname)
-                    data.append(path)
+            if opt is not None and opt.file_ext is not None:
+                for i in range(len(opt.file_ext)):
+                    if fname.endswith(opt.file_ext[i]):
+                        path = os.path.join(root, fname)
+                        images.append(path)
+            elif is_data_file(fname, DATA_EXTENSIONS):
+                path = os.path.join(root, fname)
+                images.append(path)
+            elif is_data_file(fname, IMG_EXTENSIONS):
+                data_is_image = True
+                path = os.path.join(root, fname)
+                images.append(path)
 
-    return data
+    return images
 
 
 def default_loader(path):
+    if data_is_image:
+        return Image.open(path).convert('RGB')
     return read_csv(path)
 
 
@@ -55,8 +65,8 @@ class ImageFolder(data.Dataset):
                  loader=default_loader):
         imgs = make_dataset(root)
         if len(imgs) == 0:
-            raise(RuntimeError("Found 0 files in: " + root + "\n"
-                               "Supported file extensions are: " +
+            raise(RuntimeError("Found 0 images in: " + root + "\n"
+                               "Supported image extensions are: " +
                                ",".join(IMG_EXTENSIONS)))
 
         self.root = root
@@ -68,7 +78,7 @@ class ImageFolder(data.Dataset):
     def __getitem__(self, index):
         path = self.imgs[index]
         img = self.loader(path)
-        if self.transform is not False:
+        if self.transform is not None:
             img = self.transform(img)
         if self.return_paths:
             return img, path
