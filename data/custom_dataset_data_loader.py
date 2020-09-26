@@ -28,33 +28,33 @@ def CreateDataset(opt):
     return dataset
 
 
-# class CustomDatasetDataLoader(BaseDataLoader):
-#     def name(self):
-#         return 'CustomDatasetDataLoader'
+class CustomDatasetDataLoader(BaseDataLoader):
+    def name(self):
+        return 'CustomDatasetDataLoader'
 
-#     def initialize(self, opt):
-#         BaseDataLoader.initialize(self, opt)
-#         self.dataset = CreateDataset(opt)
+    def initialize(self, opt):
+        BaseDataLoader.initialize(self, opt)
+        self.dataset = CreateDataset(opt)
 
-#         if opt.phase=='train':
-#             self.dataloader = DataLoader(self.dataset,
-#                                          batch_size=opt.batchSize,
-#                                          shuffle=not opt.serial_batches,   # Already included when the dataset is split
-#                                          num_workers=int(opt.nThreads),
-#                                          drop_last=False)
-#         elif opt.phase=='val':
-#             self.dataloader = DataLoader(self.dataset,
-#                                          batch_size=opt.batchSize,#len(self.dataset),
-#                                          shuffle=not opt.serial_batches,   # Already included when the dataset is split
-#                                          num_workers=int(opt.nThreads),
-#                                          drop_last=False)
+        if opt.phase=='train':
+            self.dataloader = DataLoader(self.dataset,
+                                         batch_size=opt.batchSize,
+                                         shuffle=not opt.serial_batches,   # Already included when the dataset is split
+                                         num_workers=int(opt.nThreads),
+                                         drop_last=False)
+        elif opt.phase=='val':
+            self.dataloader = DataLoader(self.dataset,
+                                         batch_size=opt.batchSize,#len(self.dataset),
+                                         shuffle=not opt.serial_batches,   # Already included when the dataset is split
+                                         num_workers=int(opt.nThreads),
+                                         drop_last=False)
 
 
-#     def load_data(self):
-#         return self.dataloader
+    def load_data(self):
+        return self.dataloader
 
-#     def __len__(self):
-#         return min(len(self.dataset), self.opt.max_dataset_size)
+    def __len__(self):
+        return min(len(self.dataset), self.opt.max_dataset_size)
 
 
 # class CrossValidationDatasetLoader(BaseDataLoader):

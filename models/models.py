@@ -6,6 +6,7 @@ def create_model(opt):
         assert(opt.dataset_mode == 'unaligned')
         from .cycle_gan_model import CycleGANModel
         model = CycleGANModel()
+    else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     model.initialize(opt)
     print("model [%s] was created" % (model.name()))

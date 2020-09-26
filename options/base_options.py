@@ -31,10 +31,10 @@ class BaseOptions():
         self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-        self.parser.add_argument('--batchSize', type=int, default=100, help='input batch size')
+        self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
-        self.parser.add_argument('--input_nc', type=int, default=2, help='# of input image channels')
+        self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
         self.parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
