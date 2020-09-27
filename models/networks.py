@@ -29,7 +29,7 @@ def get_norm_layer(norm_type='instance'):
     elif norm_type == 'instance':
         norm_layer = functools.partial(nn.InstanceNorm2d, affine=False)
     else:
-        raise NotImplementedError('normalization layer [%s] is not found' % norm)
+        raise NotImplementedError('normalization layer [%s] is not found' % norm_type)
     return norm_layer
 
 
@@ -89,8 +89,8 @@ def define_feature_network(which_model_netFeat, gpu_ids=[]):
 
     if which_model_netFeat == 'resnet34':
         netFeat = FeatureResNet34(gpu_ids=gpu_ids)
-    elif which_model_netFeat == 'resnet101':
-        netFeat = FeatureResNet101(gpu_ids=gpu_ids)
+    # elif which_model_netFeat == 'resnet101':
+    #     netFeat = FeatureResNet101(gpu_ids=gpu_ids)
     else:
         raise NotImplementedError('Feature model name [%s] is not recognized' %
                                   which_model_netFeat)
