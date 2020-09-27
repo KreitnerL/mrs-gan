@@ -1,3 +1,6 @@
+// NOT USED
+// TODO Figure out what it does
+
 function spec, mag, params = loadData( paths )
 
 for i = 1:length(paths)
