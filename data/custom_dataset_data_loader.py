@@ -39,13 +39,13 @@ class CustomDatasetDataLoader(BaseDataLoader):
         if opt.phase=='train':
             self.dataloader = DataLoader(self.dataset,
                                          batch_size=opt.batchSize,
-                                         shuffle=not opt.serial_batches,   # Already included when the dataset is split
+                                         shuffle=opt.shuffle,   # Already included when the dataset is split
                                          num_workers=int(opt.nThreads),
                                          drop_last=False)
         elif opt.phase=='val':
             self.dataloader = DataLoader(self.dataset,
                                          batch_size=opt.batchSize,#len(self.dataset),
-                                         shuffle=not opt.serial_batches,   # Already included when the dataset is split
+                                         shuffle=opt.shuffle,   # Already included when the dataset is split
                                          num_workers=int(opt.nThreads),
                                          drop_last=False)
 
