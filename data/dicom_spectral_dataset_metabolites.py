@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
-from models.auxiliary import progressbar
+from util.util import progressbar
 from util.util import mkdir
 
 

@@ -14,7 +14,7 @@ import scipy.io as scp
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from data.data_auxiliary import splitSpectra, standardizeSpectra, normalizeSpectra
-from models.auxiliary import progressbar
+from util.util import progressbar
 from util import util
 
 

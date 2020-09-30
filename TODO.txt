@@ -1,0 +1,4 @@
+- Create original CycleGAN for this data type
+- Get Random Forrest Network from Drithiman
+- Create WCycleGAN_gp
+- Add Perceptual Feature Loss

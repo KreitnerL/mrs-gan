@@ -23,7 +23,7 @@ import pydicom
 import scipy.io as io
 import torch
 import torch.nn.functional as F
-from models.auxiliary import progressbar
+from util.util import progressbar
 from options.train_options import TrainOptions
 from torch import empty, flip, reshape, squeeze, transpose
 from util import util

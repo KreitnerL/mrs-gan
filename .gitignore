@@ -2,3 +2,4 @@
 datasets/**/
 checkpoints/
 **/*.pyc
+**/__pycache__/

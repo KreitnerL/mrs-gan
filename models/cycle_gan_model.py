@@ -13,12 +13,14 @@ def mse_loss(input, target):
 
 class CycleGANModel(BaseModel):
     """
-    This class implements the CycleGAN model, for learning image-to-image translation without paired data.
+    This class implements a CycleGAN model with perceptual feature loss, for learning image-to-image translation without paired data.
+    To calculate the perceptual loss, a pretrained ResNet34 is used.
     The model training requires '--dataset_mode unaligned' dataset.
     By default, it uses a '--netG resnet_9blocks' ResNet generator,
     a '--netD basic' discriminator (PatchGAN introduced by pix2pix),
     and a least-square GANs objective ('--gan_mode lsgan').
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
+    Perceptual Loss paper: https://arxiv.org/abs/1706.09138
     """
 
     def name(self):

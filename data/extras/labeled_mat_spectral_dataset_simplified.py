@@ -17,7 +17,7 @@ import scipy.io as io
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 from data.data_auxiliary import standardizeSpectra, normalizeSpectra, splitData, sample
-from models.auxiliary import progressbar
+from util.util import progressbar
 from util import util
 
 
