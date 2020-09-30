@@ -54,7 +54,7 @@ to start a visdom server on `http://localhost:8097`. During training, the progra
 
 You can train the model with:
 ```sh
-python train.py --dataroot ./datasets/maps --name maps_cyclegan --model cycle_gan --no_dropout
+python train.py --dataroot ./datasets/vangogh2photo --name vangogh2photo_cyclegan  --model cycle_gan --no_dropout --batchSize 3 --niter 200 --niter_decay 200 --lambda_A 10.0 --lambda_B 10.0 --lambda_feat 1.0
 ```
 Check the [options folder](./options/README.md) for more information about the run parameters.
 
@@ -62,7 +62,7 @@ Check the [options folder](./options/README.md) for more information about the r
 ### Testing:
 To test the pre-trained model, run:
 ```sh
-python test.py --dataroot ./datasets/vangogh2photo --name maps_cyclegan --model cycle_gan --phase test --no_dropout
+python test.py --dataroot ./datasets/vangogh2photo --name vangogh2photo_cyclegan --model cycle_gan --phase test --no_dropout --how_many 600
 ```
 
 The test results will be saved to a html file here: `./results/maps_cyclegan/latest_test/index.html`
