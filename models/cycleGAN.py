@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from collections import OrderedDict
 from torch.autograd import Variable
 import itertools
@@ -6,6 +7,9 @@ import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+import matplotlib.pyplot as plt
+import numpy as np
+T = torch.Tensor
 
 
 def mse_loss(input, target):
@@ -13,18 +17,16 @@ def mse_loss(input, target):
 
 class CycleGANModel(BaseModel):
     """
-    This class implements a CycleGAN model with perceptual feature loss, for learning image-to-image translation without paired data.
-    To calculate the perceptual loss, a pretrained ResNet34 is used.
+    This class implements a CycleGAN model for learning 1d signal translation without paired data.
     The model training requires '--dataset_mode unaligned' dataset.
     By default, it uses a '--netG resnet_9blocks' ResNet generator,
     a '--netD basic' discriminator (PatchGAN introduced by pix2pix),
     and a least-square GANs objective ('--gan_mode lsgan').
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
-    Perceptual Loss paper: https://arxiv.org/abs/1706.09138
     """
 
-    def name(self):
-        return 'CycleGAN_Image_Perceptual_Loss'
+    def name():
+        return 'CycleGAN'
 
     def __init__(self, opt):
         super().__init__(opt)
@@ -53,8 +55,6 @@ class CycleGANModel(BaseModel):
             self.netD_B = networks.define_D(opt.input_nc, opt.ndf,
                                             opt.which_model_netD,
                                             opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
-            # The feature network is a pretrained ResNet wich is used to calculate the perceptual loss
-            self.netFeat = networks.define_feature_network(opt.which_model_feat, self.gpu_ids)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -73,7 +73,6 @@ class CycleGANModel(BaseModel):
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
-            self.criterionFeat = mse_loss
             # initialize optimizers
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
@@ -84,18 +83,6 @@ class CycleGANModel(BaseModel):
         self.lambda_idt = self.opt.identity
         self.lambda_A = self.opt.lambda_A
         self.lambda_B = self.opt.lambda_B
-
-        if bool(self.opt.lambda_feat):
-            self.lambda_feat_AfB = self.lambda_feat_BfA = self.lambda_feat_fArecB = self.lambda_feat_fBrecA = self.lambda_feat_ArecA = self.lambda_feat_BrecB = self.opt.lambda_feat
-        else:
-            self.lambda_feat_AfB = self.opt.lambda_feat_AfB    
-            self.lambda_feat_BfA = self.opt.lambda_feat_BfA
-
-            self.lambda_feat_fArecB = self.opt.lambda_feat_fArecB
-            self.lambda_feat_fBrecA = self.opt.lambda_feat_fBrecA
-
-            self.lambda_feat_ArecA = self.opt.lambda_feat_ArecA
-            self.lambda_feat_BrecB = self.opt.lambda_feat_BrecB
 
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG_A)
@@ -135,7 +122,7 @@ class CycleGANModel(BaseModel):
     def get_image_paths(self):
         return self.image_paths
 
-    def backward_D_basic(self, netD, real, fake):
+    def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate GAN loss for the discriminator\n
             netD (network)      -- the discriminator D\n
             real (tensor array) -- real images\n
@@ -189,20 +176,8 @@ class CycleGANModel(BaseModel):
         # Backward cycle loss
         self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
 
-        # Feature loss
-        self.feat_loss_AfB = self.criterionFeat(self.netFeat(self.real_A), self.netFeat(self.fake_B)) * self.lambda_feat_AfB    
-        self.feat_loss_BfA = self.criterionFeat(self.netFeat(self.real_B), self.netFeat(self.fake_A)) * self.lambda_feat_BfA
-
-        self.feat_loss_fArecB = self.criterionFeat(self.netFeat(self.fake_A), self.netFeat(self.rec_B)) * self.lambda_feat_fArecB
-        self.feat_loss_fBrecA = self.criterionFeat(self.netFeat(self.fake_B), self.netFeat(self.rec_A)) * self.lambda_feat_fBrecA
-
-        self.feat_loss_ArecA = self.criterionFeat(self.netFeat(self.real_A), self.netFeat(self.rec_A)) * self.lambda_feat_ArecA 
-        self.feat_loss_BrecB = self.criterionFeat(self.netFeat(self.real_B), self.netFeat(self.rec_B)) * self.lambda_feat_BrecB 
-
-        self.feat_loss = self.feat_loss_AfB + self.feat_loss_BfA + self.feat_loss_fArecB + self.feat_loss_fBrecA + self.feat_loss_ArecA + self.feat_loss_BrecB
-
         # combined loss
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.feat_loss
+        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
 
     def optimize_parameters(self):
@@ -239,12 +214,14 @@ class CycleGANModel(BaseModel):
                                 ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B)])
 
     def get_current_visuals(self):
-        real_A = util.tensor2im(self.real_A.data)
-        fake_B = util.tensor2im(self.fake_B.data)
-        rec_A = util.tensor2im(self.rec_A.data)
-        real_B = util.tensor2im(self.real_B.data)
-        fake_A = util.tensor2im(self.fake_A.data)
-        rec_B = util.tensor2im(self.rec_B.data)
+        x = np.linspace(0,5, self.opt.input_nc)
+        real_A = util.get_img_from_fig(x, self.real_A.data, 'PPM')
+        fake_B = util.get_img_from_fig(x, self.fake_B.data, 'PPM')
+        rec_A = util.get_img_from_fig(x, self.rec_A.data, 'PPM')
+        real_B = util.get_img_from_fig(x, self.real_B.data, 'PPM')
+        fake_A = util.get_img_from_fig(x, self.fake_A.data, 'PPM')
+        rec_B = util.get_img_from_fig(x, self.rec_B.data, 'PPM')
+
         if self.opt.identity > 0.0:
             idt_A = util.tensor2im(self.idt_A.data)
             idt_B = util.tensor2im(self.idt_B.data)

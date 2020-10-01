@@ -4,6 +4,9 @@ from PIL import Image
 import numpy as np
 import os
 import sys
+import io
+import cv2
+import matplotlib.pyplot as plt
 
 
 # Converts a Tensor into a Numpy array
@@ -12,6 +15,24 @@ def tensor2im(image_tensor, imtype=np.uint8):
     image_numpy = image_tensor[0].cpu().float().numpy()
     image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
     return image_numpy.astype(imtype)
+
+# define a function which returns an image as numpy array from figure
+def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(x,y)
+    ax.xlabel(xlabel)
+    ax.ylabel(ylabel)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=dpi)
+    buf.seek(0)
+    img_arr = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+    buf.close()
+    img = cv2.imdecode(img_arr, 1)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    return img
 
 # def tensor2plot(spectra, *labels, **save):
 #     if len(spectra)==1:
