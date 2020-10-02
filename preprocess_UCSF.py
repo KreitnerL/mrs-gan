@@ -25,12 +25,11 @@ from util import util
 
 print('--------------- Loading Options ---------------')
 parser = argparse.ArgumentParser()
-parser.add_argument('sourceDir', type=str, help='Directory of the DICOM files')
-parser.add_argument('saveDir', type=str, default='./datasets/UCSF/', help='Directory where the matlab files will be saved')
-parser.add_argument('file_ext_A', type=str, default='UCSF_proc.dcm',  help='File extension of the proc DICOM files')
-parser.add_argument('file_ext_B', type=str, default='UCSF_NAA.dcm',  help='File extension of the NAA DICOM files')
-parser.add_argument('folder_ext', type=str, default='UCSF_NAA.dcm',  help='Ending of the folder name where the UCSF DICOM files are located')
-
+parser.add_argument('--sourceDir', type=str, help='Directory of the DICOM files')
+parser.add_argument('--saveDir', type=str, help='Directory where the matlab files will be saved')
+parser.add_argument('--file_ext_A', type=str, default='proc.dcm', help='File extension of the processed spectra DICOM files')
+parser.add_argument('--file_ext_B', type=str, default='NAA.dcm', help='File extension of the metabolic map')
+parser.add_argument('--folder_ext', type=str, default='', help='Ending of the folder name where the DICOM files are located')
 
 opt = parser.parse_args()
 
@@ -61,7 +60,7 @@ def convert_DCM_to_MAT(sourceDir: str, saveDir: str, file_ext_A: str, file_ext_B
     # Compile loaded, reshaped data in row-wise matrix
     B_paths = sorted(make_dataset(sourceDir, folder_ext, file_ext_A))
     A_paths = sorted(make_dataset(sourceDir, folder_ext, file_ext_B))
-    print('len(A_paths): ' + str(len(A_paths)) + ', len(B_paths): ' + len(B_paths))
+    print('len(A_paths): ' + str(len(A_paths)) + ', len(B_paths): ' + str(len(B_paths)))
 
     for i in progressbar(range(len(B_paths)), "Processing patient data: ", 20):
         # Identify activated voxels using the NAA map and extract corresponding spectra
