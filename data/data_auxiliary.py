@@ -1,15 +1,18 @@
 import os
 import torch
 import numpy as np
-import torch.nn as nn
 
 def splitData(opt, dataset_size, val_split=0.2, test_split=0.1, *both):
+    """
+    Divides the dataset into training, validation and test set.\n
+    Returns the indices of samples for train, val and test set.
+    """
     if opt.shuffle_data:
         indices = torch.randperm(dataset_size)
     else:
         indices = range(dataset_size)
-    split1 = torch.tensor([int(torch.floor((1 - torch.FloatTensor([val_split]) - torch.FloatTensor([test_split])) * dataset_size))])
-    split2 = torch.tensor([int(torch.floor((1 - torch.FloatTensor([test_split])) * dataset_size))])    # split1 = torch.tensor([int(torch.floor((1 - torch.tensor(val_split, dtype=int) - torch.tensor(test_split)) * dataset_size))])
+    split1 = torch.tensor([int(dataset_size * (1 - val_split - test_split))])
+    split2 = torch.tensor([int(dataset_size * (1 - test_split))])    # split1 = torch.tensor([int(torch.floor((1 - torch.tensor(val_split, dtype=int) - torch.tensor(test_split)) * dataset_size))])
 
     if not test_split==0:
         train_sampler, valid_sampler, test_sampler = indices[:split1], indices[split1:split2], indices[split2:]

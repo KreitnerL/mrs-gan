@@ -2,11 +2,6 @@
 % Matlab file will later be loaded by the DataLoader
 
 function [ data_real, data_imag ] = activatedSpectra( path1, path2 ) 
-%ACTIVATEDSPECTRA Summary of this function goes here
-%   Detailed explanation goes here
-%
-% path1 = '/home/john/Documents/Research/Datasets/UCSF_TUM_MRSI/batch_1/t8771/ucsf/t8771_UCSF_NAA.dcm';
-% path2 = '/home/john/Documents/Research/Datasets/UCSF_TUM_MRSI/batch_1/t8771/ucsf/t8771_UCSF_proc.dcm';
 
 %% Identify activated voxels
 file = string(path1);
@@ -55,10 +50,6 @@ for m = 1:length(I)
     spectra(m,:) = specProc(:, I(m), J(m), K(m));
 end
 
-% data_real = real(spectra);
-% data_imag = imag(spectra);
-% data_real = padarray(real(spectra),[0 21],0,'post');
-% data_imag = padarray(imag(spectra),[0 21],0,'post');
 data_real = real(spectra);
 data_imag = imag(spectra);
 
