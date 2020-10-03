@@ -13,8 +13,8 @@ class UnalignedDataset(BaseDataset):
         self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
         self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
 
-        self.A_paths = make_dataset(self.dir_A)
-        self.B_paths = make_dataset(self.dir_B)
+        self.A_paths = make_dataset(self.dir_A, file_type='image')
+        self.B_paths = make_dataset(self.dir_B, file_type='image')
 
         self.A_paths = sorted(self.A_paths)
         self.B_paths = sorted(self.B_paths)
@@ -38,5 +38,5 @@ class UnalignedDataset(BaseDataset):
     def __len__(self):
         return max(self.A_size, self.B_size)
 
-    def name(self):
+    def name():
         return 'UnalignedDataset'

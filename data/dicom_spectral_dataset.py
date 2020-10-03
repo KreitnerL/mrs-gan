@@ -8,7 +8,7 @@ import scipy.io as scp
 
 from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
-from data.data_auxiliary import splitSpectra, standardizeSpectra, normalizeSpectra
+from data.data_auxiliary import splitData, standardizeSpectra, normalizeSpectra
 from util.util import progressbar
 from util import util
 
@@ -20,7 +20,8 @@ class DicomSpectralDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
         self.root = opt.dataroot
-        self.dir_A = os.path.join(opt.dataroot, opt.phase)
+        self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
+        self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
         save_dir = os.path.join(self.opt.save_dir, 'data')
         util.mkdir(save_dir)
         
@@ -87,7 +88,7 @@ class DicomSpectralDataset(BaseDataset):
         spectraI = []
         L = []
 
-        self.A_paths = make_dataset(self.root, self.opt) # Returns a list of paths of the files in the dataset
+        self.A_paths = make_dataset(self.root, file_type = 'numpy') # Returns a list of paths of the files in the dataset
         self.A_paths = sorted(self.A_paths)
         for i in progressbar(range(len(self.A_paths)), "Loading patient data: ", 20):
             datar, datai = np.load(self.A_paths[i]).get('data')
@@ -121,7 +122,7 @@ class DicomSpectralDataset(BaseDataset):
 
         # Split the data if indicated, save the indices in a CSV file
         if self.opt.split:# and not self.opt.k_folds:
-            train_indices, val_indices, test_indices = splitSpectra(length, self.opt.val_split, self.opt.test_split)
+            train_indices, val_indices, test_indices = splitData(length, self.opt.val_split, self.opt.test_split, self.opt.shuffle_data)
             contents = np.array([len(train_indices), len(val_indices), len(test_indices), specLength, d])
             path = os.path.join(self.opt.save_dir,'data/sizes')
             np.savetxt(path,contents,delimiter=',',fmt='%d')
@@ -149,6 +150,8 @@ class DicomSpectralDataset(BaseDataset):
     def name():
         return 'DicomSpectralDataset'
 
+    
+    # TODO maybe remove
     def extract(self, index):
         label = ['data/training.dat', 'data/validation.dat']
         boolean = np.full([len(self.sampler)], False, dtype=bool)
