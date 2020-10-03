@@ -5,6 +5,8 @@ from torch import from_numpy
 
 from data.base_dataset import BaseDataset
 
+index = {'train': 0, 'val': 1, 'test': 2}
+
 class DicomSpectralDataset(BaseDataset):
     """
     DicomSpectralDataset loads spectra from .dat files and returns a sample as a numpy array
@@ -15,35 +17,33 @@ class DicomSpectralDataset(BaseDataset):
         self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
         self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
         
-        path = os.path.join(self.opt.save_dir,'data/sizes')
-        sizes_A = np.genfromtxt(os.path.join(self.opt.save_dir,'sizes_A') ,delimiter=',').astype(np.int64)
-        sizes_B = np.genfromtxt(os.path.join(self.opt.save_dir,'sizes_B') ,delimiter=',').astype(np.int64)
+        sizes_A = np.genfromtxt(os.path.join(self.root,'sizes_A') ,delimiter=',').astype(np.int64)
+        sizes_B = np.genfromtxt(os.path.join(self.root,'sizes_B') ,delimiter=',').astype(np.int64)
 
-        if (self.opt.phase=='train'):
-            self.sampler_A = np.memmap(os.path.join(self.opt.phase_data_path,'train_A.dat'),dtype='double',mode='r',shape=(sizes_A[0],sizes_A[4],sizes_A[3]))
-            self.sampler_B = np.memmap(os.path.join(self.opt.phase_data_path,'train_B.dat'),dtype='double',mode='r',shape=(sizes_B[0],sizes_B[4],sizes_B[3]))
-        elif (self.opt.phase=='val'):
-            self.sampler_A = np.memmap(os.path.join(self.opt.phase_data_path,'val_A.dat'),dtype='double',mode='r',shape=(sizes_A[1],sizes_A[4],sizes_A[3]))
-            self.sampler_B = np.memmap(os.path.join(self.opt.phase_data_path,'val_B.dat'),dtype='double',mode='r',shape=(sizes_B[1],sizes_B[4],sizes_B[3]))
-        elif (self.opt.phase=='test'):
-            self.sampler_A = np.memmap(os.path.join(self.opt.phase_data_path,'test_A.dat'),dtype='double',mode='r',shape=(sizes_A[2],sizes_A[4],sizes_A[3]))
-            self.sampler_B = np.memmap(os.path.join(self.opt.phase_data_path,'test_B.dat'),dtype='double',mode='r',shape=(sizes_B[2],sizes_B[4],sizes_B[3]))
+        path_A = str(os.path.join(self.root, self.opt.phase + '_A.dat'))
+        path_B = str(os.path.join(self.root, self.opt.phase + '_B.dat'))
+
+        self.A_size = sizes_A[index[self.opt.phase]]
+        self.B_size = sizes_B[index[self.opt.phase]]
+
+        self.sampler_A = np.memmap(path_A, dtype='double', mode='r', shape=(self.A_size,sizes_A[4],sizes_A[3]))
+        self.sampler_B = np.memmap(path_B, dtype='double', mode='r', shape=(self.B_size,sizes_B[4],sizes_B[3]))
         self.counter=0
         print('Dataset sampler loaded')
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
-        A = np.asarray(self.sampler_A[index,:,:]).astype(float)
-        B = np.asarray(self.sampler_B[index,:,:]).astype(float)
+        A = np.asarray(self.sampler_A[index % self.A_size,0,:]).astype(float)
+        B = np.asarray(self.sampler_B[index % self.B_size,0,:]).astype(float)
         return {
-            'A': from_numpy(A),
-            'B': from_numpy(B)
+            'A': from_numpy(A).unsqueeze(0),
+            'B': from_numpy(B).unsqueeze(0),
         }
 
     def __len__(self):
-        return max(len(self.sampler_A), len(self.sampler_B)) # Determines the length of the dataloader
+        return max(self.A_size, self.B_size) # Determines the length of the dataloader
 
-    def name():
+    def name(self):
         return 'DicomSpectralDataset'
 
     

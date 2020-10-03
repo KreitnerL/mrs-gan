@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from data.base_data_loader import BaseDataLoader
 
 class CustomDatasetDataLoader(BaseDataLoader):
-    def name():
+    def name(self):
         return 'CustomDatasetDataLoader'
 
     def initialize(self, opt):
@@ -15,7 +15,7 @@ class CustomDatasetDataLoader(BaseDataLoader):
                                         num_workers=int(opt.nThreads),
                                         drop_last=False)
 
-    def createDataset(opt):
+    def createDataset(self, opt):
         dataset = None
         if opt.dataset_mode == 'unaligned':
             from data.unaligned_dataset import UnalignedDataset

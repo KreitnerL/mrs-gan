@@ -23,7 +23,7 @@ class CycleGANModel(BaseModel):
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
     """
 
-    def name():
+    def name(self):
         return 'CycleGAN'
 
     def __init__(self, opt):

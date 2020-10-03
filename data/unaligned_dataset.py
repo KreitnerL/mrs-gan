@@ -38,5 +38,5 @@ class UnalignedDataset(BaseDataset):
     def __len__(self):
         return max(self.A_size, self.B_size)
 
-    def name():
+    def name(self):
         return 'UnalignedDataset'
