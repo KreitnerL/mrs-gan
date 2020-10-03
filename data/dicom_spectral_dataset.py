@@ -1,6 +1,7 @@
 import os
 import os.path
 import numpy as np
+from torch import from_numpy
 
 from data.base_dataset import BaseDataset
 
@@ -32,9 +33,11 @@ class DicomSpectralDataset(BaseDataset):
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
+        A = np.asarray(self.sampler_A[index,:,:]).astype(float)
+        B = np.asarray(self.sampler_B[index,:,:]).astype(float)
         return {
-            'A': np.asarray(self.sampler_A[index,:,:]).astype(float),
-            'B': np.asarray(self.sampler_B[index,:,:]).astype(float)
+            'A': from_numpy(A),
+            'B': from_numpy(B)
         }
 
     def __len__(self):

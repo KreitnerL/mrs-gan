@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from torch.autograd import Variable
 import itertools
 import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
-import matplotlib.pyplot as plt
 import numpy as np
 T = torch.Tensor
 
@@ -33,8 +31,8 @@ class CycleGANModel(BaseModel):
 
         nb = opt.batchSize
         size = opt.fineSize
-        self.input_A = self.Tensor(nb, opt.input_nc, size, size)
-        self.input_B = self.Tensor(nb, opt.output_nc, size, size)
+        self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
+        self.input_B: T = self.Tensor(nb, opt.output_nc, size, size)
 
         # load/define networks
         # The naming conversion is different from those used in the paper
@@ -99,18 +97,21 @@ class CycleGANModel(BaseModel):
         The option 'direction' can be used to swap domain A and domain B.
         """
         AtoB = self.opt.which_direction == 'AtoB'
-        input_A = input['A' if AtoB else 'B']
-        input_B = input['B' if AtoB else 'A']
-        self.input_A.resize_(input_A.size()).copy_(input_A)
-        self.input_B.resize_(input_B.size()).copy_(input_B)
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        input_A: T = input['A' if AtoB else 'B']
+        input_B: T = input['B' if AtoB else 'A']
+        # TODO check if clone needed
+        self.input_A = input_A
+        self.input_B = input_B
 
     def forward(self):
-        self.real_A = Variable(self.input_A)
+        """
+        Uses Generators to generate fake and reconstructed spectra
+        """
+        self.real_A = self.input_A
         self.fake_B = self.netG_A.forward(self.real_A)
         self.rec_A = self.netG_B.forward(self.fake_B)
 
-        self.real_B = Variable(self.input_B)
+        self.real_B = self.input_B
         self.fake_A = self.netG_B.forward(self.real_B)
         self.rec_B = self.netG_A.forward(self.fake_A)
 
@@ -120,7 +121,7 @@ class CycleGANModel(BaseModel):
 
     # get image paths
     def get_image_paths(self):
-        return self.image_paths
+        pass
 
     def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate GAN loss for the discriminator\n
@@ -158,10 +159,10 @@ class CycleGANModel(BaseModel):
         if self.lambda_idt > 0:
             # G_A should be identity if real_B is fed.
             self.idt_A = self.netG_A.forward(self.real_B)
-            self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
+            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
             # G_B should be identity if real_A is fed.
             self.idt_B = self.netG_B.forward(self.real_A)
-            self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
+            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
         else:
             self.loss_idt_A = 0
             self.loss_idt_B = 0
@@ -172,9 +173,9 @@ class CycleGANModel(BaseModel):
         # D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
         # Forward cycle loss
-        self.loss_cycle_A = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
+        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
         # Backward cycle loss
-        self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
+        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
 
         # combined loss
         self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
@@ -223,8 +224,8 @@ class CycleGANModel(BaseModel):
         rec_B = util.get_img_from_fig(x, self.rec_B.data, 'PPM')
 
         if self.opt.identity > 0.0:
-            idt_A = util.tensor2im(self.idt_A.data)
-            idt_B = util.tensor2im(self.idt_B.data)
+            idt_A = util.get_img_from_fig(x, self.idt_A.data, 'PPM')
+            idt_B = util.get_img_from_fig(x, self.idt_B.data, 'PPM')
             return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A), ('idt_B', idt_B),
                                 ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B), ('idt_A', idt_A)])
         else:
