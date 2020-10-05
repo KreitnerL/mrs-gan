@@ -8,6 +8,8 @@ import io
 import cv2
 import matplotlib.pyplot as plt
 
+fig = ax = None
+
 
 # Converts a Tensor into a Numpy array
 # |imtype|: the desired type of the converted numpy array
@@ -18,11 +20,12 @@ def tensor2im(image_tensor, imtype=np.uint8):
 
 # define a function which returns an image as numpy array from figure
 def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180):
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(x,y)
-    ax.xlabel(xlabel)
-    ax.ylabel(ylabel)
+    global fig, ax
+    if fig==None:
+        fig, ax = plt.subplots()
+    ax.plot(x,y.squeeze().detach().cpu().numpy())
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=dpi)
@@ -31,6 +34,8 @@ def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180):
     buf.close()
     img = cv2.imdecode(img_arr, 1)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+    plt.cla()
 
     return img
 

@@ -39,20 +39,16 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = networks_1d.define_G_1d(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, no_padding=opt.no_padding)
-        self.netG_B = networks_1d.define_G_1d(opt.output_nc, opt.input_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, no_padding=opt.no_padding)
+        self.netG_A = networks_1d.define_G_1d(opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
+        self.netG_B = networks_1d.define_G_1d(opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
 
         # Discriminators
         if self.isTrain:
             use_sigmoid = opt.no_lsgan
-            self.netD_A = networks_1d.define_D_1d(opt.output_nc, opt.ndf,
-                                            opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, no_padding=opt.no_padding)
-            self.netD_B = networks_1d.define_D_1d(opt.input_nc, opt.ndf,
-                                            opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, no_padding=opt.no_padding)
+            self.netD_A = networks_1d.define_D_1d(opt.ndf,opt.which_model_netD,
+                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
+            self.netD_B = networks_1d.define_D_1d(opt.ndf,opt.which_model_netD,
+                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -100,8 +96,8 @@ class CycleGANModel(BaseModel):
         input_A: T = input['A' if AtoB else 'B']
         input_B: T = input['B' if AtoB else 'A']
         # TODO check if clone needed
-        self.input_A = input_A
-        self.input_B = input_B
+        self.input_A.resize_(input_A.size()).copy_(input_A)
+        self.input_B.resize_(input_B.size()).copy_(input_B)
 
     def forward(self):
         """
@@ -215,7 +211,7 @@ class CycleGANModel(BaseModel):
                                 ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B)])
 
     def get_current_visuals(self):
-        x = np.linspace(0,5, self.opt.input_nc)
+        x = list(range(self.real_A.size()[-1]))
         real_A = util.get_img_from_fig(x, self.real_A.data, 'PPM')
         fake_B = util.get_img_from_fig(x, self.fake_B.data, 'PPM')
         rec_A = util.get_img_from_fig(x, self.rec_A.data, 'PPM')

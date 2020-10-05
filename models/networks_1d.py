@@ -34,7 +34,7 @@ def print_network(net):
 # Generator / Discriminator
 ##############################################################################
 
-def define_G_1d(ngf, which_model_netG, norm='instance', use_dropout=False, gpu_ids=[], no_padding=True):
+def define_G_1d(ngf, which_model_netG, norm='instance', use_dropout=False, gpu_ids=[]):
     """Create a generator for 1d input
     Parameters:
         ngf (int) -- the number of filters in the last conv layer
@@ -61,17 +61,17 @@ def define_G_1d(ngf, which_model_netG, norm='instance', use_dropout=False, gpu_i
         assert(torch.cuda.is_available())
 
     if which_model_netG == 'resnet_6blocks':
-        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids)
     elif which_model_netG == 'resnet_4blocks':
-        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=4, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=4, gpu_ids=gpu_ids)
     elif which_model_netG == 'resnet_3blocks':
-        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=3, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = ResnetGenerator_1d(1, 1, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=3, gpu_ids=gpu_ids)
     elif which_model_netG == 'unet_32':
-        netG = UnetGenerator_1d(1, 1, 5, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = UnetGenerator_1d(1, 1, 5, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
     elif which_model_netG == 'unet_64':
-        netG = UnetGenerator_1d(1, 1, 6, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = UnetGenerator_1d(1, 1, 6, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
     elif which_model_netG == 'unet_128':
-        netG = UnetGenerator_1d(1, 1, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, no_padding=no_padding)
+        netG = UnetGenerator_1d(1, 1, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids)
     else:
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     if len(gpu_ids) > 0:
@@ -159,7 +159,7 @@ class GANLoss(nn.Module):
 # Code and idea originally from Justin Johnson's architecture.
 # https://github.com/jcjohnson/fast-neural-style/
 class ResnetGenerator_1d(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=32, norm_layer=nn.BatchNorm1d, use_dropout=False, n_blocks=4, gpu_ids=[], padding_type='None', no_padding=True):
+    def __init__(self, input_nc, output_nc, ngf=32, norm_layer=nn.BatchNorm1d, use_dropout=False, n_blocks=4, gpu_ids=[], padding_type='zero'):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
@@ -177,11 +177,8 @@ class ResnetGenerator_1d(nn.Module):
         self.ngf = ngf
         self.gpu_ids = gpu_ids
 
-        model = []
-
-        if not no_padding:
-            model += nn.ReflectionPad1d(3)
-        model += [nn.Conv1d(input_nc, ngf, kernel_size=7, padding=0),
+        model = [nn.ReflectionPad1d(3),
+                 nn.Conv1d(input_nc, ngf, kernel_size=7, padding=0),
                  norm_layer(ngf),
                  nn.ReLU(True)]
 
@@ -189,7 +186,7 @@ class ResnetGenerator_1d(nn.Module):
         for i in range(n_downsampling):
             mult = 2**i
             model += [nn.Conv1d(ngf * mult, ngf * mult * 2, kernel_size=3,
-                                stride=2, padding=0 if no_padding else 1),
+                                stride=2, padding=1),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
 
@@ -199,15 +196,12 @@ class ResnetGenerator_1d(nn.Module):
 
         for i in range(n_downsampling):
             mult = 2**(n_downsampling - i)
-            if not no_padding:
-                model += [nn.ReflectionPad2d(3)]
             model += [nn.ConvTranspose1d(ngf * mult, int(ngf * mult / 2),
                                          kernel_size=3, stride=2,
-                                         padding=0 if no_padding else 1, output_padding=0 if no_padding else 1),
+                                         padding=1, output_padding=1),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
-        if not no_padding:
-            model += [nn.ReflectionPad2d(3)]
+        model += [nn.ReflectionPad1d(3)]
         model += [nn.Conv1d(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
 
@@ -269,7 +263,7 @@ class ResnetBlock_1d(nn.Module):
 # Defines the Unet generator.
 class UnetGenerator_1d(nn.Module):
     def __init__(self, input_nc, output_nc, num_downs, ngf=32,
-                 norm_layer=nn.BatchNorm1d, use_dropout=False, gpu_ids=[], no_padding=True):
+                 norm_layer=nn.BatchNorm1d, use_dropout=False, gpu_ids=[]):
         """Construct a Unet generator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -288,13 +282,13 @@ class UnetGenerator_1d(nn.Module):
         assert(input_nc == output_nc)
 
         # construct unet structure
-        unet_block = UnetSkipConnectionBlock_1d(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True, no_padding=no_padding)
+        unet_block = UnetSkipConnectionBlock_1d(ngf * 8, ngf * 8, norm_layer=norm_layer, innermost=True)
         for i in range(num_downs - 5):
-            unet_block = UnetSkipConnectionBlock_1d(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout, no_padding=no_padding)
-        unet_block = UnetSkipConnectionBlock_1d(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer, no_padding=no_padding)
-        unet_block = UnetSkipConnectionBlock_1d(ngf * 2, ngf * 4, unet_block, norm_layer=norm_layer, no_padding=no_padding)
-        unet_block = UnetSkipConnectionBlock_1d(ngf, ngf * 2, unet_block, norm_layer=norm_layer, no_padding=no_padding)
-        unet_block = UnetSkipConnectionBlock_1d(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer, no_padding=no_padding)
+            unet_block = UnetSkipConnectionBlock_1d(ngf * 8, ngf * 8, unet_block, norm_layer=norm_layer, use_dropout=use_dropout)
+        unet_block = UnetSkipConnectionBlock_1d(ngf * 4, ngf * 8, unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock_1d(ngf * 2, ngf * 4, unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock_1d(ngf, ngf * 2, unet_block, norm_layer=norm_layer)
+        unet_block = UnetSkipConnectionBlock_1d(output_nc, ngf, unet_block, outermost=True, norm_layer=norm_layer)
 
         self.model = unet_block
 
@@ -310,7 +304,7 @@ class UnetGenerator_1d(nn.Module):
 #   |-- downsampling -- |submodule| -- upsampling --|
 class UnetSkipConnectionBlock_1d(nn.Module):
     def __init__(self, outer_nc, inner_nc,
-                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm1d, use_dropout=False, no_padding=True):
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm1d, use_dropout=False):
         """Construct a Unet submodule with skip connections.
         Parameters:
             outer_nc (int) -- the number of filters in the outer conv layer
@@ -326,7 +320,7 @@ class UnetSkipConnectionBlock_1d(nn.Module):
         self.outermost = outermost
 
         downconv = nn.Conv1d(outer_nc, inner_nc, kernel_size=4,
-                             stride=2, padding=0 if no_padding else 1)
+                             stride=2, padding=1)
         downrelu = nn.LeakyReLU(0.2, True)
         downnorm = norm_layer(inner_nc)
         uprelu = nn.ReLU(True)
@@ -335,21 +329,21 @@ class UnetSkipConnectionBlock_1d(nn.Module):
         if outermost:
             upconv = nn.ConvTranspose1d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=0 if no_padding else 1)
+                                        padding=1)
             down = [downconv]
             up = [uprelu, upconv, nn.Tanh()]
             model = down + [submodule] + up
         elif innermost:
             upconv = nn.ConvTranspose1d(inner_nc, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=0 if no_padding else 1)
+                                        padding=1)
             down = [downrelu, downconv]
             up = [uprelu, upconv, upnorm]
             model = down + up
         else:
             upconv = nn.ConvTranspose1d(inner_nc * 2, outer_nc,
                                         kernel_size=4, stride=2,
-                                        padding=0 if no_padding else 1)
+                                        padding=1)
             down = [downrelu, downconv, downnorm]
             up = [uprelu, upconv, upnorm]
 
@@ -368,7 +362,7 @@ class UnetSkipConnectionBlock_1d(nn.Module):
 
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator_1d(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm1d, use_sigmoid=False, gpu_ids=[], no_padding=True):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=nn.BatchNorm1d, use_sigmoid=False, gpu_ids=[]):
         """Construct a PatchGAN discriminator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -382,7 +376,7 @@ class NLayerDiscriminator_1d(nn.Module):
         kw = 4
         padw = int(np.ceil((kw-1)/2))
         sequence = [
-            nn.Conv1d(input_nc, ndf, kernel_size=kw, stride=2, padding=0 if no_padding else padw),
+            nn.Conv1d(input_nc, ndf, kernel_size=kw, stride=2, padding=padw),
             nn.LeakyReLU(0.2, True)
         ]
 
@@ -393,7 +387,7 @@ class NLayerDiscriminator_1d(nn.Module):
             nf_mult = min(2**n, 8)
             sequence += [
                 nn.Conv1d(ndf * nf_mult_prev, ndf * nf_mult,
-                          kernel_size=kw, stride=2, padding=0 if no_padding else padw),
+                          kernel_size=kw, stride=2, padding=padw),
                 norm_layer(ndf * nf_mult),
                 nn.LeakyReLU(0.2, True)
             ]
@@ -402,12 +396,12 @@ class NLayerDiscriminator_1d(nn.Module):
         nf_mult = min(2**n_layers, 8)
         sequence += [
             nn.Conv1d(ndf * nf_mult_prev, ndf * nf_mult,
-                      kernel_size=kw, stride=1, padding=0 if no_padding else padw),
+                      kernel_size=kw, stride=1, padding=padw),
             norm_layer(ndf * nf_mult),
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv1d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=0 if no_padding else padw)]
+        sequence += [nn.Conv1d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
 
         if use_sigmoid:
             sequence += [nn.Sigmoid()]

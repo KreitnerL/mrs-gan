@@ -47,7 +47,6 @@ Specifically for spectra:
 - `--standardize`: Standardize the input data. action='store_true', default=False
 - `--norm_range`: Range in which the input data should be normalized. type=list, default=[-1, 1]
 - `--pad_data`: Pad data when loading. Most ResNet architectures require padding MRS data by 21. type=int, default=0
-- `--no_padding`, Use no padding for cycleGAN. Only works for `model=cycle_gan_1d`, type=bool, default=True
 
 
 For visuals:
