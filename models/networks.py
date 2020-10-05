@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.nn import init
 import torchvision
-import torch.optim as optim
-import torch.nn.functional as F
 from torch.autograd import Variable
 
 import math

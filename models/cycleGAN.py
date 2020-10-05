@@ -5,7 +5,7 @@ import itertools
 import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
-from . import networks
+from . import networks_1d
 import numpy as np
 T = torch.Tensor
 
@@ -39,20 +39,20 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
-        self.netG_B = networks.define_G(opt.output_nc, opt.input_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
+        self.netG_A = networks_1d.define_G_1d(opt.input_nc, opt.output_nc,
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, no_padding=opt.no_padding)
+        self.netG_B = networks_1d.define_G_1d(opt.output_nc, opt.input_nc,
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, no_padding=opt.no_padding)
 
         # Discriminators
         if self.isTrain:
             use_sigmoid = opt.no_lsgan
-            self.netD_A = networks.define_D(opt.output_nc, opt.ndf,
+            self.netD_A = networks_1d.define_D_1d(opt.output_nc, opt.ndf,
                                             opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
-            self.netD_B = networks.define_D(opt.input_nc, opt.ndf,
+                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, no_padding=opt.no_padding)
+            self.netD_B = networks_1d.define_D_1d(opt.input_nc, opt.ndf,
                                             opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
+                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, no_padding=opt.no_padding)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -68,7 +68,7 @@ class CycleGANModel(BaseModel):
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
-            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
+            self.criterionGAN = networks_1d.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
             # initialize optimizers
@@ -83,11 +83,11 @@ class CycleGANModel(BaseModel):
         self.lambda_B = self.opt.lambda_B
 
         print('---------- Networks initialized -------------')
-        networks.print_network(self.netG_A)
-        networks.print_network(self.netG_B)
+        networks_1d.print_network(self.netG_A)
+        networks_1d.print_network(self.netG_B)
         if self.isTrain:
-            networks.print_network(self.netD_A)
-            networks.print_network(self.netD_B)
+            networks_1d.print_network(self.netD_A)
+            networks_1d.print_network(self.netD_B)
         print('-----------------------------------------------')
 
     def set_input(self, input):

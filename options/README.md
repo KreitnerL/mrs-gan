@@ -1,6 +1,6 @@
 # Options
 
-This folder contains files specifying the available options during [training](#train-options) and [testing](#test-options).
+This folder contains files specifying the available options during [training](#train-options) and [testing](#test-options). It also contains the options for creating the dataset.
 
 All available options are listed below:
 
@@ -28,10 +28,10 @@ All available options are listed below:
 - `--norm`: instance normalization or batch normalization [instance | batch]. type=str, default='instance'
 - `--shuffle`: if false, takes images in order to make batches, otherwise takes them randomly, default=True, action='store_true'
 - `--identity`: use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1'. type=float, default=0.0
-- `--no_dropout`: no dropout for the generator'. action='store_true', type=bool, default=False
+- `--no_dropout`: no dropout for the generator'. action='store_true`, type=bool, default=False
 - `--max_dataset_size`: Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded. type=int, default=float("inf")
 - `--resize_or_crop`:  scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]. type=str, default='resize_and_crop'
-- `--no_flip`, if specified, do not flip the images for data augmentation. action='store_true', type=bool, default=False
+- `--no_flip`, if specified, do not flip the images for data augmentation. action='store_true`, type=bool, default=False
 
 Specifically for spectra:
 - `--split`: split the dataset into training, validating, and testing segments. action='store_true', default=False
@@ -47,6 +47,7 @@ Specifically for spectra:
 - `--standardize`: Standardize the input data. action='store_true', default=False
 - `--norm_range`: Range in which the input data should be normalized. type=list, default=[-1, 1]
 - `--pad_data`: Pad data when loading. Most ResNet architectures require padding MRS data by 21. type=int, default=0
+- `--no_padding`, Use no padding for cycleGAN. Only works for `model=cycle_gan_1d`, type=bool, default=True
 
 
 For visuals:
@@ -98,3 +99,24 @@ For visuals:
 - `--aspect_ratio`: aspect ratio of result images. type=float, default=1.0
 - `--phase`: train, val, test, etc. type=str, default='test'
 - `--how_many`: how many test images to run. type=int, default=50
+
+
+## Dataset Creation
+- `--source_dir_A`, Directory of the dataset of domain A, type=str
+- `--source_dir_B`, Directory of the dataset of domain B, type=str
+- `--save_dir`, Directory where the dataset will be saved, type=str
+- `--file_ext_spectra`, File extension of the processed spectra DICOM files, type=str, default='proc.dcm'
+- `--file_ext_metabolic_map`, File extension of the metabolic map, type=str, default='NAA.dcm'
+- `--force`, If true, overwrites all exisiting .npz, .mat, .dat files, type=bool, default=False
+
+- `--normalize`, normalize the spectra in preprocessing, type=bool, default=False
+- `--standardize`, standardize the spectra in preprocessing, type=bool, default=False
+- `--pad_data`, pad_data the spectra in preprocessing, type=bool, default=False
+- `--input_nc`, number if input channels, type=int, default=2
+- `--real`, only use real part of the spectra, type=bool, default=False
+- `--imag`, only use imaginary part of the spectra, type=bool, default=False
+- `--split`, Split the data into train, validation and test set, type=bool, default=True
+- `--val_split`, Part of dataset that is used for validation, type=float, default=0.3
+- `--test_split`, Part of dataset that is used for testing, type=float, default=0
+- `--shuffle_data`, Select spectra for training / testing randomly, type=bool, default=True
+- `--quiet`, Does not print the options in the terminal when initializing, action='store_true', default=False
