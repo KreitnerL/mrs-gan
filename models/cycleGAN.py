@@ -1,12 +1,12 @@
 import torch
+import torch.nn as nn
 from collections import OrderedDict
-from torch.autograd import Variable
 import itertools
-import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
-from models.lr_sheduler import get_scheduler_G, get_scheduler_D
+T = torch.Tensor
+from models.lr_scheduler import get_scheduler_G, get_scheduler_D
 
 
 def mse_loss(input, target):
@@ -14,48 +14,41 @@ def mse_loss(input, target):
 
 class CycleGANModel(BaseModel):
     """
-    This class implements a CycleGAN model with perceptual feature loss, for learning image-to-image translation without paired data.
-    To calculate the perceptual loss, a pretrained ResNet34 is used.
-    The model training requires '--dataset_mode unaligned' dataset.
-    By default, it uses a '--netG resnet_9blocks' ResNet generator,
-    a '--netD basic' discriminator (PatchGAN introduced by pix2pix),
-    and a least-square GANs objective ('--gan_mode lsgan').
+    This class implements a CycleGAN model for learning domain to domain translation without paired data.
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
-    Perceptual Loss paper: https://arxiv.org/abs/1706.09138
     """
 
     def name(self):
-        return 'CycleGAN_Image_Perceptual_Loss'
+        return 'CycleGAN'
 
-    def __init__(self, opt):
+    def __init__(self, opt, num_dimensions=2):
         super().__init__(opt)
+        networks.set_num_dimensions(num_dimensions)
 
         nb = opt.batchSize
         size = opt.fineSize
-        self.input_A = self.Tensor(nb, opt.input_nc, size, size)
-        self.input_B = self.Tensor(nb, opt.output_nc, size, size)
+        self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
+        self.input_B: T = self.Tensor(nb, opt.output_nc, size, size)
 
         # load/define networks
         # The naming conversion is different from those used in the paper
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc,
+        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, 
                                         opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
-        self.netG_B = networks.define_G(opt.output_nc, opt.input_nc,
+        self.netG_B = networks.define_G(opt.input_nc, opt.output_nc,
                                         opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
 
         # Discriminators
         if self.isTrain:
             use_sigmoid = opt.no_lsgan
-            self.netD_A = networks.define_D(opt.output_nc, opt.ndf,
-                                            opt.which_model_netD,
+            self.netD_A = networks.define_D(opt.input_nc,
+                                            opt.ndf, opt.which_model_netD, 
                                             opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
-            self.netD_B = networks.define_D(opt.input_nc, opt.ndf,
-                                            opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
-            # The feature network is a pretrained ResNet wich is used to calculate the perceptual loss
-            self.netFeat = networks.define_feature_network(opt.which_model_feat, self.gpu_ids)
+            self.netD_B = networks.define_D(opt.input_nc,
+                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+                                            opt.norm, use_sigmoid, self.gpu_ids)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -67,18 +60,26 @@ class CycleGANModel(BaseModel):
                 self.load_network(self.netD_B, 'D_B', which_epoch)
 
         if self.isTrain:
-            self.old_lr = opt.lr
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
-            self.criterionFeat = mse_loss
             # initialize optimizers
+            if not opt.TTUR:
+                self.opt.glr = opt.lr
+                self.opt.dlr = opt.lr
+                self.opt.n_epochs_gen_decay = opt.n_epochs_decay
+                self.opt.n_epochs_dis_decay = opt.n_epochs_decay
+            
+            self.old_glr = opt.lr
+            self.old_dlr = opt.lr
+            
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
                                             lr=opt.glr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), lr=opt.dlr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
+                                            lr=opt.dlr, betas=(opt.beta2, 0.999))
 
             self.optimizers['Generator'] = self.optimizer_G
             self.optimizers['Discriminator'] = self.optimizer_D
@@ -86,23 +87,11 @@ class CycleGANModel(BaseModel):
                 get_scheduler_G(self.optimizer_G, opt),
                 get_scheduler_D(self.optimizer_D, opt)
             ]
-        
+
         # Set loss weights
         self.lambda_idt = self.opt.identity
         self.lambda_A = self.opt.lambda_A
         self.lambda_B = self.opt.lambda_B
-
-        if bool(self.opt.lambda_feat):
-            self.lambda_feat_AfB = self.lambda_feat_BfA = self.lambda_feat_fArecB = self.lambda_feat_fBrecA = self.lambda_feat_ArecA = self.lambda_feat_BrecB = self.opt.lambda_feat
-        else:
-            self.lambda_feat_AfB = self.opt.lambda_feat_AfB    
-            self.lambda_feat_BfA = self.opt.lambda_feat_BfA
-
-            self.lambda_feat_fArecB = self.opt.lambda_feat_fArecB
-            self.lambda_feat_fBrecA = self.opt.lambda_feat_fBrecA
-
-            self.lambda_feat_ArecA = self.opt.lambda_feat_ArecA
-            self.lambda_feat_BrecB = self.opt.lambda_feat_BrecB
 
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG_A)
@@ -119,18 +108,21 @@ class CycleGANModel(BaseModel):
         The option 'direction' can be used to swap domain A and domain B.
         """
         AtoB = self.opt.which_direction == 'AtoB'
-        input_A = input['A' if AtoB else 'B']
-        input_B = input['B' if AtoB else 'A']
+        input_A: T = input['A' if AtoB else 'B']
+        input_B: T = input['B' if AtoB else 'A']
+        # TODO check if clone needed
         self.input_A.resize_(input_A.size()).copy_(input_A)
         self.input_B.resize_(input_B.size()).copy_(input_B)
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
-        self.real_A = Variable(self.input_A)
+        """
+        Uses Generators to generate fake and reconstructed spectra
+        """
+        self.real_A = self.input_A
         self.fake_B = self.netG_A.forward(self.real_A)
         self.rec_A = self.netG_B.forward(self.fake_B)
 
-        self.real_B = Variable(self.input_B)
+        self.real_B = self.input_B
         self.fake_A = self.netG_B.forward(self.real_B)
         self.rec_B = self.netG_A.forward(self.fake_A)
 
@@ -140,9 +132,9 @@ class CycleGANModel(BaseModel):
 
     # get image paths
     def get_image_paths(self):
-        return self.image_paths
+        pass
 
-    def backward_D_basic(self, netD, real, fake):
+    def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate GAN loss for the discriminator\n
             netD (network)      -- the discriminator D\n
             real (tensor array) -- real images\n
@@ -178,10 +170,10 @@ class CycleGANModel(BaseModel):
         if self.lambda_idt > 0:
             # G_A should be identity if real_B is fed.
             self.idt_A = self.netG_A.forward(self.real_B)
-            self.loss_idt_A = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
+            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
             # G_B should be identity if real_A is fed.
             self.idt_B = self.netG_B.forward(self.real_A)
-            self.loss_idt_B = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
+            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
         else:
             self.loss_idt_A = 0
             self.loss_idt_B = 0
@@ -192,24 +184,12 @@ class CycleGANModel(BaseModel):
         # D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
         # Forward cycle loss
-        self.loss_cycle_A = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
+        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
         # Backward cycle loss
-        self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
-
-        # Feature loss
-        self.feat_loss_AfB = self.criterionFeat(self.netFeat(self.real_A), self.netFeat(self.fake_B)) * self.lambda_feat_AfB    
-        self.feat_loss_BfA = self.criterionFeat(self.netFeat(self.real_B), self.netFeat(self.fake_A)) * self.lambda_feat_BfA
-
-        self.feat_loss_fArecB = self.criterionFeat(self.netFeat(self.fake_A), self.netFeat(self.rec_B)) * self.lambda_feat_fArecB
-        self.feat_loss_fBrecA = self.criterionFeat(self.netFeat(self.fake_B), self.netFeat(self.rec_A)) * self.lambda_feat_fBrecA
-
-        self.feat_loss_ArecA = self.criterionFeat(self.netFeat(self.real_A), self.netFeat(self.rec_A)) * self.lambda_feat_ArecA 
-        self.feat_loss_BrecB = self.criterionFeat(self.netFeat(self.real_B), self.netFeat(self.rec_B)) * self.lambda_feat_BrecB 
-
-        self.feat_loss = self.feat_loss_AfB + self.feat_loss_BfA + self.feat_loss_fArecB + self.feat_loss_fBrecA + self.feat_loss_ArecA + self.feat_loss_BrecB
+        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
 
         # combined loss
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.feat_loss
+        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
 
     def optimize_parameters(self):
@@ -220,7 +200,7 @@ class CycleGANModel(BaseModel):
         self.optimizer_G.zero_grad()
         self.backward_G()
         self.optimizer_G.step()
-        # D_A
+        # D_A and D_B
         self.optimizer_D.zero_grad()
         self.backward_D_A()
         self.backward_D_B()
@@ -243,20 +223,7 @@ class CycleGANModel(BaseModel):
                                 ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B)])
 
     def get_current_visuals(self):
-        real_A = util.tensor2im(self.real_A.data)
-        fake_B = util.tensor2im(self.fake_B.data)
-        rec_A = util.tensor2im(self.rec_A.data)
-        real_B = util.tensor2im(self.real_B.data)
-        fake_A = util.tensor2im(self.fake_A.data)
-        rec_B = util.tensor2im(self.rec_B.data)
-        if self.opt.identity > 0.0:
-            idt_A = util.tensor2im(self.idt_A.data)
-            idt_B = util.tensor2im(self.idt_B.data)
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A), ('idt_B', idt_B),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B), ('idt_A', idt_A)])
-        else:
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+        raise NotImplementedError()
 
     def save(self, label):
         """ Create a checkpoint of the current state of the model """

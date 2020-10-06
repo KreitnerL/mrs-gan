@@ -1,9 +1,10 @@
 Done:
 - Generate Dataset: Real spectra vs synthitic spectra
 - Create Dataloader for spectra
+- Create original CycleGAN for this data type
+- Add TTUR
 
 TODO:
-- Create original CycleGAN for this data type
+- Add Wasserstein Loss + Spectral Normalization
 - Get Random Forrest Network from Drithiman
-- Create WCycleGAN_gp
 - Add Perceptual Feature Loss

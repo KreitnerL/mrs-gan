@@ -29,7 +29,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         epoch_iter = total_steps - dataset_size * (epoch - 1)
         model.set_input(data)
         model.optimize_parameters()
-        model.update_learning_rate()    # update learning rates in the end of every epoch.
 
         if total_steps % opt.display_freq == 0:
             visualizer.display_current_results(model.get_current_visuals(), epoch)

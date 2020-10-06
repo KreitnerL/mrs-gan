@@ -45,8 +45,7 @@ class BaseOptions():
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         self.parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded.  [unaligned | LabeledMatSpectralDataset]')
-        self.parser.add_argument('--model', type=str, default='cycle_gan',
-                                 help='chooses which model to use. [cycle_gan]')
+        self.parser.add_argument('--model', type=str, default='cycleGAN_PFL', help='chooses which model to use. [cycleGAN_PFL, cycleGAN_spectra]')
         self.parser.add_argument('--which_direction', type=str, default='AtoB', help='AtoB or BtoA')
         self.parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
