@@ -2,12 +2,11 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 import itertools
-import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
-from . import networks_1d
-import numpy as np
+from . import networks
 T = torch.Tensor
+from models.lr_scheduler import get_scheduler_G, get_scheduler_D
 
 
 def mse_loss(input, target):
@@ -15,19 +14,16 @@ def mse_loss(input, target):
 
 class CycleGANModel(BaseModel):
     """
-    This class implements a CycleGAN model for learning 1d signal translation without paired data.
-    The model training requires '--dataset_mode unaligned' dataset.
-    By default, it uses a '--netG resnet_9blocks' ResNet generator,
-    a '--netD basic' discriminator (PatchGAN introduced by pix2pix),
-    and a least-square GANs objective ('--gan_mode lsgan').
+    This class implements a CycleGAN model for learning domain to domain translation without paired data.
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
     """
 
     def name(self):
         return 'CycleGAN'
 
-    def __init__(self, opt):
+    def __init__(self, opt, num_dimensions=2):
         super().__init__(opt)
+        networks.set_num_dimensions(num_dimensions)
 
         nb = opt.batchSize
         size = opt.fineSize
@@ -39,16 +35,20 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = networks_1d.define_G_1d(opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
-        self.netG_B = networks_1d.define_G_1d(opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
+        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, 
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
+        self.netG_B = networks.define_G(opt.input_nc, opt.output_nc,
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
 
         # Discriminators
         if self.isTrain:
             use_sigmoid = opt.no_lsgan
-            self.netD_A = networks_1d.define_D_1d(opt.ndf,opt.which_model_netD,
+            self.netD_A = networks.define_D(opt.input_nc,
+                                            opt.ndf, opt.which_model_netD, 
                                             opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
-            self.netD_B = networks_1d.define_D_1d(opt.ndf,opt.which_model_netD,
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
+            self.netD_B = networks.define_D(opt.input_nc,
+                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+                                            opt.norm, use_sigmoid, self.gpu_ids)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -60,18 +60,33 @@ class CycleGANModel(BaseModel):
                 self.load_network(self.netD_B, 'D_B', which_epoch)
 
         if self.isTrain:
-            self.old_lr = opt.lr
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
-            self.criterionGAN = networks_1d.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
+            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
             # initialize optimizers
+            if not opt.TTUR:
+                self.opt.glr = opt.lr
+                self.opt.dlr = opt.lr
+                self.opt.n_epochs_gen_decay = opt.n_epochs_decay
+                self.opt.n_epochs_dis_decay = opt.n_epochs_decay
+            
+            self.old_glr = opt.lr
+            self.old_dlr = opt.lr
+            
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_A = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_B = torch.optim.Adam(self.netD_B.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+                                            lr=opt.glr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
+                                            lr=opt.dlr, betas=(opt.beta2, 0.999))
+
+            self.optimizers['Generator'] = self.optimizer_G
+            self.optimizers['Discriminator'] = self.optimizer_D
+            self.schedulers = [
+                get_scheduler_G(self.optimizer_G, opt),
+                get_scheduler_D(self.optimizer_D, opt)
+            ]
 
         # Set loss weights
         self.lambda_idt = self.opt.identity
@@ -79,11 +94,11 @@ class CycleGANModel(BaseModel):
         self.lambda_B = self.opt.lambda_B
 
         print('---------- Networks initialized -------------')
-        networks_1d.print_network(self.netG_A)
-        networks_1d.print_network(self.netG_B)
+        networks.print_network(self.netG_A)
+        networks.print_network(self.netG_B)
         if self.isTrain:
-            networks_1d.print_network(self.netD_A)
-            networks_1d.print_network(self.netD_B)
+            networks.print_network(self.netD_A)
+            networks.print_network(self.netD_B)
         print('-----------------------------------------------')
 
     def set_input(self, input):
@@ -185,14 +200,11 @@ class CycleGANModel(BaseModel):
         self.optimizer_G.zero_grad()
         self.backward_G()
         self.optimizer_G.step()
-        # D_A
-        self.optimizer_D_A.zero_grad()
+        # D_A and D_B
+        self.optimizer_D.zero_grad()
         self.backward_D_A()
-        self.optimizer_D_A.step()
-        # D_B
-        self.optimizer_D_B.zero_grad()
         self.backward_D_B()
-        self.optimizer_D_B.step()
+        self.optimizer_D.step()
 
     def get_current_errors(self):
         D_A = self.loss_D_A.data
@@ -211,22 +223,7 @@ class CycleGANModel(BaseModel):
                                 ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B)])
 
     def get_current_visuals(self):
-        x = list(range(self.real_A.size()[-1]))
-        real_A = util.get_img_from_fig(x, self.real_A.data, 'PPM')
-        fake_B = util.get_img_from_fig(x, self.fake_B.data, 'PPM')
-        rec_A = util.get_img_from_fig(x, self.rec_A.data, 'PPM')
-        real_B = util.get_img_from_fig(x, self.real_B.data, 'PPM')
-        fake_A = util.get_img_from_fig(x, self.fake_A.data, 'PPM')
-        rec_B = util.get_img_from_fig(x, self.rec_B.data, 'PPM')
-
-        if self.opt.identity > 0.0:
-            idt_A = util.get_img_from_fig(x, self.idt_A.data, 'PPM')
-            idt_B = util.get_img_from_fig(x, self.idt_B.data, 'PPM')
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A), ('idt_B', idt_B),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B), ('idt_A', idt_A)])
-        else:
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+        raise NotImplementedError()
 
     def save(self, label):
         """ Create a checkpoint of the current state of the model """
@@ -234,17 +231,4 @@ class CycleGANModel(BaseModel):
         self.save_network(self.netD_A, 'D_A', label, self.gpu_ids)
         self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
         self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
-
-    def update_learning_rate(self):
-        lrd = self.opt.lr / self.opt.niter_decay
-        lr = self.old_lr - lrd
-        for param_group in self.optimizer_D_A.param_groups:
-            param_group['lr'] = lr
-        for param_group in self.optimizer_D_B.param_groups:
-            param_group['lr'] = lr
-        for param_group in self.optimizer_G.param_groups:
-            param_group['lr'] = lr
-
-        print('update learning rate: %f -> %f' % (self.old_lr, lr))
-        self.old_lr = lr
 

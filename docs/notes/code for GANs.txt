@@ -63,11 +63,11 @@ checkpoints folder
 
     def update_learning_rate(self): # Cycle, non-cycle: TTUR, no_TTUR
         if self.opt.no_TTUR:
-            lrd = self.opt.lr / self.opt.niter_decay
+            lrd = self.opt.lr / self.opt.n_epochs_decay
             lr = [self.old_lr - lrd, self.old_lr - lrd]
         else:
-            glrd = self.opt.glr / self.opt.niter_gen_decay
-            dlrd = self.opt.dlr / self.opt.niter_dis_decay
+            glrd = self.opt.glr / self.opt.n_epochs_gen_decay
+            dlrd = self.opt.dlr / self.opt.n_epochs_dis_decay
             lr = [self.old_glr - glrd, self.old_dlr - dlrd]
 
         self.opt.glr, self.opt.dlr = lr[0], lr[1]
