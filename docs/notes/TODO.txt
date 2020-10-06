@@ -1,3 +1,8 @@
+Done:
+- Generate Dataset: Real spectra vs synthitic spectra
+- Create Dataloader for spectra
+
+TODO:
 - Create original CycleGAN for this data type
 - Get Random Forrest Network from Drithiman
 - Create WCycleGAN_gp

@@ -2,11 +2,6 @@
 % Matlab file will later be loaded by the DataLoader
 
 function [ data_real, data_imag ] = activatedSpectra( path1, path2 ) 
-%ACTIVATEDSPECTRA Summary of this function goes here
-%   Detailed explanation goes here
-%
-% path1 = '/home/john/Documents/Research/Datasets/UCSF_TUM_MRSI/batch_1/t8771/ucsf/t8771_UCSF_NAA.dcm';
-% path2 = '/home/john/Documents/Research/Datasets/UCSF_TUM_MRSI/batch_1/t8771/ucsf/t8771_UCSF_proc.dcm';
 
 %% Identify activated voxels
 file = string(path1);
@@ -55,15 +50,8 @@ for m = 1:length(I)
     spectra(m,:) = specProc(:, I(m), J(m), K(m));
 end
 
-% data_real = real(spectra);
-% data_imag = imag(spectra);
-% data_real = padarray(real(spectra),[0 21],0,'post');
-% data_imag = padarray(imag(spectra),[0 21],0,'post');
 data_real = real(spectra);
 data_imag = imag(spectra);
-
-zerosR = find(data_real==0);
-zerosI = find(data_imag==0);
 
 maxR = max(data_real,[],2);
 maxI = max(data_imag,[],2);
@@ -72,25 +60,11 @@ data_real = (data_real + maxR) ./ (2 * maxR) .* 2 - 1;
 data_imag = (data_imag + maxI) ./ (2 * maxI) .* 2 - 1;
 
 if data_real~=data_real
-    data_real(zerosR) = 0;
+    data_real(data_real==0) = 0;
 end
 if data_imag~=data_imag
-    data_imag(zerosI) = 0;
+    data_imag(data_imag==0) = 0;
 end
-
-
-% 
-% S_real = std(data_real,0,'all','omitnan');
-% M_real = mean(data_real,0,'all','omitnan');
-% S_imag = std(data_imag,0,'all','omitnan');
-% M_imag = mean(data_imag,0,'all','omitnan');
-% 
-% data_real = (data_real - M_real) / S_real;
-% data_imag = (data_imag - M_imag) / S_imag;
-% 
-% save(path3+'mean_and_std.csv',S_real, S_imag,M_real, M_imag)
-% padded_real = padarray(data_real,[0 21],0,'post');
-% padded_imag = padarray(data_imag,[0 21],0,'post');
 
 end
 

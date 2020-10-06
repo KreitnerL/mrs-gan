@@ -6,3 +6,4 @@ pandas
 matplotlib
 visdom
 dominate
+opencv-python

@@ -9,7 +9,7 @@ class BaseDataset(data.Dataset):
     def name(self):
         return 'BaseDataset'
 
-    def initialize(self, opt):
+    def initialize():
         pass
 
     def __getattr__(self, item):
@@ -17,7 +17,7 @@ class BaseDataset(data.Dataset):
             mag = self.magnitude()
             return mag
 
-# TODO May be unecessary
+# Used for images only
 def get_transform(opt):
     transform_list = []
     if opt.resize_or_crop == 'resize_and_crop':

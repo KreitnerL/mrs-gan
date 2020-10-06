@@ -71,6 +71,25 @@ The test results will be saved to a html file here: `./results/maps_cyclegan/lat
 ## Additional Info
 <a name="CycleGAN-dataset"></a>
 
+### DICOM Dataset
+If you have a dataset consisting out of DICOM (.dcm) files you first have to convert the spectra into a matlab (.mat) file. For this, follow these steps:
+
+- Make sure to have a licensed matlab installation. 
+- Install matlab.engine for your python environment. Validate with running this in python.
+
+```python
+import matlab.engine
+matlab.engine.start_matlab()
+```
+
+- Install the `Image Processing Toolbox` for matlab.
+
+- Let `sourceDir` be the folder containing subfolders with patient data. The relevant samples of patients are in the `folder_ext` folder.
+You will need a processed spectra `file_ext_A` that is ready for quantification, as well as a metabolite map (e.g. for NAA) `file_ext_B` to select the activated voxels for evaluation. To store the .mat file in the `saveDir` directory run:
+```sh
+python preprocess --sourceDir [sourceDir] --saveDir [saveDir] --file_ext_A [file_ext_A] --file_ext_B [file_ext_B] --folder_ext [folder_ext]
+```
+
 ### CycleGAN dataset
 Download the CycleGAN datasets using the following script. 
 
