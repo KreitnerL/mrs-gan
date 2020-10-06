@@ -63,8 +63,8 @@ For visuals:
 - `--save_epoch_freq`: frequency of saving checkpoints at the end of epochs. type=int, default=5
 - `--continue_train`: continue training: load the latest model. action='store_true'
 - `--phase`: train, val, test, etc. type=str, default='train'
-- `--niter`: # of iter at starting learning rate. type=int, default=100
-- `--niter_decay`: # of iter to linearly decay learning rate to zero. type=int, default=100
+- `--n_epochs`: # of iter at starting learning rate. type=int, default=100
+- `--n_epochs_decay`: # of iter to linearly decay learning rate to zero. type=int, default=100
 - `--beta1`: momentum term of adam, type=float, default=0.5
 - `--lr`: initial learning rate for adam, type=float, default=0.0002
 - `--no_lsgan`: do *not* use least square GAN, if false, use vanilla GAN. action='store_true', default=False

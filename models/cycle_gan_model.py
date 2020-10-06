@@ -6,6 +6,7 @@ import util.util as util
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+from models.lr_sheduler import get_scheduler_G, get_scheduler_D
 
 
 def mse_loss(input, target):
@@ -76,10 +77,16 @@ class CycleGANModel(BaseModel):
             self.criterionFeat = mse_loss
             # initialize optimizers
             self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                                lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_A = torch.optim.Adam(self.netD_A.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
-            self.optimizer_D_B = torch.optim.Adam(self.netD_B.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))
+                                            lr=opt.glr, betas=(opt.beta1, 0.999))
+            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), lr=opt.dlr, betas=(opt.beta1, 0.999))
 
+            self.optimizers['Generator'] = self.optimizer_G
+            self.optimizers['Discriminator'] = self.optimizer_D
+            self.schedulers = [
+                get_scheduler_G(self.optimizer_G, opt),
+                get_scheduler_D(self.optimizer_D, opt)
+            ]
+        
         # Set loss weights
         self.lambda_idt = self.opt.identity
         self.lambda_A = self.opt.lambda_A
@@ -214,13 +221,10 @@ class CycleGANModel(BaseModel):
         self.backward_G()
         self.optimizer_G.step()
         # D_A
-        self.optimizer_D_A.zero_grad()
+        self.optimizer_D.zero_grad()
         self.backward_D_A()
-        self.optimizer_D_A.step()
-        # D_B
-        self.optimizer_D_B.zero_grad()
         self.backward_D_B()
-        self.optimizer_D_B.step()
+        self.optimizer_D.step()
 
     def get_current_errors(self):
         D_A = self.loss_D_A.data
@@ -260,17 +264,4 @@ class CycleGANModel(BaseModel):
         self.save_network(self.netD_A, 'D_A', label, self.gpu_ids)
         self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
         self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
-
-    def update_learning_rate(self):
-        lrd = self.opt.lr / self.opt.niter_decay
-        lr = self.old_lr - lrd
-        for param_group in self.optimizer_D_A.param_groups:
-            param_group['lr'] = lr
-        for param_group in self.optimizer_D_B.param_groups:
-            param_group['lr'] = lr
-        for param_group in self.optimizer_G.param_groups:
-            param_group['lr'] = lr
-
-        print('update learning rate: %f -> %f' % (self.old_lr, lr))
-        self.old_lr = lr
 

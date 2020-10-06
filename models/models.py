@@ -8,7 +8,7 @@ def create_model(opt):
         model = CycleGANModel(opt)
     elif opt.model == 'cycle_gan_spectra':
         assert(opt.dataset_mode == 'dicom_spectral_dataset')
-        from .cycleGAN import CycleGANModel
+        from .cycleGAN_spectra import CycleGANModel
         model = CycleGANModel(opt)
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)

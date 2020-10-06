@@ -16,6 +16,8 @@ class BaseModel():
         self.isTrain = opt.isTrain
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
         self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+        self.optimizers = dict()
+        self.schedulers = []
 
     def set_input(self, input):
         self.input = input
@@ -62,8 +64,20 @@ class BaseModel():
         save_path = os.path.join(self.save_dir, save_filename)
         network.load_state_dict(torch.load(save_path))
 
-    def update_learning_rate():
-        pass
+    def update_learning_rate(self):
+        """Update learning rates for all the networks; called at the end of every epoch"""
+        old_lr = {}
+        for name, optimizer in self.optimizers.items():
+            old_lr[name] = optimizer.param_groups[0]['lr']
+
+        for scheduler in self.schedulers:
+            if self.opt.lr_policy == 'plateau':
+                scheduler.step(0)
+            else:
+                scheduler.step()
+
+        for name, optimizer in self.optimizers.items():
+            print(name, ': learning rate %.7f -> %.7f' % (old_lr[name], optimizer.param_groups[0]['lr']))
 
     @staticmethod
     def plotloss(errors, accuracy, x, savedir, label, TB=False):
