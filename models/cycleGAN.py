@@ -76,17 +76,7 @@ class CycleGANModel(BaseModel):
             self.old_glr = opt.lr
             self.old_dlr = opt.lr
             
-            self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                            lr=opt.glr, betas=(opt.beta1, 0.999))
-            self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
-                                            lr=opt.dlr, betas=(opt.beta2, 0.999))
-
-            self.optimizers['Generator'] = self.optimizer_G
-            self.optimizers['Discriminator'] = self.optimizer_D
-            self.schedulers = [
-                get_scheduler_G(self.optimizer_G, opt),
-                get_scheduler_D(self.optimizer_D, opt)
-            ]
+            self.init_optimizers(opt)
 
         # Set loss weights
         self.lambda_idt = self.opt.identity
@@ -100,6 +90,22 @@ class CycleGANModel(BaseModel):
             networks.print_network(self.netD_A)
             networks.print_network(self.netD_B)
         print('-----------------------------------------------')
+
+    def init_optimizers(self, opt):
+        """
+        Initialize optimizers and learning rate schedulers
+        """
+        self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
+                                            lr=opt.glr, betas=(opt.beta1, 0.999))
+        self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
+                                        lr=opt.dlr, betas=(opt.beta2, 0.999))
+
+        self.optimizers['Generator'] = self.optimizer_G
+        self.optimizers['Discriminator'] = self.optimizer_D
+        self.schedulers = [
+            get_scheduler_G(self.optimizer_G, opt),
+            get_scheduler_D(self.optimizer_D, opt)
+        ]
 
     def set_input(self, input):
         """
@@ -166,17 +172,7 @@ class CycleGANModel(BaseModel):
 
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B"""
-        # Identity loss
-        if self.lambda_idt > 0:
-            # G_A should be identity if real_B is fed.
-            self.idt_A = self.netG_A.forward(self.real_B)
-            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
-            # G_B should be identity if real_A is fed.
-            self.idt_B = self.netG_B.forward(self.real_A)
-            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
-        else:
-            self.loss_idt_A = 0
-            self.loss_idt_B = 0
+        self.calculate_identity_loss()
 
         # GAN loss
         # D_A(G_A(A))
@@ -191,6 +187,19 @@ class CycleGANModel(BaseModel):
         # combined loss
         self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
+
+    def calculate_identity_loss(self):
+        """Calculates the idetity loss"""
+        if self.lambda_idt > 0:
+            # G_A should be identity if real_B is fed.
+            self.idt_A = self.netG_A.forward(self.real_B)
+            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
+            # G_B should be identity if real_A is fed.
+            self.idt_B = self.netG_B.forward(self.real_A)
+            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
+        else:
+            self.loss_idt_A = 0
+            self.loss_idt_B = 0
 
     def optimize_parameters(self):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
