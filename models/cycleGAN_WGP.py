@@ -25,7 +25,7 @@ class CycleGAN_WGP(CycleGAN_spectra):
         opt.clip_value = 0.01
         opt.lambda_gp = 10
         opt.gp = True
-        super().__init__(opt, 1)
+        super().__init__(opt)
         
     def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate Wasserstein loss for the discriminator\n
@@ -87,12 +87,12 @@ class CycleGAN_WGP(CycleGAN_spectra):
         """Calculates the gradient penalty loss for WGAN GP"""
         # Random weight term for interpolation between real and fake samples
         alpha = torch.rand(real_samples.size(0), 1)
-        alpha = alpha.expand(real_samples.size())
+        alpha = alpha.expand(real_samples.size()).cuda()
         
         # Get random interpolation between real and fake samples
         interpolates = (alpha * real_samples + ((1 - alpha) * fake_samples)).requires_grad_(True)
         d_interpolates = D(interpolates)
-        fake = torch.autograd.Variable(torch.ones(d_interpolates.size()).fill_(1.0), requires_grad=False)
+        fake = torch.autograd.Variable(torch.ones(d_interpolates.size()).fill_(1.0), requires_grad=False).cuda()
         # Get gradient w.r.t. interpolates
         gradients = torch.autograd.grad(
             outputs=d_interpolates,
@@ -109,5 +109,5 @@ class CycleGAN_WGP(CycleGAN_spectra):
     def optimize_parameters(self):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         super().optimize_parameters()
-        if not self.gp:
+        if not self.opt.gp:
             self.clip_weights_D()

@@ -10,6 +10,10 @@ def create_model(opt):
         assert(opt.dataset_mode == 'dicom_spectral_dataset')
         from .cycleGAN_spectra import CycleGAN_spectra
         model = CycleGAN_spectra(opt)
+    elif opt.model == 'cycleGAN_WGP':
+        assert(opt.dataset_mode == 'dicom_spectral_dataset')
+        from .cycleGAN_WGP import CycleGAN_WGP
+        model = CycleGAN_WGP(opt)
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     print("model [%s] was created" % (model.name()))
