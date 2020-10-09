@@ -132,7 +132,10 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dr
     if len(gpu_ids) > 0:
         netG.cuda()
     netG.apply(weights_init)
-    return netG
+    if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
+        return nn.DataParallel(netG, device_ids=gpu_ids)
+    else:
+        return netG
 
 def define_D(input_nc, ndf, which_model_netD,
              n_layers_D=3, norm='instance', use_sigmoid=False, gpu_ids=[]):
@@ -146,13 +149,19 @@ def define_D(input_nc, ndf, which_model_netD,
         netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
+    elif which_model_netD == 'spectra':
+        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)    
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
     if use_gpu:
         netD.cuda()
     netD.apply(weights_init)
-    return netD
+
+    if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
+        return nn.DataParallel(netD, device_ids=gpu_ids)
+    else:
+        return netD
 
 
 def define_feature_network(which_model_netFeat, gpu_ids=[]):
@@ -172,7 +181,10 @@ def define_feature_network(which_model_netFeat, gpu_ids=[]):
     if use_gpu:
         netFeat.cuda()
 
-    return netFeat
+    if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
+        return nn.DataParallel(netFeat, device_ids=gpu_ids)
+    else:
+        return netFeat
 
 
 def print_network(net):
@@ -292,10 +304,7 @@ class ResnetGenerator(nn.Module):
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
-        if self.gpu_ids and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
 
 
 # Define a resnet block
@@ -366,10 +375,7 @@ class UnetGenerator(nn.Module):
         self.model = unet_block
 
     def forward(self, input):
-        if self.gpu_ids and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
 
 
 # Defines the submodule with skip connection.
@@ -433,6 +439,57 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             return torch.cat([self.model(x), x], 1)
 
+class Flatten(nn.Module):
+    """
+    Flattens a Tensor of size [B, C, L_1, ..., L_N] to size [B, C * L_1 * ... * L_N]
+    """
+    def forward(self, input: torch.Tensor):
+        return input.flatten(1)
+
+
+class SpectraNLayerDiscriminator(nn.Module):
+    """
+    Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
+    and finally uses a Linear layer to compute a scalar that represents the networks prediction
+    """
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('batch'), use_sigmoid=False, gpu_ids=[]):
+        super(SpectraNLayerDiscriminator, self).__init__()
+        self.gpu_ids = gpu_ids
+
+        kernel_size=4
+        padding=1
+        stride=2
+
+        self.sequence = nn.ModuleList([])
+        c_in = input_nc
+        c_out = ndf
+        # Scale down tensor of length L to L/(2**n_layers)
+        # Simultaniously upscale Feature dimension C to 2**_n_layers 
+        for _ in range(n_layers):
+            self.sequence.extend([
+                get_conv()(c_in, c_out,
+                          kernel_size=kernel_size, stride=stride, padding=padding),
+                norm_layer(c_out),
+                nn.LeakyReLU(0.2, True)
+            ])
+            c_in = c_out
+            c_out *= 2
+
+        self.sequence.extend([
+            get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
+            Flatten(),
+            nn.Linear(int(1024 / (2**(n_layers+1))), 1)
+        ])
+
+        if use_sigmoid:
+            self.sequence.append(nn.Sigmoid())
+
+    def forward(self, input):
+        for layer in self.sequence:
+            input = layer(input)
+        return input
+        
+
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
     def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=get_norm_layer('batch'), use_sigmoid=False, gpu_ids=[]):
@@ -482,10 +539,7 @@ class NLayerDiscriminator(nn.Module):
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
-        if len(self.gpu_ids) and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.model, input, self.gpu_ids)
-        else:
-            return self.model(input)
+        return self.model(input)
 
 class ResNet34(nn.Module):
 
@@ -555,7 +609,4 @@ class FeatureResNet34(nn.Module):
 
 
     def forward(self, input):
-        if len(self.gpu_ids) and isinstance(input.data, torch.cuda.FloatTensor):
-            return nn.parallel.data_parallel(self.resnet, input, self.gpu_ids)
-        else:
-            return self.resnet(input)
+        return self.resnet(input)
