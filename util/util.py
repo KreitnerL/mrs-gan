@@ -19,11 +19,18 @@ def tensor2im(image_tensor, imtype=np.uint8):
     return image_numpy.astype(imtype)
 
 # define a function which returns an image as numpy array from figure
-def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180):
+# TODO add global option
+def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180, magnitude=True):
     global fig, ax
     if fig==None:
         fig, ax = plt.subplots()
-    ax.plot(x,y.squeeze().detach().cpu().numpy())
+    colors = ['b', 'r', 'm', 'k']
+
+    if magnitude:
+        y = y.sum(-2, True)
+    for channel in reversed(range(y.size(-2))):
+        y_i = y.select(-2, channel)
+        ax.plot(x,y_i.squeeze().detach().cpu().numpy(), colors[channel])
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 

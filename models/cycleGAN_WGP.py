@@ -20,7 +20,7 @@ class CycleGAN_WGP(CycleGAN_spectra):
         return 'CycleGAN_WGP'
 
     def __init__(self, opt):
-        opt.no_lsgan = True
+        opt.no_lsgan = False
         # TODO add option
         opt.clip_value = 0.01
         opt.lambda_gp = 10
