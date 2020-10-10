@@ -38,7 +38,7 @@ class DicomSpectralDataset(BaseDataset):
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
-        if self.channel_index:
+        if self.channel_index is not None:
             A = np.expand_dims(np.asarray(self.sampler_A[index % self.A_size,self.channel_index,:]).astype(float),0)
             B = np.expand_dims(np.asarray(self.sampler_B[index % self.B_size,self.channel_index,:]).astype(float),0)
         else:
