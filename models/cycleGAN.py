@@ -201,19 +201,21 @@ class CycleGANModel(BaseModel):
             self.loss_idt_A = 0
             self.loss_idt_B = 0
 
-    def optimize_parameters(self):
+    def optimize_parameters(self, optimize_G=True, optimize_D=True):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         # forward
         self.forward() # compute fake images and reconstruction images.
         # G_A and G_B
-        self.optimizer_G.zero_grad()
-        self.backward_G()
-        self.optimizer_G.step()
-        # D_A and D_B
-        self.optimizer_D.zero_grad()
-        self.backward_D_A()
-        self.backward_D_B()
-        self.optimizer_D.step()
+        if optimize_G:
+            self.optimizer_G.zero_grad()
+            self.backward_G()
+            self.optimizer_G.step()
+        if optimize_D:
+            # D_A and D_B
+            self.optimizer_D.zero_grad()
+            self.backward_D_A()
+            self.backward_D_B()
+            self.optimizer_D.step()
 
     def get_current_errors(self):
         D_A = self.loss_D_A.data

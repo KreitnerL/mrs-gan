@@ -4,19 +4,17 @@ Done:
 - Create original CycleGAN for this data type
 - Add TTUR
 - Fix output of Discriminator (Reshape + Linear Layer)
-
-TODO:
 - Add Wasserstein Loss + Spectral Normalization
     - Use a linear activation function in the output layer of the critic model (instead of sigmoid).
     - Use Wasserstein loss to train the critic and generator models that promote larger difference between scores for real and generated images.
-    - Update the critic model more times than the generator each iteration (e.g. 5).
-    - Use the RMSProp version of gradient descent with small learning rate and no momentum (e.g. 0.00005).
-
     - Constrain critic model weights to a limited range after each mini batch update (e.g. [-0.01,0.01]).
     OR
     - Gradient Penalty
-    OR
-    - Spectral Normalization
+    - Update the critic model more times than the generator each iteration (e.g. 5).
+
+
+TODO:
+- Spectral Normalization
 
 - Get Random Forrest Network from Drithiman
 - Add Perceptual Feature Loss

@@ -47,8 +47,8 @@ class CycleGAN_WGP(CycleGAN_spectra):
         else:
             gradient_penalty = 0
 
-        # Combined wasserstein loss. Real -> big numbers, Fake -> small numbers
-        loss_D = -loss_D_real + loss_D_fake + self.opt.lambda_gp * gradient_penalty
+        # Combined wasserstein loss. Larger score for real images results in a larger resulting loss for the critic, penalizing the model
+        loss_D = loss_D_real - loss_D_fake + self.opt.lambda_gp * gradient_penalty
         # backward
         loss_D.backward()
         return loss_D
@@ -68,7 +68,7 @@ class CycleGAN_WGP(CycleGAN_spectra):
         # Backward cycle loss
         self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
 
-        # combined loss
+        # combined wasserstein loss. Larger score from the critic will result in a smaller loss for the generator, encouraging the critic to output larger scores for fake images
         self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
 
@@ -86,7 +86,7 @@ class CycleGAN_WGP(CycleGAN_spectra):
     def compute_gradient_penalty(self, D, real_samples, fake_samples):
         """Calculates the gradient penalty loss for WGAN GP"""
         # Random weight term for interpolation between real and fake samples
-        alpha = torch.rand(real_samples.size(0), 1)
+        alpha = torch.rand(real_samples.size(0), 1, 1)
         alpha = alpha.expand(real_samples.size()).cuda()
         
         # Get random interpolation between real and fake samples
@@ -106,8 +106,8 @@ class CycleGAN_WGP(CycleGAN_spectra):
         gradient_penalty = ((gradients.norm(2, dim=1) - 1) ** 2).mean()
         return gradient_penalty
 
-    def optimize_parameters(self):
+    def optimize_parameters(self, optimize_G=True, optimize_D=True):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
-        super().optimize_parameters()
+        super().optimize_parameters(optimize_G, optimize_D)
         if not self.opt.gp:
             self.clip_weights_D()

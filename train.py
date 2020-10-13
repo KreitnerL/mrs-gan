@@ -23,12 +23,15 @@ print('------------- Beginning Training -------------')
 for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
     print('>>>>> Epoch: ', epoch)
     epoch_start_time = time.time()
+    # Loads batch_size samples from the dataset
     for i, data in enumerate(dataset):
         iter_start_time = time.time()
         total_steps += opt.batchSize if i < (len(dataset) - 1) else (dataset_size * (epoch)) - total_steps
         epoch_iter = total_steps - dataset_size * (epoch - 1)
         model.set_input(data)
-        model.optimize_parameters()
+        # Only update critic every n_critic steps
+        optimize_gen = not(i % opt.n_critic)
+        model.optimize_parameters(optimize_G=optimize_gen)
 
         if total_steps % opt.display_freq == 0:
             visualizer.display_current_results(model.get_current_visuals(), epoch)

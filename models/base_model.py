@@ -25,7 +25,7 @@ class BaseModel():
     def forward(self):
         pass
 
-    def optimize_parameters(self):
+    def optimize_parameters(self, optimize_G=True, optimize_D=True):
         pass
 
     def plot_grads(self, arg=True):

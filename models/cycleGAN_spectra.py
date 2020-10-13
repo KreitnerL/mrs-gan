@@ -26,16 +26,16 @@ class CycleGAN_spectra(CycleGANModel):
 
     def get_current_visuals(self):
         x = list(range(self.real_A.size()[-1]))
-        real_A = util.get_img_from_fig(x, self.real_A.data, 'PPM')
-        fake_B = util.get_img_from_fig(x, self.fake_B.data, 'PPM')
-        rec_A = util.get_img_from_fig(x, self.rec_A.data, 'PPM')
-        real_B = util.get_img_from_fig(x, self.real_B.data, 'PPM')
-        fake_A = util.get_img_from_fig(x, self.fake_A.data, 'PPM')
-        rec_B = util.get_img_from_fig(x, self.rec_B.data, 'PPM')
+        real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
+        fake_B = util.get_img_from_fig(x, self.fake_B[0:1].data, 'PPM')
+        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')
+        real_B = util.get_img_from_fig(x, self.real_B[0:1].data, 'PPM')
+        fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM')
+        rec_B = util.get_img_from_fig(x, self.rec_B[0:1].data, 'PPM')
 
         if self.opt.identity > 0.0:
-            idt_A = util.get_img_from_fig(x, self.idt_A.data, 'PPM')
-            idt_B = util.get_img_from_fig(x, self.idt_B.data, 'PPM')
+            idt_A = util.get_img_from_fig(x, self.idt_A[0:1].data, 'PPM')
+            idt_B = util.get_img_from_fig(x, self.idt_B[0:1].data, 'PPM')
             return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A), ('idt_B', idt_B),
                                 ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B), ('idt_A', idt_A)])
         else:

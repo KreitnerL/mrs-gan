@@ -8,15 +8,11 @@ class TrainOptions(BaseOptions):
 
     def initialize(self):
         BaseOptions.initialize(self)
-        self.parser.add_argument('--file_ext', type=str, default='proc.npz', help='can add additional information to select specific files from the dataset')
-        self.parser.add_argument('--input_ext', type=str, default='proc.npz', help='can add additional information to select specific files from the dataset')
-        self.parser.add_argument('--folder_ext', type=str, default='UCSF', help='can add additional information to select specific folders from the dataset')
-        self.parser.add_argument('--k_folds', type=int, default=-1, help='number of folds for a cross-validation training scheme')
-
         self.parser.add_argument('--display_freq', type=int, default=100, help='frequency of showing training results on screen')
         self.parser.add_argument('--print_freq', type=int, default=100, help='frequency of showing training results on console')
         self.parser.add_argument('--save_latest_freq', type=int, default=5000, help='frequency of saving the latest results')
         self.parser.add_argument('--save_epoch_freq', type=int, default=5, help='frequency of saving checkpoints at the end of epochs')
+
         self.parser.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')
         self.parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
         self.parser.add_argument('--which_epoch', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
@@ -28,6 +24,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
         self.parser.add_argument('--lr_policy', type=str, default='linear', help='learning rate policy. [linear | step | plateau | cosine]')
         self.parser.add_argument('--lr_decay_iters', type=int, default=50, help='multiply by a gamma every lr_decay_iters iterations')
+        self.parser.add_argument('--n_critic', type=int, default=1, help='number of optimizations for the critic before generator is optimized')
 
         self.parser.add_argument('--TTUR', action='store_true', help='Enable the Two Time-scale Update Rule for stabilizing training and reducing the chance of mode collapse')
         self.parser.add_argument('--n_epochs_gen', type=int, default=100, help='# of iter at starting generator learning rate')
