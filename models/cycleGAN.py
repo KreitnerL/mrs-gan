@@ -25,7 +25,7 @@ class CycleGANModel(BaseModel):
         super().__init__(opt)
         networks.set_num_dimensions(num_dimensions)
 
-        nb = opt.batchSize
+        nb = opt.batch_size
         size = opt.fineSize
         self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
         self.input_B: T = self.Tensor(nb, opt.output_nc, size, size)
@@ -42,13 +42,12 @@ class CycleGANModel(BaseModel):
 
         # Discriminators
         if self.isTrain:
-            use_sigmoid = opt.no_lsgan
             self.netD_A = networks.define_D(opt.input_nc,
                                             opt.ndf, opt.which_model_netD, 
-                                            opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids)
+                                            opt.n_layers_D, opt.norm, self.gpu_ids)
             self.netD_B = networks.define_D(opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
-                                            opt.norm, use_sigmoid, self.gpu_ids)
+                                            opt.norm, self.gpu_ids)
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -63,7 +62,7 @@ class CycleGANModel(BaseModel):
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
-            self.criterionGAN = networks.GANLoss(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)
+            self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
             # initialize optimizers
@@ -96,9 +95,9 @@ class CycleGANModel(BaseModel):
         Initialize optimizers and learning rate schedulers
         """
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                            lr=opt.glr, betas=(opt.beta1, 0.999))
+                                            lr=opt.glr, betas=(opt.beta1, 0.9))
         self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
-                                        lr=opt.dlr, betas=(opt.beta2, 0.999))
+                                        lr=opt.dlr, betas=(opt.beta2, 0.9))
 
         self.optimizers['Generator'] = self.optimizer_G
         self.optimizers['Discriminator'] = self.optimizer_D
@@ -217,7 +216,7 @@ class CycleGANModel(BaseModel):
             self.backward_D_B()
             self.optimizer_D.step()
 
-    def get_current_errors(self):
+    def get_current_losses(self):
         D_A = self.loss_D_A.data
         G_A = self.loss_G_A.data
         Cyc_A = self.loss_cycle_A.data

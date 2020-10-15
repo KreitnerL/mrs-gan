@@ -11,10 +11,12 @@ Done:
     OR
     - Gradient Penalty
     - Update the critic model more times than the generator each iteration (e.g. 5).
+- Setup Random Forest code
 
 
 TODO:
+- Improve Loss visualization
 - Spectral Normalization
-
-- Get Random Forrest Network from Drithiman
 - Add Perceptual Feature Loss
+
+- LCModel: Preprocess parameters so that cre val is 1 and everyhing is relative to it

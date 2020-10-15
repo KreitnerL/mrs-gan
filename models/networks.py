@@ -472,7 +472,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('batch'), gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), gpu_ids=[]):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
