@@ -6,8 +6,8 @@ All available options are listed below:
 
 ## Base options:
 - `--dataroot`: (**REQUIRED**) path to images (should have subfolders trainA, trainB, valA, valB, etc). type=str
-- `--gpu_ids`: gpu ids to run the code on: e.g. 0;  0,1,2; 0,2. use -1 for CPU'. To profit from multiple GPUs choose a big `batchSize`. type=str, default='0'
-- `--batchSize`: input batch size. type=int, default=1
+- `--gpu_ids`: gpu ids to run the code on: e.g. 0;  0,1,2; 0,2. use -1 for CPU'. To profit from multiple GPUs choose a big `batch_size`. type=str, default='0'
+- `--batch_size`: input batch size. type=int, default=1
 - `--name`: name of the experiment. It decides where to store samples and models. type=str, default='experiment_name'
 - `--checkpoints_dir`: model checkpoints are saved here. type=str, default='./checkpoints'
 - `--dataset_mode`: chooses how datasets are loaded. [unaligned | LabeledMatSpectralDataset]'. type=str, default='unaligned'
@@ -67,7 +67,7 @@ For visuals:
 - `--n_epochs_decay`: # of iter to linearly decay learning rate to zero. type=int, default=100
 - `--beta1`: momentum term of adam, type=float, default=0.5
 - `--lr`: initial learning rate for adam, type=float, default=0.0002
-- `--no_lsgan`: do *not* use least square GAN, if false, use vanilla GAN. action='store_true', default=False
+- `--gan_mode`: TODO
 - `--lambda_A`: weight for cycle loss (A -> B -> A). type=float, default=10.0
 - `--lambda_B`: weight for cycle loss (B -> A -> B). type=float, default=10.0
 - `--lambda_feat_AfB`: weight for perception loss between real A and fake B. type=float, default=0

@@ -51,7 +51,7 @@ to start a visdom server on `http://localhost:8097`. During training, the progra
 
 You can train the model with:
 ```sh
-python train.py --dataroot ./datasets/vangogh2photo --name vangogh2photo_cyclegan  --model cycle_gan --no_dropout --batchSize 3 --n_epochs 200 --n_epochs_decay 200 --lambda_A 10.0 --lambda_B 10.0 --lambda_feat 1.0
+python train.py --dataroot ./datasets/vangogh2photo --name vangogh2photo_cyclegan  --model cycle_gan --no_dropout --batch_size 3 --n_epochs 200 --n_epochs_decay 200 --lambda_A 10.0 --lambda_B 10.0 --lambda_feat 1.0
 ```
 Check the [options folder](./options/README.md) for more information about the run parameters.
 

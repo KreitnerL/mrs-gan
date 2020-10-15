@@ -29,9 +29,10 @@ class BaseOptions():
 
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
         self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
+        self.parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-        self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
+        self.parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
         self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
@@ -51,10 +52,6 @@ class BaseOptions():
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--shuffle', default=True, action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
-        self.parser.add_argument('--display_winsize', type=int, default=256,  help='display window size')
-        self.parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
-        self.parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
-        self.parser.add_argument('--display_single_pane_ncols', type=int, default=0, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
         self.parser.add_argument('--identity', type=float, default=0.0, help='use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1')
         self.parser.add_argument('--no_dropout', action='store_true', default=False, help='no dropout for the generator')
         self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')

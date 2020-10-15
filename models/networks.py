@@ -138,7 +138,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dr
         return netG
 
 def define_D(input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='instance', use_sigmoid=False, gpu_ids=[]):
+             n_layers_D=3, norm='instance', gpu_ids=[]):
     netD = None
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
@@ -146,11 +146,11 @@ def define_D(input_nc, ndf, which_model_netD,
     if use_gpu:
         assert(torch.cuda.is_available())
     if which_model_netD == 'basic':
-        netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
+        netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'n_layers':
-        netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)
+        netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'spectra':
-        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, use_sigmoid=use_sigmoid, gpu_ids=gpu_ids)    
+        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, gpu_ids=gpu_ids)    
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
@@ -207,7 +207,7 @@ def print_network(net):
 # but it abstracts away the need to create the target label tensor
 # that has the same size as the input
 class GANLoss(nn.Module):
-    def __init__(self, use_lsgan=True, target_real_label=1.0, target_fake_label=0.0,
+    def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0,
                  tensor=torch.FloatTensor):
         """ Initialize the GANLoss class.
         Parameters:
@@ -218,37 +218,57 @@ class GANLoss(nn.Module):
         LSGAN needs no sigmoid. vanilla GANs will handle it with BCEWithLogitsLoss.
         """
         super(GANLoss, self).__init__()
-        self.real_label = target_real_label
-        self.fake_label = target_fake_label
+        self.register_buffer('real_label', torch.tensor(target_real_label).cuda())
+        self.register_buffer('fake_label', torch.tensor(target_fake_label).cuda())
         self.real_label_var = None
         self.fake_label_var = None
         self.Tensor = tensor
-        if use_lsgan:
+        self.gan_mode = gan_mode
+        if gan_mode == 'lsgan':
             self.loss = nn.MSELoss()
+        elif gan_mode == 'vanilla':
+            self.loss = nn.BCEWithLogitsLoss()
+        elif gan_mode == 'wgangp':
+            self.loss = None
         else:
-            self.loss = nn.BCELoss()
+            raise NotImplementedError('gan mode %s not implemented!', gan_mode)
 
-    def get_target_tensor(self, input, target_is_real):
-        target_tensor = None
+    def get_target_tensor(self, prediction, target_is_real):
+        """Create label tensors with the same size as the input.
+
+        Parameters:
+            prediction (tensor) - - tpyically the prediction from a discriminator
+            target_is_real (bool) - - if the ground truth label is for real images or fake images
+
+        Returns:
+            A label tensor filled with ground truth label, and with the size of the input
+        """
+
         if target_is_real:
-            create_label = ((self.real_label_var is None) or
-                            (self.real_label_var.numel() != input.numel()))
-            if create_label:
-                real_tensor = self.Tensor(input.size()).fill_(self.real_label)
-                self.real_label_var = Variable(real_tensor, requires_grad=False)
-            target_tensor = self.real_label_var
+            target_tensor = self.real_label
         else:
-            create_label = ((self.fake_label_var is None) or
-                            (self.fake_label_var.numel() != input.numel()))
-            if create_label:
-                fake_tensor = self.Tensor(input.size()).fill_(self.fake_label)
-                self.fake_label_var = Variable(fake_tensor, requires_grad=False)
-            target_tensor = self.fake_label_var
-        return target_tensor
+            target_tensor = self.fake_label
+        return target_tensor.expand_as(prediction)
 
     def __call__(self, input, target_is_real):
-        target_tensor = self.get_target_tensor(input, target_is_real)
-        return self.loss(input, target_tensor)
+        """Calculate loss given Discriminator's output and grount truth labels.
+
+        Parameters:
+            prediction (tensor) - - tpyically the prediction output from a discriminator
+            target_is_real (bool) - - if the ground truth label is for real images or fake images
+
+        Returns:
+            the calculated loss.
+        """
+        if self.gan_mode == 'wgangp':
+            if target_is_real:
+                loss = -input.mean()
+            else:
+                loss = input.mean()
+        else:
+            target_tensor = self.get_target_tensor(input, target_is_real)
+            loss = self.loss(input, target_tensor)
+        return loss
 
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.
@@ -452,7 +472,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('batch'), use_sigmoid=False, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('batch'), gpu_ids=[]):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -481,9 +501,6 @@ class SpectraNLayerDiscriminator(nn.Module):
             nn.Linear(int(1024 / (2**(n_layers+1))), 1)
         ])
 
-        if use_sigmoid:
-            self.sequence.append(nn.Sigmoid())
-
     def forward(self, input):
         for layer in self.sequence:
             input = layer(input)
@@ -492,7 +509,7 @@ class SpectraNLayerDiscriminator(nn.Module):
 
 # Defines the PatchGAN discriminator with the specified arguments.
 class NLayerDiscriminator(nn.Module):
-    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=get_norm_layer('batch'), use_sigmoid=False, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=64, n_layers=3, norm_layer=get_norm_layer('batch'), gpu_ids=[]):
         """Construct a PatchGAN discriminator
         Parameters:
             input_nc (int)  -- the number of channels in input images
@@ -532,9 +549,6 @@ class NLayerDiscriminator(nn.Module):
         ]
 
         sequence += [get_conv()(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]
-
-        if use_sigmoid:
-            sequence += [nn.Sigmoid()]
 
         self.model = nn.Sequential(*sequence)
 
