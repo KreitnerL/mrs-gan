@@ -47,8 +47,6 @@ def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180, magnitude=True):
     return img
 
 
-
-
 def save_image(image_numpy, image_path, aspect_ratio=1.0):
     """Save a numpy image to the disk
 
@@ -101,3 +99,12 @@ def progressbar(it, prefix="", size=60, file=sys.stdout):
         show(i+1)
     file.write("\n")
     file.flush()
+
+def is_set_of_type(dir, type):
+    """
+    Checks if there is at least one .mat file under the given path (including subfolders)
+    """
+    for _, _, fnames in os.walk(dir):
+        if any(fname.endswith(type) for fname in fnames):
+            return True
+    return False
