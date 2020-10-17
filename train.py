@@ -50,7 +50,8 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             t_comp = (time.time() - iter_start_time) / opt.batch_size
             visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data)
             if opt.display_id > 0:
-                visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
+                visualizer.plot_current_losses(float(total_iters)/1000, losses)
+            visualizer.save_current_losses()
 
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
             print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))

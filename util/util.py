@@ -24,13 +24,13 @@ def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180, magnitude=True):
     if fig==None:
         fig, ax = plt.subplots()
         # fig.set_size_inches(500/dpi, 350/dpi, forward=True)
-    colors = ['b', 'r', 'm', 'k']
-
+    else:
+        plt.figure(fig.number)
     if magnitude:
         y = y.sum(-2, True)
     for channel in reversed(range(y.size(-2))):
         y_i = y.select(-2, channel)
-        ax.plot(x,y_i.squeeze().detach().cpu().numpy(), colors[channel])
+        ax.plot(x,y_i.squeeze().detach().cpu().numpy())
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
 

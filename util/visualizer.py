@@ -75,9 +75,8 @@ class Visualizer():
             save_result (bool) - - if save the current results to an HTML file
         """
         if self.display_id > 0:  # show images in the browser using visdom
-            ncols = self.ncols
-            if ncols > 0:        # show all the images in one visdom panel
-                ncols = min(ncols, len(visuals))
+            if self.ncols > 0:        # show all the images in one visdom panel
+                ncols = min(self.ncols, len(visuals))
                 h, w = next(iter(visuals.values())).shape[:2]
                 table_css = """<style>
                         table {border-collapse: separate; border-spacing: 4px; white-space: nowrap; text-align: center}
@@ -144,7 +143,7 @@ class Visualizer():
                 webpage.add_images(ims, txts, links, width=self.win_size)
             webpage.save()
 
-    def plot_current_losses(self, epoch, counter_ratio, losses):
+    def plot_current_losses(self, iter, losses):
         """display the current losses on visdom display: dictionary of error labels and values
 
         Parameters:
@@ -154,11 +153,8 @@ class Visualizer():
         """
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
-        self.plot_data['X'].append(epoch + counter_ratio)
+        self.plot_data['X'].append(iter)
         self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
-        
-        if self.use_html:
-            self.save_current_losses(epoch)
         try:
             self.vis.line(
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
@@ -166,7 +162,7 @@ class Visualizer():
                 opts={
                     'title': self.name + ' loss over time',
                     'legend': self.plot_data['legend'],
-                    'xlabel': 'epoch',
+                    'xlabel': 'x{:.0e} iterations'.format(1000),
                     'ylabel': 'loss'},
                 win=self.display_id)
         except VisdomExceptionBase:
@@ -191,13 +187,15 @@ class Visualizer():
         with open(self.log_name, "a") as log_file:
             log_file.write('%s\n' % message)  # save the message
 
-    def save_current_losses(self, epoch):
+    def save_current_losses(self):
         """Stores the current loss as a png image.
         """
         self.saved_loss = True
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
-        plt.xlabel('Epoch')
+        else:
+            plt.figure(self.figure.number)
+        plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
         x = self.plot_data['X']
@@ -206,7 +204,7 @@ class Visualizer():
             plt.plot(x, loss, label=self.plot_data['legend'][i])
         plt.legend()
 
-        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss_{:03d}.png'.format(epoch))
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
         plt.savefig(path, format='png')
         plt.cla()
 
