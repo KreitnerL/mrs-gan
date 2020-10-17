@@ -51,12 +51,12 @@ class CycleGANModel(BaseModel):
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
-            which_epoch = opt.which_epoch
-            self.load_network(self.netG_A, 'G_A', which_epoch)
-            self.load_network(self.netG_B, 'G_B', which_epoch)
+            epoch_count = opt.epoch_count
+            self.load_network(self.netG_A, 'G_A', 'latest')
+            self.load_network(self.netG_B, 'G_B', 'latest')
             if self.isTrain:
-                self.load_network(self.netD_A, 'D_A', which_epoch)
-                self.load_network(self.netD_B, 'D_B', which_epoch)
+                self.load_network(self.netD_A, 'D_A', 'latest')
+                self.load_network(self.netD_B, 'D_B', 'latest')
 
         if self.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
@@ -77,10 +77,10 @@ class CycleGANModel(BaseModel):
             
             self.init_optimizers(opt)
 
-        # Set loss weights
-        self.lambda_idt = self.opt.identity
-        self.lambda_A = self.opt.lambda_A
-        self.lambda_B = self.opt.lambda_B
+            # Set loss weights
+            self.lambda_idt = self.opt.identity
+            self.lambda_A = self.opt.lambda_A
+            self.lambda_B = self.opt.lambda_B
 
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG_A)
@@ -115,9 +115,9 @@ class CycleGANModel(BaseModel):
         AtoB = self.opt.which_direction == 'AtoB'
         input_A: T = input['A' if AtoB else 'B']
         input_B: T = input['B' if AtoB else 'A']
-        # TODO check if clone needed
         self.input_A.resize_(input_A.size()).copy_(input_A)
         self.input_B.resize_(input_B.size()).copy_(input_B)
+        self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
     def forward(self):
         """
@@ -137,7 +137,7 @@ class CycleGANModel(BaseModel):
 
     # get image paths
     def get_image_paths(self):
-        pass
+        return self.image_paths
 
     def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate GAN loss for the discriminator\n

@@ -47,6 +47,8 @@ class DicomSpectralDataset(BaseDataset):
         return {
             'A': from_numpy(A),
             'B': from_numpy(B),
+            'A_paths': '{:03d}.foo'.format(index % self.A_size),
+            'B_paths': '{:03d}.foo'.format(index % self.B_size)
         }
 
     def __len__(self):

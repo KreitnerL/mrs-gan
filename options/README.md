@@ -12,7 +12,7 @@ All available options are listed below:
 - `--checkpoints_dir`: model checkpoints are saved here. type=str, default='./checkpoints'
 - `--dataset_mode`: chooses how datasets are loaded. [unaligned | LabeledMatSpectralDataset]'. type=str, default='unaligned'
 - `--model`: chooses which model to use. [cycle_gan]. type=str, default='cycle_gan'
-- `--which_epoch`: which epoch to load? set to latest to use latest cached model. type=str, default='latest'
+- `--epoch_count`: which epoch to load? set to latest to use latest cached model. type=str, default='latest'
 - `--nThreads`: # threads for loading data, default=2. type=int
 - `--input_nc`: # of input image channels. type=int, default=3
 - `--output_nc`: # of output image channels. type=int, default=3

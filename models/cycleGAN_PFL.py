@@ -46,20 +46,6 @@ class CycleGAN_PFL(CycleGANModel):
             self.lambda_feat_ArecA = self.opt.lambda_feat_ArecA
             self.lambda_feat_BrecB = self.opt.lambda_feat_BrecB
 
-    def set_input(self, input):
-        """
-        Unpack input data from the dataloader and perform necessary pre-processing steps.\n
-        input (dict): include the data itself and its metadata information.\n
-        The option 'direction' can be used to swap domain A and domain B.
-        """
-        super().set_input(input)
-        AtoB = self.opt.which_direction == 'AtoB'
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
-
-    # get image paths
-    def get_image_paths(self):
-        return self.image_paths
-
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B"""
         # Identity loss

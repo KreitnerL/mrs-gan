@@ -5,6 +5,7 @@ import ntpath
 import time
 from . import util, html
 from subprocess import Popen, PIPE
+import matplotlib.pyplot as plt
 
 
 if sys.version_info[0] == 2:
@@ -47,11 +48,12 @@ class Visualizer():
             self.img_dir = os.path.join(self.web_dir, 'images')
             print('create web directory %s...' % self.web_dir)
             util.mkdirs([self.web_dir, self.img_dir])
-        # create a logging file to store training losses
-        self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
-        with open(self.log_name, "a") as log_file:
-            now = time.strftime("%c")
-            log_file.write('================ Training Loss (%s) ================\n' % now)
+        if opt.isTrain:
+            # create a logging file to store training losses
+            self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+            with open(self.log_name, "a") as log_file:
+                now = time.strftime("%c")
+                log_file.write('================ Training Loss (%s) ================\n' % now)
 
     def reset(self):
         """Reset the self.saved status"""
@@ -64,7 +66,7 @@ class Visualizer():
         print('Command: %s' % cmd)
         Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
 
-    def display_current_results(self, visuals, epoch, save_result):
+    def display_current_results(self, visuals, epoch=None, save_result=None):
         """Display current results on visdom; save current results to an HTML file.
 
         Parameters:
@@ -87,6 +89,7 @@ class Visualizer():
                 label_html_row = ''
                 images = []
                 idx = 0
+                image_numpy = None
                 for label, image_numpy in visuals.items():
                     label_html_row += '<td>%s</td>' % label
                     images.append(image_numpy.transpose([2, 0, 1]))
@@ -153,6 +156,9 @@ class Visualizer():
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(epoch + counter_ratio)
         self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
+        
+        if self.use_html:
+            self.save_current_losses(epoch)
         try:
             self.vis.line(
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
@@ -185,7 +191,24 @@ class Visualizer():
         with open(self.log_name, "a") as log_file:
             log_file.write('%s\n' % message)  # save the message
 
+    def save_current_losses(self, epoch):
+        """Stores the current loss as a png image.
+        """
+        self.saved_loss = True
+        if not hasattr(self, 'figure'):
+            self.figure = plt.figure()
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.title(self.name + ' loss over time')
+        x = self.plot_data['X']
+        y = np.array(self.plot_data['Y']).transpose()
+        for i, loss in enumerate(y):
+            plt.plot(x, loss, label=self.plot_data['legend'][i])
+        plt.legend()
 
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss_{:03d}.png'.format(epoch))
+        plt.savefig(path, format='png')
+        plt.cla()
 
 def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
     """Save images to the disk.
