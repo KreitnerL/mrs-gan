@@ -59,10 +59,12 @@ def preprocess_numpy_spectra(spectraR, spectraI, size, save_dir, opt):
         spectra = F.pad(spectra, [0, 0, 0, opt.pad_data, 0, 0], "constant", 0) # 21
         print('spectra.size() after padding = ', spectra.size())
 
-    if opt.input_nc==1:
-        if opt.real==True:
-            spectra = spectra[:,:,0].unsqueeze(dim=2)
-        elif opt.imag==True:
-            spectra = spectra[:,:,1].unsqueeze(dim=2)
+
+    if opt.real==True:
+        spectra = spectra[:,:,0].unsqueeze(dim=2)
+    elif opt.imag==True:
+        spectra = spectra[:,:,1].unsqueeze(dim=2)
+    elif opt.mag==True:
+        spectra = torch.sqrt(spectra[:,:,0]**2 + spectra[:,:,1]**2).unsqueeze(dim=2)
 
     return spectra

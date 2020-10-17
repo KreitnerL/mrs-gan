@@ -10,7 +10,7 @@ def splitData(dataset_size, val_split=0.2, test_split=0.1, shuffle_data=False):
     if shuffle_data:
         indices = torch.randperm(dataset_size)
     else:
-        indices = range(dataset_size)
+        indices = torch.tensor(range(dataset_size))
     split1 = torch.tensor([int(dataset_size * (1 - val_split - test_split))])
     split2 = torch.tensor([int(dataset_size * (1 - test_split))])    # split1 = torch.tensor([int(torch.floor((1 - torch.tensor(val_split, dtype=int) - torch.tensor(test_split)) * dataset_size))])
 

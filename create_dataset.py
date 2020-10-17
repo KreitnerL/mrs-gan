@@ -88,13 +88,13 @@ def load_from_mat(source_dir, save_dir, preprocess=False):
     """
     spectra = []
 
-    A_paths = make_dataset(source_dir, file_ext='spectra.mat') # Returns a list of paths of the files in the dataset
+    A_paths = make_dataset(source_dir, file_ext=opt.mat_source_file) # Returns a list of paths of the files in the dataset
     A_paths = sorted(A_paths)
     for path in A_paths:
-        spectra.append(io.loadmat(path)['spectra'])
+        spectra.append(io.loadmat(path)[opt.mat_var_name])
     spectra = np.concatenate(spectra, axis=0)
-    if preprocess:
-        spectraR = spectra[:,1,:]
+    if preprocess and opt.input_nc == 2:
+        spectraR = spectra[:,0,:]
         spectraI = spectra[:,1,:]
         spectra = preprocess_numpy_spectra(spectraR, spectraI, spectraR.shape, save_dir)
     else:
@@ -114,7 +114,7 @@ def split_dataset(spectra, save_dir, type):
     print('spectra dimensionality: ',spectra.shape)
     print('----- Saving and Mapping Dataset ------')
 
-    path = os.path.join(save_dir, 'spectra')
+    path = os.path.join(save_dir, opt.name)
     mkdir(path)
 
     # Split the data if indicated, save the indices in a CSV file
@@ -180,4 +180,4 @@ print('Generating dataset A...')
 generate_dataset('A', opt.source_dir_A)
 print('Generating dataset B...')
 generate_dataset('B', opt.source_dir_B)
-print('Done! You can find you dataset at', opt.save_dir)
+print('Done! You can find you dataset at', os.path.join(opt.save_dir, opt.name))
