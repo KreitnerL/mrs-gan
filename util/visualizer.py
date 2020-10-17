@@ -195,7 +195,7 @@ class Visualizer():
             self.figure = plt.figure()
         else:
             plt.figure(self.figure.number)
-        plt.xlabel('Iterations')
+        plt.xlabel('x{:.0e} iterations'.format(1000))
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
         x = self.plot_data['X']

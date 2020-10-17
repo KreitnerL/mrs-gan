@@ -2,9 +2,9 @@
 % Define how training and validation with random forest should be carried out.
 function err = main()
 
-    synthetic_spectra = 'D:\Datasets\Synthetic_data\dataset_magnitude.mat';
-    synthetic_parameter = 'D:\Datasets\Synthetic_data\dataset_parameters.mat';
-    labels = ["cho", "cre", "glx", "ins", "lip", "mac", "naa"];
+    synthetic_spectra = 'D:\Datasets\updated_dataset\dataset_magnitude.mat';
+    synthetic_parameter = 'D:\Datasets\updated_dataset\dataset_parameters.mat';
+    labels = ["cho", "glx", "ins", "naa"];
     nTrees = 100; % Number of trees
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
