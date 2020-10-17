@@ -3,8 +3,20 @@ Done:
 - Create Dataloader for spectra
 - Create original CycleGAN for this data type
 - Add TTUR
+- Fix output of Discriminator (Reshape + Linear Layer)
+- Add Wasserstein Loss + Spectral Normalization
+    - Use a linear activation function in the output layer of the critic model (instead of sigmoid).
+    - Use Wasserstein loss to train the critic and generator models that promote larger difference between scores for real and generated images.
+    - Constrain critic model weights to a limited range after each mini batch update (e.g. [-0.01,0.01]).
+    OR
+    - Gradient Penalty
+    - Update the critic model more times than the generator each iteration (e.g. 5).
+- Setup Random Forest code
+
 
 TODO:
-- Add Wasserstein Loss + Spectral Normalization
-- Get Random Forrest Network from Drithiman
+- Improve Loss visualization
+- Spectral Normalization
 - Add Perceptual Feature Loss
+
+- LCModel: Preprocess parameters so that cre val is 1 and everyhing is relative to it

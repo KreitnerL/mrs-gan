@@ -16,7 +16,12 @@ class DicomSpectralDataset(BaseDataset):
         self.root = opt.dataroot
         self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
         self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
-        
+        if opt.real:
+            self.channel_index = 0 
+        elif opt.imag:
+            self.channel_index = 1
+        else:
+            self.channel_index = None
         sizes_A = np.genfromtxt(os.path.join(self.root,'sizes_A') ,delimiter=',').astype(np.int64)
         sizes_B = np.genfromtxt(os.path.join(self.root,'sizes_B') ,delimiter=',').astype(np.int64)
 
@@ -33,11 +38,15 @@ class DicomSpectralDataset(BaseDataset):
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
-        A = np.asarray(self.sampler_A[index % self.A_size,0,:]).astype(float)
-        B = np.asarray(self.sampler_B[index % self.B_size,0,:]).astype(float)
+        if self.channel_index is not None:
+            A = np.expand_dims(np.asarray(self.sampler_A[index % self.A_size,self.channel_index,:]).astype(float),0)
+            B = np.expand_dims(np.asarray(self.sampler_B[index % self.B_size,self.channel_index,:]).astype(float),0)
+        else:
+            A = np.asarray(self.sampler_A[index % self.A_size,:,:]).astype(float)
+            B = np.asarray(self.sampler_B[index % self.B_size,:,:]).astype(float)
         return {
-            'A': from_numpy(A).unsqueeze(0),
-            'B': from_numpy(B).unsqueeze(0),
+            'A': from_numpy(A),
+            'B': from_numpy(B),
         }
 
     def __len__(self):

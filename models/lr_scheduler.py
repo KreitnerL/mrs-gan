@@ -1,6 +1,9 @@
 from torch.optim import lr_scheduler
+initialized = False
 
 def setup_for_no_TTUR(opt):
+    global initialized 
+    initialized = True
     if not opt.TTUR:
         opt.glr = opt.lr
         opt.dlr = opt.lr
@@ -29,6 +32,8 @@ def get_scheduler(optimizer, opt, n_epochs, n_epochs_decay):
     For other schedulers (step, plateau, and cosine), we use the default PyTorch schedulers.
     See https://pytorch.org/docs/stable/optim.html for more details.
     """
+    if not initialized:
+        setup_for_no_TTUR(opt)
     if opt.lr_policy == 'linear':
         def lambda_rule(epoch):
             lr_l = 1.0 - max(0, epoch + opt.epoch_count - n_epochs) / float(n_epochs_decay + 1)

@@ -127,7 +127,7 @@ def split_dataset(spectra, save_dir, type):
 
         save_dat_file(os.path.join(path, 'train_' + type + '.dat'), train_indices, d, specLength, spectra)
         save_dat_file(os.path.join(path, 'val_' + type + '.dat'), val_indices, d, specLength, spectra)
-        save_dat_file(os.path.join(path, 'test' + type + '.dat'), test_indices, d, specLength, spectra)
+        save_dat_file(os.path.join(path, 'test_' + type + '.dat'), test_indices, d, specLength, spectra)
 
 def save_dat_file(path, indices, d, spec_length, spectra):
     """
