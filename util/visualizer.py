@@ -6,6 +6,7 @@ import time
 from . import util, html
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
+from util.util import smooth
 
 
 if sys.version_info[0] == 2:
@@ -205,6 +206,31 @@ class Visualizer():
         plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
+        plt.savefig(path, format='png')
+        plt.cla()
+
+    def save_smooth_loss(self):
+        """Stores the current loss as a png image.
+        """
+        self.saved_loss = True
+        if not hasattr(self, 'figure'):
+            self.figure = plt.figure()
+        else:
+            plt.figure(self.figure.number)
+        plt.xlabel('x{:.0e} iterations'.format(1000))
+        plt.ylabel('Loss')
+        plt.title(self.name + ' loss over time')
+        x = self.plot_data['X']
+        y_all = np.array(self.plot_data['Y']).transpose()
+        y = []
+        for y_i in y_all:
+            y.append(smooth(y_i))
+        x = np.linspace(x[0],x[-1],len(y[0]))
+        for i, loss in enumerate(y):
+            plt.plot(x, loss, label=self.plot_data['legend'][i])
+        plt.legend()
+
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss_smooth.png')
         plt.savefig(path, format='png')
         plt.cla()
 

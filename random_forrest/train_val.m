@@ -16,17 +16,20 @@
 
 function [err_rel] = train_val(X_train, Y_train, X_test, Y_test, labels, nTrees)
     num_metabolites = size(Y_train,1);
+    num_trains = size(X_train,1);
     num_tests = size(X_test,1);
 
     %% RUN UNIVARIATE REGRESSION
-    for metabolite=1:num_metabolites
+    for metabolite=num_metabolites:-1:1
         % TRAIN
+        fprintf('train random forest for %s on  %d samples', labels(metabolite), num_trains)
         model{metabolite} = TreeBagger(nTrees, X_train, Y_train(metabolite,:), 'Method','regression'); 
         % VALIDATE
+        fprintf('validate random forest for %s on %d samples', labels(metabolite), num_tests)
         Est{metabolite} = predict(model{metabolite}, X_test)';
     end
 
-    for metabolite=1:num_metabolites
+    for metabolite=num_metabolites:-1:1
         err_rel(metabolite,:) = (abs(Est{metabolite} - Y_test(metabolite,:))) ./ (abs(Y_test(metabolite,:)));
         avg_err_rel(metabolite,:) = mean(err_rel(metabolite,:),2);
         fprintf('Relative error %s: %f\n', labels(metabolite), avg_err_rel(metabolite,:));

@@ -60,6 +60,8 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
         iter_data_time = time.time()
 
+    visualizer.save_smooth_loss()
+
     model.update_learning_rate()    # update learning rates in the end of every epoch.
 
     if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
