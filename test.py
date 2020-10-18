@@ -7,6 +7,7 @@ It first creates model and dataset given the option. It will hard-code some para
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
 import os
+from util.util import progressbar
 from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
@@ -38,15 +39,10 @@ visualizer = Visualizer(opt)    # create a visualizer that display/save images a
 web_dir = os.path.join(opt.results_dir, opt.name, '{}_{}'.format(opt.phase, opt.epoch_count))  # define the website directory
 print('creating web directory', web_dir)
 webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch_count))
-for i, data in enumerate(dataset):
-    if i >= opt.num_test:  # only apply our model to opt.num_test images.
-        break
+for data in progressbar(dataset, num_iters = opt.num_test):
     model.set_input(data)  # unpack data from data loader
     model.test()           # run inference
     visuals = model.get_current_visuals()  # get image results
     image_paths = model.get_image_paths()
-    if i % opt.print_freq == 0:  # save images to an HTML file
-        print('processing (%04d)-th image...' % (i))
-        visualizer.display_current_results(model.get_current_visuals())
     save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
 webpage.save()  # save the HTML

@@ -47,7 +47,6 @@ class BaseOptions():
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         self.parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded.  [unaligned | LabeledMatSpectralDataset]')
         self.parser.add_argument('--model', type=str, default='cycleGAN_PFL', help='chooses which model to use. [cycleGAN_PFL, cycleGAN_spectra]')
-        self.parser.add_argument('--which_direction', type=str, default='AtoB', help='AtoB or BtoA')
         self.parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')

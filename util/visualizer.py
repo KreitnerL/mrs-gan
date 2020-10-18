@@ -212,6 +212,10 @@ class Visualizer():
     def save_smooth_loss(self):
         """Stores the current loss as a png image.
         """
+        num_points = len(self.plot_data['Y'])
+        if num_points < 30:
+            return
+
         self.saved_loss = True
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
@@ -224,7 +228,7 @@ class Visualizer():
         y_all = np.array(self.plot_data['Y']).transpose()
         y = []
         for y_i in y_all:
-            y.append(smooth(y_i))
+            y.append(smooth(y_i, window_len=int(num_points/10)))
         x = np.linspace(x[0],x[-1],len(y[0]))
         for i, loss in enumerate(y):
             plt.plot(x, loss, label=self.plot_data['legend'][i])

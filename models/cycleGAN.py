@@ -49,14 +49,22 @@ class CycleGANModel(BaseModel):
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids)
 
+        print('---------- Networks initialized -------------')
+        networks.print_network(self.netG_A)
+        networks.print_network(self.netG_B)
+        if self.isTrain:
+            networks.print_network(self.netD_A)
+            networks.print_network(self.netD_B)
+        print('-----------------------------------------------')
+
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
-            epoch_count = opt.epoch_count
-            self.load_network(self.netG_A, 'G_A', 'latest')
-            self.load_network(self.netG_B, 'G_B', 'latest')
+            self.load_network(self.netG_A, 'G_A', opt.epoch_count)
+            self.load_network(self.netG_B, 'G_B', opt.epoch_count)
             if self.isTrain:
-                self.load_network(self.netD_A, 'D_A', 'latest')
-                self.load_network(self.netD_B, 'D_B', 'latest')
+                self.load_network(self.netD_A, 'D_A', opt.epoch_count)
+                self.load_network(self.netD_B, 'D_B', opt.epoch_count)
+            print('Loaded checkpoint', opt.epoch_count)
 
         if self.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
@@ -82,14 +90,6 @@ class CycleGANModel(BaseModel):
             self.lambda_A = self.opt.lambda_A
             self.lambda_B = self.opt.lambda_B
 
-        print('---------- Networks initialized -------------')
-        networks.print_network(self.netG_A)
-        networks.print_network(self.netG_B)
-        if self.isTrain:
-            networks.print_network(self.netD_A)
-            networks.print_network(self.netD_B)
-        print('-----------------------------------------------')
-
     def init_optimizers(self, opt):
         """
         Initialize optimizers and learning rate schedulers
@@ -112,12 +112,11 @@ class CycleGANModel(BaseModel):
         input (dict): include the data itself and its metadata information.\n
         The option 'direction' can be used to swap domain A and domain B.
         """
-        AtoB = self.opt.which_direction == 'AtoB'
-        input_A: T = input['A' if AtoB else 'B']
-        input_B: T = input['B' if AtoB else 'A']
+        input_A: T = input['A']
+        input_B: T = input['B']
         self.input_A.resize_(input_A.size()).copy_(input_A)
         self.input_B.resize_(input_B.size()).copy_(input_B)
-        self.image_paths = input['A_paths' if AtoB else 'B_paths']
+        self.image_paths = input['A_paths']
 
     def forward(self):
         """

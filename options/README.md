@@ -20,7 +20,6 @@ All available options are listed below:
 - `--fineSize`: after scaling, crop image to this size. type=int, default=256
 - `--ngf`: # of gen filters in first conv layer. type=int, default=64
 - `--ndf`: # of discrim filters in first conv layer. type=int, default=64
-- `--which_direction`: AtoB or BtoA. type=str, default='AtoB'
 - `--which_model_netD`: selects model to use for netD. type=str, default='basic'
 - `--which_model_netG`: selects model to use for netG. type=str, default='resnet_9blocks'
 - `--which_model_feat`: selects model to use for feature network. type=str, default='resnet34'
