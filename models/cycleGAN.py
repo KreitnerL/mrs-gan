@@ -51,11 +51,11 @@ class CycleGANModel(BaseModel):
                                             opt.norm, self.gpu_ids)
 
         print('---------- Networks initialized -------------')
-        networks.print_network(self.netG_A)
-        networks.print_network(self.netG_B)
+        define.print_network(self.netG_A)
+        define.print_network(self.netG_B)
         if self.isTrain:
-            networks.print_network(self.netD_A)
-            networks.print_network(self.netD_B)
+            define.print_network(self.netD_A)
+            define.print_network(self.netD_B)
         print('-----------------------------------------------')
 
         # Load checkpoint

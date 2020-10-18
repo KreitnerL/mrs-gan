@@ -79,7 +79,8 @@ def define_D(input_nc, ndf, which_model_netD,
                                   which_model_netD)
     if use_gpu:
         netD.cuda()
-    netD.apply(weights_init)
+    if not which_model_netD == 'spectra_sn':
+        netD.apply(weights_init)
 
     if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
         return nn.DataParallel(netD, device_ids=gpu_ids)

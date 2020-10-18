@@ -389,7 +389,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
     Additionally, the spectral norm of each layer will be contrained by spectral normalization to control the Lipschitz constant.
     """
     def __init__(self, input_nc, ndf=32, n_layers=3, gpu_ids=[]):
-        super(SpectraNLayerDiscriminator, self).__init__()
+        super(SpectraNLayerDiscriminator_SN, self).__init__()
         self.gpu_ids = gpu_ids
 
         kernel_size=4

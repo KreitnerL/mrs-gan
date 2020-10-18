@@ -13,7 +13,7 @@ class CycleGAN_WSN(CycleGAN_spectra):
 
     def __init__(self, opt):
         opt.gan_mode = 'wgangp'
-        opt.which_model_netD = 'spectra_SN'
+        opt.which_model_netD = 'spectra_sn'
         super().__init__(opt)
 
     def get_current_losses(self):
