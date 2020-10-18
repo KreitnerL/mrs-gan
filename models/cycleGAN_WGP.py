@@ -1,10 +1,6 @@
 from models.cycleGAN_spectra import CycleGAN_spectra
 import torch
 from collections import OrderedDict
-T = torch.Tensor
-
-def wasserstein_distance(input):
-    return torch.mean(input)
 
 class CycleGAN_WGP(CycleGAN_spectra):
     """

@@ -5,6 +5,7 @@ import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
+from . import define
 T = torch.Tensor
 from models.lr_scheduler import get_scheduler_G, get_scheduler_D
 
@@ -35,17 +36,17 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = networks.define_G(opt.input_nc, opt.output_nc, 
+        self.netG_A = define.define_G(opt.input_nc, opt.output_nc, 
                                         opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
-        self.netG_B = networks.define_G(opt.input_nc, opt.output_nc,
+        self.netG_B = define.define_G(opt.input_nc, opt.output_nc,
                                         opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
 
         # Discriminators
         if self.isTrain:
-            self.netD_A = networks.define_D(opt.input_nc,
+            self.netD_A = define.define_D(opt.input_nc,
                                             opt.ndf, opt.which_model_netD, 
                                             opt.n_layers_D, opt.norm, self.gpu_ids)
-            self.netD_B = networks.define_D(opt.input_nc,
+            self.netD_B = define.define_D(opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids)
 
