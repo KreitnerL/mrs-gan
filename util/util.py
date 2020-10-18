@@ -6,6 +6,7 @@ import io
 import cv2
 import matplotlib.pyplot as plt
 import sys
+import numpy
 
 fig = ax = None
 
@@ -87,14 +88,16 @@ def mkdir(path):
     if not os.path.exists(path):
         os.makedirs(path)
 
-def progressbar(it, prefix="", size=60, file=sys.stdout):
-    count = len(it)
+def progressbar(it, prefix="", size=60, file=sys.stdout, num_iters = float("inf")):
+    count = min(len(it), num_iters)
     def show(j):
         x = int(size*j/count)
         file.write("%s[%s%s] %i/%i\r" % (prefix, "#"*x, "."*(size-x), j, count))
         file.flush()        
     show(0)
     for i, item in enumerate(it):
+        if i>=num_iters:
+            break
         yield item
         show(i+1)
     file.write("\n")
@@ -109,8 +112,10 @@ def is_set_of_type(dir, type):
             return True
     return False
 
-def smooth(self, x,window_len=11,window='hanning'):
+def smooth(x, window_len=11, window='hanning'):
         """smooth the data using a window with requested size.
+        Taken from
+        https://scipy-cookbook.readthedocs.io/items/SignalSmooth.html
     
         This method is based on the convolution of a scaled window with the signal.
         The signal is prepared by introducing reflected copies of the signal 
@@ -144,9 +149,7 @@ def smooth(self, x,window_len=11,window='hanning'):
         """
         if x.ndim != 1:
             raise ValueError("smooth only accepts 1 dimension arrays.")
-        if x.size < window_len:
-            raise ValueError("Input vector needs to be bigger than window size.")
-        if window_len<3:
+        if x.size < window_len or window_len < 3:
             return x
         if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
             raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")

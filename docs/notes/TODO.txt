@@ -12,18 +12,20 @@ Done:
     - Gradient Penalty
     - Update the critic model more times than the generator each iteration (e.g. 5).
 - Setup Random Forest code
+- Improve Loss visualization
 
 
 TODO:
-- Improve Loss visualization
-    When all losses are almost 0, that is because the Discriminator is confused. He produces almost the same output for both real and fake images. Hence, the distance between the scores is 0.
-    This also means that the Generator can easily fool the Discriminator and thus has a low loss.
-
-    Ideally the Discriminator should be able to tell them easily apart up to the point where the Generator has become so good that there really is no more difference.
 - Spectral Normalization
 - Add Perceptual Feature Loss
 
 - LCModel: Preprocess parameters so that cre val is 1 and everyhing is relative to it
+- Parameter search https://pytorch.org/tutorials/beginner/hyperparameter_tuning_tutorial.html
 
+
+When all losses are almost 0, that is because the Discriminator is confused. He produces almost the same output for both real and fake images. Hence, the distance between the scores is 0.
+This also means that the Generator can easily fool the Discriminator and thus has a low loss.
+
+Ideally the Discriminator should be able to tell them easily apart up to the point where the Generator has become so good that there really is no more difference.
 
 /home/kreitnerl/mrs-gan/train.py --dataroot ./datasets/spectra --name spectra_cyclegan --model cycleGAN_WGP --no_dropout --input_nc 1 --output_nc 1 --dataset_mode dicom_spectral_dataset --gpu_ids 5 --which_model_netG resnet_6blocks --ngf 32 --ndf 32 --TTUR --which_model_netD spectra --real --batch_size 200 --n_critic 5 --gan_mode wgangp --dlr 0.001 --beta1 0 --beta2 0 --n_epochs_dis_decay 30
