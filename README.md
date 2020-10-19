@@ -1,4 +1,4 @@
-# Improving Generalizability through Generative Adversarial Domain Adaptation for MR Spectroscopy
+# Improving Model Generalizability for MR Spectroscopy through Generative Adversarial Domain Adaptation 
 
 Using a Generative Adversarial Network (GAN) to decrease the domain shift between real and synthtic Magnetic Resonance Spectroscopy (MRS) samples. Codebase for Bachelor Thesis.
 
