@@ -144,7 +144,7 @@ class Visualizer():
                 webpage.add_images(ims, txts, links, width=self.win_size)
             webpage.save()
 
-    def plot_current_losses(self, iter, losses):
+    def plot_current_losses(self):
         """display the current losses on visdom display: dictionary of error labels and values
 
         Parameters:
@@ -152,10 +152,6 @@ class Visualizer():
             counter_ratio (float) -- progress (percentage) in the current epoch, between 0 to 1
             losses (OrderedDict)  -- training losses stored in the format of (name, float) pairs
         """
-        if not hasattr(self, 'plot_data'):
-            self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
-        self.plot_data['X'].append(iter)
-        self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
         try:
             self.vis.line(
                 X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
@@ -170,7 +166,7 @@ class Visualizer():
             self.create_visdom_connections()
 
     # losses: same format as |losses| of plot_current_losses
-    def print_current_losses(self, epoch, iters, losses, t_comp, t_data):
+    def print_current_losses(self, epoch, iters, losses, t_comp, t_data, iter):
         """print current losses on console; also save the losses to the disk
 
         Parameters:
@@ -180,6 +176,11 @@ class Visualizer():
             t_comp (float) -- computational time per data point (normalized by batch_size)
             t_data (float) -- data loading time per data point (normalized by batch_size)
         """
+        if not hasattr(self, 'plot_data'):
+            self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
+        self.plot_data['X'].append(iter)
+        self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
+
         message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
         for k, v in losses.items():
             message += '%s: %.3f ' % (k, v)
@@ -213,7 +214,7 @@ class Visualizer():
         """Stores the current loss as a png image.
         """
         num_points = len(self.plot_data['Y'])
-        if num_points < 30:
+        if num_points < 45:
             return
 
         self.saved_loss = True
@@ -228,7 +229,7 @@ class Visualizer():
         y_all = np.array(self.plot_data['Y']).transpose()
         y = []
         for y_i in y_all:
-            y.append(smooth(y_i, window_len=int(num_points/10)))
+            y.append(smooth(y_i, window_len=int(num_points/15)))
         x = np.linspace(x[0],x[-1],len(y[0]))
         for i, loss in enumerate(y):
             plt.plot(x, loss, label=self.plot_data['legend'][i])

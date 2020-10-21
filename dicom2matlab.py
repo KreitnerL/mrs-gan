@@ -2,11 +2,11 @@ from options.dicom2matlab_options import Dicom2MatlabOptions
 opt = Dicom2MatlabOptions().parse()
 import os
 import os.path
-import matlab.engine
 import numpy as np
 import scipy.io as io
 import torch
 from util.util import progressbar, is_set_of_type
+from util.load_activated_spectra import get_activated_spectra
 from data.image_folder import make_dataset
 from util.process_spectra import preprocess_numpy_spectra
 
@@ -14,9 +14,6 @@ def convert_DCM_to_MAT_NUMPY(sourceDir: str, file_ext_A: str, file_ext_B: str):
     """
     Loads the dicom encoded spectra and their respective metabolic maps, selects spectra of the activated voxels and stores them in a .npz and a .mat file
     """
-    print('>>>>>> Starting Matlab Engine... <<<<<<')
-    eng = matlab.engine.start_matlab()
-    print('>>>>>> Matlab Engine Running! <<<<<<')
 
     # Implementing Matlab code from UCSF
     # Compile loaded, reshaped data in row-wise matrix
@@ -26,7 +23,7 @@ def convert_DCM_to_MAT_NUMPY(sourceDir: str, file_ext_A: str, file_ext_B: str):
 
     for i in progressbar(range(len(A_paths)), "Processing patient data: ", 20):
         # Identify activated voxels using the NAA map and extract corresponding spectra
-        dataR, dataI = eng.activatedSpectra(B_paths[i], A_paths[i], nargout=2)
+        dataR, dataI = get_activated_spectra(B_paths[i], A_paths[i])
         dataR, dataI = torch.FloatTensor(dataR), torch.FloatTensor(dataI)
         size = dataR.shape
         spectra = torch.empty([2, size[0], size[1]])
