@@ -6,7 +6,7 @@ import time
 from . import util, html
 from subprocess import Popen, PIPE
 import matplotlib.pyplot as plt
-from util.util import smooth
+from util.util import smooth, load_loss_from_file
 
 
 if sys.version_info[0] == 2:
@@ -52,10 +52,15 @@ class Visualizer():
         if opt.isTrain:
             # create a logging file to store training losses
             self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+            if opt.continue_train and os.path.isfile(self.log_name):
+                self.plot_data = load_loss_from_file(opt, self.log_name)
+                if len(self.plot_data['legend']) == 0:
+                    del self.plot_data
+
             with open(self.log_name, "a") as log_file:
                 now = time.strftime("%c")
                 log_file.write('================ Training Loss (%s) ================\n' % now)
-
+            
     def reset(self):
         """Reset the self.saved status"""
         self.saved = False

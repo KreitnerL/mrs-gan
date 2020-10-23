@@ -62,7 +62,10 @@ class BaseModel():
     def load_network(self, network, network_label, epoch_label):
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)
         save_path = os.path.join(self.save_dir, save_filename)
-        network.load_state_dict(torch.load(save_path))
+        try:
+            network.load_state_dict(torch.load(save_path))
+        except FileNotFoundError:
+            pass
 
     def update_learning_rate(self):
         """Update learning rates for all the networks; called at the end of every epoch"""
