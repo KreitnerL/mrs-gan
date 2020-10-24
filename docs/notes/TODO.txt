@@ -14,16 +14,15 @@ Done:
 - Setup Random Forest code
 - Improve Loss visualization
 - Spectral Normalization
-
+- Convert matlab code to python (pydicom)
 
 TODO:
 - Add Perceptual Feature Loss
 - LCModel: Preprocess parameters so that cre val is 1 and everyhing is relative to it
 - Parameter search https://pytorch.org/tutorials/beginner/hyperparameter_tuning_tutorial.html
-- Convert matlab code to python (pydicom)
-
 
 1) Create Baselines
+    - synthetic - synthetic
     - synthetic - real
     - real - real
 
@@ -45,3 +44,14 @@ Ideally the Discriminator should be able to tell them easily apart up to the poi
 
 
 /home/kreitnerl/mrs-gan/train.py --dataroot ./datasets/spectra --name spectra_cyclegan --model cycleGAN_WGP --no_dropout --input_nc 1 --output_nc 1 --dataset_mode dicom_spectral_dataset --gpu_ids 5 --which_model_netG resnet_6blocks --ngf 32 --ndf 32 --TTUR --which_model_netD spectra --real --batch_size 200 --n_critic 5 --gan_mode wgangp --dlr 0.001 --beta1 0 --beta2 0 --n_epochs_dis_decay 30
+
+
+load spectra from: /home/kreitnerl/Datasets/Synthetic_data/dataset_magnitude.mat
+load parameters from: /home/kreitnerl/Datasets/Synthetic_data/dataset_parameters.mat
+training random forest with 100 trees on 90000 data samples...
+training completed in 12956.396 sec
+storing random forest weights at ./results/RF_2020-10-23_23-34-52_515575.joblib
+prediction of 10000 samples completed in 1.212 sec
+Average Relative Error cho: 0.02132080474039676
+
+Average Relative Error naa: 0.03763041926932573
