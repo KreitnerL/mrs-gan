@@ -6,7 +6,7 @@ import io
 import cv2
 import matplotlib.pyplot as plt
 import sys
-import numpy
+import re
 
 fig = ax = None
 
@@ -163,3 +163,31 @@ def smooth(x, window_len=11, window='hanning'):
 
         y=np.convolve(w/w.sum(),s,mode='valid')
         return y
+
+def load_loss_from_file(opt, path):
+    """
+    Loads the given loss file, extracts all losses and returns them in a struct
+    """
+    legend = []
+    y = []
+    has_legend = False
+    with open(path) as f:
+        lines = [line.rstrip() for line in f]
+    for line in lines:
+        if line.startswith('='):
+            continue
+        # if int(re.search(r'\d+', line).group()) >= opt.epoch_count:
+        #     break
+        line =  re.sub('\(.*\)', '', line)
+        y_i = []
+        for t in line.split():
+            try:
+                y_i.append(float(t))
+            except ValueError:
+                if not has_legend and len(t)>1:
+                    legend.append(t.replace(':', ''))
+        y.append(y_i)
+        has_legend=True
+
+    return {'X': np.array(range(len(y)))/10000, 'Y': y, 'legend': legend}
+

@@ -11,7 +11,7 @@ class TrainOptions(BaseOptions):
         # visdom and HTML visualization parameters
         self.parser.add_argument('--display_freq', type=int, default=100, help='frequency of showing training results on screen')
         self.parser.add_argument('--display_ncols', type=int, default=0, help='if positive, display all images in a single visdom web panel with certain number of images per row.')
-        self.parser.add_argument('--display_id', type=int, default=1, help='window id of the web display')
+        self.parser.add_argument('--display_id', type=int, default=-1, help='window id of the web display')
         self.parser.add_argument('--display_server', type=str, default="http://localhost", help='visdom server of the web display')
         self.parser.add_argument('--display_env', type=str, default='main', help='visdom display environment name (default is "main")')
         self.parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
@@ -28,8 +28,8 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--phase', type=str, default='train', help='train, val, test, etc')
 
         # training parameters
-        self.parser.add_argument('--n_epochs', type=int, default=100, help='# of iter at starting learning rate')
-        self.parser.add_argument('--n_epochs_decay', type=int, default=100, help='# of iter to linearly decay learning rate to zero')
+        self.parser.add_argument('--n_epochs', type=int, default=5, help='# of iter at starting learning rate')
+        self.parser.add_argument('--n_epochs_decay', type=int, default=5, help='# of iter to linearly decay learning rate to zero')
         self.parser.add_argument('--beta1', type=float, default=0.900, help='momentum term of adam generator')
         self.parser.add_argument('--beta2', type=float, default=0.999, help='momentum term of adam for discriminator')
         self.parser.add_argument('--lr', type=float, default=0.0002, help='initial learning rate for adam')
