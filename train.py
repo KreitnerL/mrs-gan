@@ -36,7 +36,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         total_iters += opt.batch_size
         epoch_iter += opt.batch_size
         model.set_input(data)         # unpack data from dataset and apply preprocessing
-        model.optimize_parameters()
         # Only update critic every n_critic steps
         optimize_gen = not(i % opt.n_critic)
         model.optimize_parameters(optimize_G=optimize_gen)   # calculate loss functions, get gradients, update network weights
