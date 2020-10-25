@@ -60,9 +60,10 @@ def baseline_3():
 
     # Split synthetic data into training / test dataset
     val_split = 0.1
-    # num_train = val_split * len(synthetic)
-    num_train = 1000
-    num_test = 1000
+    num_test = int(val_split * len(synthetic))
+    num_train = len(synthetic) - num_test
+    # num_train = 1000
+    # num_test = 1000
     synthetic_train = np.array([synthetic[i] for i in range(num_train)])
     synthetic_test = np.array([synthetic[i] for i in range(num_train, num_train+num_test)])
     synthetic_param_train = np.array([synthetic_params[i] for i in range(num_train)])
