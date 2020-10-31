@@ -12,7 +12,7 @@ class Dicom2MatlabOptions():
         self.parser.add_argument('--source_dir', type=str, help='Directory of the dicom dataset')
         self.parser.add_argument('--save_dir', type=str, help='Directory where the matlab dataset will be saved')
         self.parser.add_argument('--file_ext_spectra', type=str, default='proc.dcm', help='File extension of the processed spectra DICOM files')
-        self.parser.add_argument('--file_ext_metabolic_map', type=str, default='NAA.dcm', help='File extension of the metabolic map')
+        self.parser.add_argument('--file_ext_metabolite', type=str, default='UCSF_', help='File extension of the metabolic map')
         self.parser.add_argument('--force', action='store_true', help='If true, overwrites all exisiting .npz, .mat, .dat files')
 
         self.parser.add_argument('--normalize', type=bool, default=False, help='normalize the spectra in preprocessing')
@@ -29,6 +29,7 @@ class Dicom2MatlabOptions():
         if not self.initialized:
             self.initialize()
         self.opt = self.parser.parse_args()
+        assert sum([self.opt.real, self.opt.imag, self.opt.mag]) <= 1
         args = vars(self.opt)
         if not self.opt.quiet:
             print('------------ Options -------------')
