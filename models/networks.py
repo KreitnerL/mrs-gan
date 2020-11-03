@@ -138,9 +138,9 @@ class GANLoss(nn.Module):
         """
         if self.gan_mode == 'wgangp':
             if target_is_real:
-                loss = -input.mean()
-            else:
                 loss = input.mean()
+            else:
+                loss = -input.mean()
         else:
             target_tensor = self.get_target_tensor(input, target_is_real)
             loss = self.loss(input, target_tensor)

@@ -208,8 +208,10 @@ class Visualizer():
         x = self.plot_data['X']
         y = np.array(self.plot_data['Y']).transpose()
         for i, loss in enumerate(y):
+            if i>=3:
+                break
             plt.plot(x, loss, label=self.plot_data['legend'][i])
-        # plt.legend()
+        plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
         plt.savefig(path, format='png')
