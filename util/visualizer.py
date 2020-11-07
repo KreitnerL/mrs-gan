@@ -170,6 +170,24 @@ class Visualizer():
         except VisdomExceptionBase:
             self.create_visdom_connections()
 
+    def plot_current_validation_error(self, error):
+        if not hasattr(self, 'validation_error'):
+            self.validation_error = []
+        self.validation_error.append(error)
+        if not hasattr(self, 'figure2'):
+            self.figure2 = plt.figure()
+        else:
+            plt.figure(self.figure2.number)
+
+        plt.xlabel('epoch')
+        plt.ylabel('Average Relative Validation Error')
+        plt.title(self.name + ' validation error over time')
+        plt.plot(list(range(1, len(self.validation_error)+1)), self.validation_error)
+
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_error.png')
+        plt.savefig(path, format='png')
+        plt.cla()
+
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, iters, losses, t_comp, t_data, iter):
         """print current losses on console; also save the losses to the disk

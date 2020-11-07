@@ -15,6 +15,7 @@ class Validator:
     def __init__(self, opt):
         self.opt = Namespace(**vars(opt))
         self.opt.phase = 'val'
+        self.opt.batch_size=1
         print('------------ Creating Validation Set ------------')
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
@@ -44,7 +45,9 @@ class Validator:
         """
         fakes = []
         num_test = min(self.dataset_size, self.opt.num_test)
-        for data in progressbar(self.dataset, num_iters = num_test):
+        for i, data in enumerate(self.dataset):
+            if i>=num_test:
+                break
             model.set_input(data)  # unpack data from data loader
             model.test()           # run inference
             fakes.append(model.get_fake().detach().squeeze(dim=0).cpu().numpy())

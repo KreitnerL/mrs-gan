@@ -1,4 +1,5 @@
 import time
+from util.validator import Validator
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
@@ -19,6 +20,11 @@ visualizer = Visualizer(opt)    # create a visualizer that display/save images a
 
 total_iters = 0                 # the total number of training iterations
 t_data = 0
+
+if opt.rf_path:
+    validator = Validator(opt)
+else:
+    validator = None
 
 print('------------- Beginning Training -------------')
 for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
@@ -58,6 +64,10 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             model.save(save_suffix)
 
         iter_data_time = time.time()
+
+    if opt.rf_path:
+        _, avg_err_rel = validator.get_validation_score(model)
+        visualizer.plot_current_validation_error(sum(avg_err_rel))
 
     visualizer.save_smooth_loss()
 
