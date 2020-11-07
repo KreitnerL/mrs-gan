@@ -34,8 +34,15 @@ def load_from_mat(source_dir, var_name):
     for path in A_paths:
         spectra.append(io.loadmat(path)[var_name])
     spectra = np.concatenate(spectra, axis=0)
+    spectra = normalize(spectra)
     spectra = torch.from_numpy(spectra)
     return spectra
+
+def normalize(spectra):
+    max_per_spectrum = np.amax(abs(spectra),(1,2))
+    max_per_spectrum = np.repeat(max_per_spectrum[:, np.newaxis], spectra.shape[1], axis=1)
+    max_per_spectrum = np.repeat(max_per_spectrum[:, :, np.newaxis], spectra.shape[2], axis=2)
+    return np.divide(spectra, max_per_spectrum)
 
 
 def split_dataset(spectra, save_dir, type):

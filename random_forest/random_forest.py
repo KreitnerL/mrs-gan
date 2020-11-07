@@ -18,11 +18,14 @@ class RandomForest:
     - num_trees: Number of decision trees used in the random forest.
     - labels: List of metabolite names.
     """
-    def __init__(self, num_trees, labels):
+    def __init__(self, num_trees, labels, load_from=None):
         # set random state to 0 for reproducability
         self.num_trees = num_trees
         self.labels = labels
-        self.regressor = RandomForestRegressor(n_estimators=num_trees, random_state=0)
+        if load_from:
+            self.load()
+        else:
+            self.regressor = RandomForestRegressor(n_estimators=num_trees, random_state=0)
 
     def train(self, x, y):
         """
@@ -117,5 +120,5 @@ def train_val(x_train, x_test, y_train, y_test, labels, path, num_trees=100):
     rf.store(path)
     predictions = rf.test(x_test)
     err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
-    max_y = min(max(np.array(avg_err_rel)+0.2),1)
+    max_y = min(max(np.array(avg_err_rel)+0.15),1)
     rf.save_plot(err_rel, path, max_y)

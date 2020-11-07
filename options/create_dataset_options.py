@@ -17,7 +17,7 @@ class CreateDatasetOptions():
         self.parser.add_argument('--name', type=str, default='spectra', help='Name of the dataset')
 
         self.parser.add_argument('--split', type=bool, default=True, help='Split the data into train, validation and test set')
-        self.parser.add_argument('--val_split', type=float, default=0.2, help='Part of dataset that is used for validation')
+        self.parser.add_argument('--val_split', type=float, default=0.1, help='Part of dataset that is used for validation')
         self.parser.add_argument('--test_split', type=float, default=0, help='Part of dataset that is used for testing') 
         self.parser.add_argument('--shuffle_data', action='store_true', help='Select spectra for training / testing randomly')
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
