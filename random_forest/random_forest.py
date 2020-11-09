@@ -84,7 +84,6 @@ class RandomForest:
         for metabolite in range(len(self.labels)):
             err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
-            print('Average Relative Error {0}: {1}\n'.format(self.labels[metabolite], avg_err_rel[metabolite]))
         return err_rel, avg_err_rel
 
     def save_plot(self, err_rel, avg_err_rel, path: str):
@@ -122,4 +121,6 @@ def train_val(x_train, x_test, y_train, y_test, labels, path, num_trees=100):
         rf.store(filepath)
     predictions = rf.test(x_test)
     err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
+    for metabolite in range(len(avg_err_rel)):
+        print('Average Relative Error {0}: {1}'.format(labels[metabolite], avg_err_rel[metabolite]))
     rf.save_plot(err_rel, avg_err_rel, path)

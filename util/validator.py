@@ -4,7 +4,6 @@ import json
 
 from models.cycleGAN import CycleGANModel
 from data.data_loader import CreateDataLoader
-from util.util import progressbar
 from random_forest.random_forest import RandomForest
 
 
@@ -16,6 +15,7 @@ class Validator:
         self.opt = Namespace(**vars(opt))
         self.opt.phase = 'val'
         self.opt.batch_size=1
+        self.opt.AtoB = True
         print('------------ Creating Validation Set ------------')
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options

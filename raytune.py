@@ -63,18 +63,20 @@ def training_function(config):
 # Create HyperBand scheduler and minimize err_rate
 hyperband = HyperBandScheduler(metric="err_rate", mode="min")
 # Specify the search space and maximize err_rate
-hyperopt = HyperOptSearch(metric="err_rate", mode="max")
+hyperopt = HyperOptSearch(metric="err_rate", mode="min")
 
 init_opt = TrainOptions().parse()
 analysis = tune.run(
     training_function,
     config={
-        "dlr": tune.quniform(0.0001, 0.001, 0.0001),
+        # "dlr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
+        # "glr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
+        # "batch_size": tune.choice(list(range(1,100))) 50
     },
-    resources_per_trial={"gpu": 0.3},
-    num_samples=6,
+    resources_per_trial={"gpu": 0.25},
+    num_samples=12,
     scheduler=hyperband,
     search_alg=hyperopt
 )
-print("best config: ", analysis.get_best_config(metric="err_rate", mode="min", scope='last-5-avg'))
+print("best config: ", analysis.get_best_config(metric="err_rate", mode="min"))
 print(analysis.results)

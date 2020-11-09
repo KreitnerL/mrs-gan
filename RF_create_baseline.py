@@ -61,11 +61,11 @@ class BaselineCreator:
 
     def create_baselines(self):
         print('Creating baseline 1: Real to Real')
-        train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'baseline1/R2R')
+        train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'R2R')
         print('Creating baseline 2: Syntethic to Real')
-        train_val(self.synthetic_train, self.real_test, self.synthetic_param_train, self.real_param_test, labels, save_dir+'baseline2/S2R')
+        train_val(self.synthetic_train, self.real_test, self.synthetic_param_train, self.real_param_test, labels, save_dir+'S2R')
         print('Creating baseline 3: Syntethic 2 Syntethic')
-        train_val(self.synthetic_train, self.synthetic_test, self.synthetic_param_train, self.synthetic_param_test, labels, save_dir+'baseline3/S2S')
+        train_val(self.synthetic_train, self.synthetic_test, self.synthetic_param_train, self.synthetic_param_test, labels, save_dir+'S2R')
 
 if __name__ == "__main__":
     b = BaselineCreator()
