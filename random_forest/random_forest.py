@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import time
-import datetime
 from joblib import dump, load
 
 class RandomForest:
@@ -18,11 +17,14 @@ class RandomForest:
     - num_trees: Number of decision trees used in the random forest.
     - labels: List of metabolite names.
     """
-    def __init__(self, num_trees, labels):
+    def __init__(self, num_trees, labels, load_from=None):
         # set random state to 0 for reproducability
         self.num_trees = num_trees
         self.labels = labels
-        self.regressor = RandomForestRegressor(n_estimators=num_trees, random_state=0)
+        if load_from:
+            self.load(load_from)
+        else:
+            self.regressor = RandomForestRegressor(n_estimators=num_trees, random_state=0)
 
     def train(self, x, y):
         """
@@ -38,9 +40,7 @@ class RandomForest:
         print('training completed in {:.3f} sec'.format(time.time()-start))
             
 
-    def store(self, path):
-        filename = 'RF_' + str(datetime.datetime.now()).replace(':','-').replace(' ','_').replace('.','_') + '.joblib'
-        filepath = os.path.join(path, filename)
+    def store(self, filepath):
         print('storing random forest weights at', filepath)
         dump(self.regressor, filepath)
 
@@ -72,7 +72,7 @@ class RandomForest:
         Parameters
         ---------
         - predictions: List of predicted quantifications by the random forest
-        - y: List of quantifications. M x N2, M = number of metabolites, N2 = number of spectra
+        - y: List of quantifications. N2xM, M = number of metabolites, N2 = number of spectra
         
         Returns
         -------
@@ -84,10 +84,9 @@ class RandomForest:
         for metabolite in range(len(self.labels)):
             err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
-            print('Average Relative Error {0}: {1}\n'.format(self.labels[metabolite], avg_err_rel[metabolite]))
         return err_rel, avg_err_rel
 
-    def save_plot(self, err_rel, path: str, max_y = 1):
+    def save_plot(self, err_rel, avg_err_rel, path: str):
         """
         Save a boxplot from the given relative errors.
 
@@ -96,6 +95,7 @@ class RandomForest:
         - err_rel: List of relative errors. M x N2
         - path: directory where the plot should be saved.
         """
+        max_y = min(max(np.array(avg_err_rel)+0.15),1)
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
         else:
@@ -104,18 +104,22 @@ class RandomForest:
         plt.ylabel('Relative Error')
         plt.title('Error per predicted metabolite')
         plt.gca().set_ylim([0,max_y])
-        path = os.path.join(path, 'rel_err_boxplot.png')
+        path = path+'_rel_err_boxplot.png'
         plt.savefig(path, format='png')
         plt.cla()
 
-def train_val(x_train, x_test, y_train, y_test, labels, path, num_trees=100):
+def train_val(x_train, x_test, y_train, y_test, labels, path, load_from = None, num_trees=100):
     """
     Performs training and validation for the given dataset
     """
-    rf = RandomForest(num_trees, labels)
-    rf.train(x_train, y_train)
-    rf.store(path)
+    if load_from and os.path.isfile(load_from):
+        rf = RandomForest(num_trees, labels, load_from)
+    else:
+        rf = RandomForest(num_trees, labels)
+        rf.train(x_train, y_train)
+        rf.store(path+'.joblib')
     predictions = rf.test(x_test)
     err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
-    max_y = min(max(np.array(avg_err_rel)+0.2),1)
-    rf.save_plot(err_rel, path, max_y)
+    for metabolite in range(len(avg_err_rel)):
+        print('Average Relative Error {0}: {1}'.format(labels[metabolite], avg_err_rel[metabolite]))
+    rf.save_plot(err_rel, avg_err_rel, path)

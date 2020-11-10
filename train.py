@@ -1,4 +1,5 @@
 import time
+from util.validator import Validator
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
@@ -20,6 +21,11 @@ visualizer = Visualizer(opt)    # create a visualizer that display/save images a
 total_iters = 0                 # the total number of training iterations
 t_data = 0
 
+if opt.rf_path:
+    validator = Validator(opt)
+else:
+    validator = None
+
 print('------------- Beginning Training -------------')
 for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
     print('>>>>> Epoch: ', epoch)
@@ -36,7 +42,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         total_iters += opt.batch_size
         epoch_iter += opt.batch_size
         model.set_input(data)         # unpack data from dataset and apply preprocessing
-        model.optimize_parameters()
         # Only update critic every n_critic steps
         optimize_gen = not(i % opt.n_critic)
         model.optimize_parameters(optimize_G=optimize_gen)   # calculate loss functions, get gradients, update network weights
@@ -45,7 +50,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             save_result = total_iters % opt.update_html_freq == 0
             visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
-        if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
+        if total_iters % opt.print_freq == 0 and total_iters != opt.print_freq:    # print training losses and save logging information to the disk
             losses = model.get_current_losses()
             t_comp = (time.time() - iter_start_time) / opt.batch_size
             visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data, float(total_iters)/1000)
@@ -59,6 +64,10 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             model.save(save_suffix)
 
         iter_data_time = time.time()
+
+    if opt.rf_path:
+        _, avg_err_rel = validator.get_validation_score(model)
+        visualizer.plot_current_validation_error(sum(avg_err_rel))
 
     visualizer.save_smooth_loss()
 

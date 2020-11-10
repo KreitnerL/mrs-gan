@@ -170,6 +170,24 @@ class Visualizer():
         except VisdomExceptionBase:
             self.create_visdom_connections()
 
+    def plot_current_validation_error(self, error):
+        if not hasattr(self, 'validation_error'):
+            self.validation_error = []
+        self.validation_error.append(error)
+        if not hasattr(self, 'figure2'):
+            self.figure2 = plt.figure()
+        else:
+            plt.figure(self.figure2.number)
+
+        plt.xlabel('epoch')
+        plt.ylabel('Average Relative Validation Error')
+        plt.title(self.name + ' validation error over time')
+        plt.plot(list(range(1, len(self.validation_error)+1)), self.validation_error)
+
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_error.png')
+        plt.savefig(path, format='png')
+        plt.cla()
+
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, iters, losses, t_comp, t_data, iter):
         """print current losses on console; also save the losses to the disk
@@ -208,8 +226,10 @@ class Visualizer():
         x = self.plot_data['X']
         y = np.array(self.plot_data['Y']).transpose()
         for i, loss in enumerate(y):
+            if i>=3:
+                break
             plt.plot(x, loss, label=self.plot_data['legend'][i])
-        # plt.legend()
+        plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
         plt.savefig(path, format='png')
@@ -264,6 +284,8 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
     ims, txts, links = [], [], []
 
     for label, im in visuals.items():
+        if im is None:
+            continue
         image_name = '%s_%s.png' % (name, label)
         save_path = os.path.join(image_dir, image_name)
         util.save_image(im, save_path, aspect_ratio=aspect_ratio)

@@ -12,6 +12,7 @@ import os.path
 import numpy as np
 import scipy.io as io
 import torch
+import json
 from pathlib import Path
 
 from data.image_folder import make_dataset
@@ -20,6 +21,8 @@ from util.util import mkdir
 
 from options.create_dataset_options import CreateDatasetOptions
 opt = CreateDatasetOptions().parse()
+
+labels = ["cho", "naa"]
 
 def load_from_mat(source_dir, var_name):
     """
@@ -34,8 +37,15 @@ def load_from_mat(source_dir, var_name):
     for path in A_paths:
         spectra.append(io.loadmat(path)[var_name])
     spectra = np.concatenate(spectra, axis=0)
+    spectra = normalize(spectra)
     spectra = torch.from_numpy(spectra)
     return spectra
+
+def normalize(spectra):
+    max_per_spectrum = np.amax(abs(spectra),(1,2))
+    max_per_spectrum = np.repeat(max_per_spectrum[:, np.newaxis], spectra.shape[1], axis=1)
+    max_per_spectrum = np.repeat(max_per_spectrum[:, :, np.newaxis], spectra.shape[2], axis=2)
+    return np.divide(spectra, max_per_spectrum)
 
 
 def split_dataset(spectra, save_dir, type):
@@ -75,7 +85,7 @@ def save_dat_file(path, indices, d, spec_length, spectra):
         fp[:] = spectra[indices]
         del fp
 
-def generate_dataset(type, source_dir, var_name):
+def generate_dataset(type, source_dir, var_name, save_dir):
     """
     This function creates the dataset hirachy wich will later be used by the dataloader. 
     For domain A and domain B, it expects a matlab file containg all spectra in the form of [N x D x L]
@@ -90,11 +100,29 @@ def generate_dataset(type, source_dir, var_name):
             val_B.dat
     """
     spectra = load_from_mat(source_dir, var_name)
-    split_dataset(spectra, opt.save_dir, type)
+    split_dataset(spectra, save_dir, type)
 
+def generate_labels(source_dir, labels, save_dir, val_split, test_split):
+    """
+    This function generates the labels for the validation of the target domain.
+    """
+    train_split = (1-val_split-test_split)
+    params = io.loadmat(source_dir)
+    labels_dict = dict()
+    for label in labels:
+        p = np.squeeze(params[label])
+        num_train = int(train_split*len(p))
+        num_val = int(val_split*len(p))
+        p = p[num_train : num_train+num_val]
+        labels_dict[label] = p.tolist()
+    with open(save_dir+'/labels.dat', 'w') as file:
+        json.dump(labels_dict, file)
 
 print('Generating dataset A...')
-generate_dataset('A', opt.source_path_A, opt.A_mat_var_name)
+generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.save_dir)
 print('Generating dataset B...')
-generate_dataset('B', opt.source_path_B, opt.B_mat_var_name)
-print('Done! You can find you dataset at', opt.save_dir + '/' + opt.name + '/')
+generate_dataset('B', opt.source_path_B, opt.B_mat_var_name, opt.save_dir)
+if len(opt.source_path_target_labels):
+    print('Generating labels...')
+    generate_labels(opt.source_path_target_labels, labels, opt.save_dir+opt.name, opt.val_split, opt.test_split)
+print('Done! You can find you dataset at', opt.save_dir + opt.name + '/')

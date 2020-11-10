@@ -159,7 +159,7 @@ def smooth(x, window_len=11, window='hanning'):
         if window == 'flat': #moving average
             w=np.ones(window_len,'d')
         else:
-            w=eval('numpy.'+window+'(window_len)')
+            w=eval('np.'+window+'(window_len)')
 
         y=np.convolve(w/w.sum(),s,mode='valid')
         return y
@@ -188,6 +188,8 @@ def load_loss_from_file(opt, path):
                     legend.append(t.replace(':', ''))
         y.append(y_i)
         has_legend=True
+    y.pop(0)
+    x = [*np.array(range(len(y)))/10000]
 
-    return {'X': np.array(range(len(y)))/10000, 'Y': y, 'legend': legend}
+    return {'X': x, 'Y': y, 'legend': legend}
 

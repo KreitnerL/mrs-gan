@@ -7,3 +7,5 @@ matplotlib
 visdom
 dominate
 opencv-python
+ray[tune]
+hyperopt

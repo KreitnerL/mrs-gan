@@ -78,7 +78,7 @@ class DicomSpectralDataset(BaseDataset):
             }
 
     def __len__(self):
-        if self.opt.phase is not 'val':
+        if self.opt.phase != 'val':
             return max(self.A_size, self.B_size) # Determines the length of the dataloader
         else:
             return self.size
