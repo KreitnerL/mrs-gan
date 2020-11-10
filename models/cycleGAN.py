@@ -251,9 +251,9 @@ class CycleGANModel(BaseModel):
         self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
         self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
 
-    def get_fake(self, A=False):
-        if A:
-            return self.fake_A
-        else:
+    def get_fake(self):
+        if self.opt.AtoB:
             return self.fake_B
+        else:
+            return self.fake_A
 

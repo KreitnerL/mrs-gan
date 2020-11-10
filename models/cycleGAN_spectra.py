@@ -25,20 +25,17 @@ class CycleGAN_spectra(CycleGANModel):
         super().__init__(opt, 1)
 
     def get_current_visuals(self):
-        x = list(range(self.real_A.size()[-1]))
-        tmp = self.real_A[0:1]
-        real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
-        fake_B = util.get_img_from_fig(x, self.fake_B[0:1].data, 'PPM')
-        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')
-        real_B = util.get_img_from_fig(x, self.real_B[0:1].data, 'PPM')
-        fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM')
-        rec_B = util.get_img_from_fig(x, self.rec_B[0:1].data, 'PPM')
+        real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
+        if hasattr(self, 'real_A'):
+            x = list(range(self.real_A.size()[-1]))
+            real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
+            fake_B = util.get_img_from_fig(x, self.fake_B[0:1].data, 'PPM')
+            rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')
+        if hasattr(self, 'real_B'):
+            x = list(range(self.real_B.size()[-1]))
+            real_B = util.get_img_from_fig(x, self.real_B[0:1].data, 'PPM')
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM')
+            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].data, 'PPM')
 
-        if self.opt.identity > 0.0:
-            idt_A = util.get_img_from_fig(x, self.idt_A[0:1].data, 'PPM')
-            idt_B = util.get_img_from_fig(x, self.idt_B[0:1].data, 'PPM')
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A), ('idt_B', idt_B),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B), ('idt_A', idt_A)])
-        else:
-            return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
-                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+        return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
+                            ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
