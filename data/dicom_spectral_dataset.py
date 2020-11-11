@@ -23,6 +23,8 @@ class DicomSpectralDataset(BaseDataset):
 
         if self.opt.phase == 'val':
             return self.init_val(opt)
+        if self.opt.phase == 'test':
+            self.opt.phase = 'val'
 
         self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
         self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
@@ -39,6 +41,8 @@ class DicomSpectralDataset(BaseDataset):
         self.sampler_A = np.memmap(path_A, dtype='double', mode='r', shape=(self.A_size,sizes_A[4],sizes_A[3]))
         self.sampler_B = np.memmap(path_B, dtype='double', mode='r', shape=(self.B_size,sizes_B[4],sizes_B[3]))
         self.counter=0
+        if self.opt.phase == 'val':
+            self.opt.phase = 'test'
         print('Dataset sampler loaded')
 
     def init_val(self, opt):

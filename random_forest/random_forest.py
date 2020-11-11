@@ -107,17 +107,21 @@ class RandomForest:
         path = path+'_rel_err_boxplot.png'
         plt.savefig(path, format='png')
         plt.cla()
+        print('Saved error plot at', path)
 
-def train_val(x_train, x_test, y_train, y_test, labels, path, load_from = None, num_trees=100):
+def train_val(x_train, x_test, y_train, y_test, labels, path, rf_path = None, num_trees=100):
     """
     Performs training and validation for the given dataset
     """
-    if load_from and os.path.isfile(load_from):
-        rf = RandomForest(num_trees, labels, load_from)
+    if rf_path and os.path.isfile(rf_path):
+        rf = RandomForest(num_trees, labels, rf_path)
     else:
         rf = RandomForest(num_trees, labels)
         rf.train(x_train, y_train)
-        rf.store(path+'.joblib')
+        if rf_path:
+            rf.store(rf_path)
+        else:
+            rf.store(path+'.joblib')
     predictions = rf.test(x_test)
     err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
     for metabolite in range(len(avg_err_rel)):

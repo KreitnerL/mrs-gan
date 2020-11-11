@@ -1,21 +1,27 @@
 """
 Run this file to create a baseline for the performance of the random forest.
 The program will test:
-    - Train on target, test of target
-    - Train on source, test on target
-    - Train on source, test on source
+    - Train on real, test of real
+    - Train on ideal, test on real
+    - Train on ideal, test on ideal
 """
 import scipy.io as io
 from random_forest.random_forest import train_val
 import numpy as np
 
 
-source_path = '/home/kreitnerl/Datasets/updated_dataset/dataset_magnitude.mat'
-source_parameter_path = '/home/kreitnerl/Datasets/updated_dataset/dataset_quantities.mat'
-source_var_name = 'mag'
-target_path = '/home/kreitnerl/Datasets/second_distribution_dataset/dataset_magnitude.mat'
-target_parameter_path = '/home/kreitnerl/Datasets/second_distribution_dataset/dataset_quantities.mat'
-target_var_name = 'mag'
+ideal_path = '/home/kreitnerl/Datasets/paired_samples/datasetpair_magnitude.mat'
+ideal_parameter_path = '/home/kreitnerl/Datasets/paired_samples/datasetpair_quantities.mat'
+ideal_var_name = 'mag'
+real_path = '/home/kreitnerl/Datasets/paired_samples/dataset_magnitude.mat'
+real_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
+real_var_name = 'mag'
+fakes_path = '/home/kreitnerl/mrs-gan/results/spectra_cyclegan_4/fakes.mat'
+fakes_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
+fakes_var_name = 'spectra'
+fakes_parameter_offset = 0.1
+
+
 save_dir = './results/'
 
 labels = ["cho", "naa"]
@@ -30,6 +36,8 @@ def normalize(spectra):
 def load_dataset(path, var_name, param_path):
     print('load spectra from:', path)
     data = np.array(io.loadmat(path)[var_name])
+    if data.ndim == 2:
+        data = np.expand_dims(data, 1)
     data = normalize(data).squeeze()
     
     print('load parameters from:', param_path)
@@ -38,36 +46,47 @@ def load_dataset(path, var_name, param_path):
         params.append(np.array(io.loadmat(param_path)[label]).squeeze())
     return data, np.transpose(params)
 
-
 class BaselineCreator:
     def __init__(self):
-        
-        target, target_params = load_dataset(target_path, target_var_name, target_parameter_path)
-        num_test_target = int(val_split * len(target))
-        num_train_target = len(target) - num_test_target
-        self.target_train = np.array([target[i] for i in range(num_train_target)])
-        self.target_param_train = np.array([target_params[i] for i in range(num_train_target)])
-        self.target_test = np.array([target[i] for i in range(num_train_target, num_train_target+num_test_target)])
-        self.target_param_test = np.array([target_params[i] for i in range(num_train_target, num_train_target+num_test_target)])
+        ideal, ideal_params = load_dataset(ideal_path, ideal_var_name, ideal_parameter_path)
+        num_test_ideal = round(val_split * len(ideal))
+        num_train_ideal = len(ideal) - num_test_ideal
+        self.ideal_train = np.array([ideal[i] for i in range(num_train_ideal)])
+        self.ideal_param_train = np.array([ideal_params[i] for i in range(num_train_ideal)])
+        self.ideal_test = np.array([ideal[i] for i in range(num_train_ideal, num_train_ideal+num_test_ideal)])
+        self.ideal_param_test = np.array([ideal_params[i] for i in range(num_train_ideal, num_train_ideal+num_test_ideal)])
 
-        source, source_params = load_dataset(source_path, source_var_name, source_parameter_path)
-        num_test_syn = int(val_split * len(source))
-        num_train_syn = len(source) - num_test_syn
-        self.source_train = np.array([source[i] for i in range(num_train_syn)])
-        self.source_param_train = np.array([source_params[i] for i in range(num_train_syn)])
-        self.source_test = np.array([source[i] for i in range(num_train_syn, num_train_syn+num_test_syn)])
-        self.source_param_test = np.array([source_params[i] for i in range(num_train_syn, num_train_syn+num_test_syn)])
-
+        real, real_params = load_dataset(real_path, real_var_name, real_parameter_path)
+        num_test_real = round(val_split * len(real))
+        num_train_real = len(real) - num_test_real
+        self.real_train = np.array([real[i] for i in range(num_train_real)])
+        self.real_param_train = np.array([real_params[i] for i in range(num_train_real)])
+        self.real_test = np.array([real[i] for i in range(num_train_real, num_train_real+num_test_real)])
+        self.real_param_test = np.array([real_params[i] for i in range(num_train_real, num_train_real+num_test_real)])
 
     def create_baselines(self):
-        print('Creating baseline 1: target to target')
-        train_val(self.target_train, self.target_test, self.target_param_train, self.target_param_test, labels, save_dir+'T2T', save_dir+'T2T.joblib')
-        print('Creating baseline 2: source to target')
-        train_val(self.source_train, self.target_test, self.source_param_train, self.target_param_test, labels, save_dir+'S2T', save_dir+'S2T.joblib')
-        print('Creating baseline 3: source to source')
-        train_val(self.source_train, self.source_test, self.source_param_train, self.source_param_test, labels, save_dir+'S2S', save_dir+'S2T.joblib')
+        print('Creating baseline 1: real to real')
+        train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'R2R', save_dir+'R.joblib')
+
+        print('Creating baseline 2: ideal to real')
+        train_val(self.ideal_train, self.real_test, self.ideal_param_train, self.real_param_test, labels, save_dir+'I2R', save_dir+'I.joblib')
+
+        print('Creating baseline 3: ideal to ideal')
+        train_val(self.ideal_train, self.ideal_test, self.ideal_param_train, self.ideal_param_test, labels, save_dir+'I2I', save_dir+'I.joblib')
+
+class Tester():
+    def __init__(self):
+        self.fakes, self.fake_params = load_dataset(fakes_path, fakes_var_name, fakes_parameter_path)
+        offset = round(fakes_parameter_offset*len(self.fake_params))
+        self.fake_params = np.array([self.fake_params[i] for i in range(offset, offset+len(self.fakes))])
+
+    def test(self):
+        print('Testing pretrained RF on fakes...')
+        train_val(None, self.fakes, None, self.fake_params, labels, save_dir+'fake', save_dir+'I.joblib')
 
 if __name__ == "__main__":
-    b = BaselineCreator()
-    b.create_baselines()
+    # b = BaselineCreator()
+    # b.create_baselines()
+    t = Tester()
+    t.test()
 

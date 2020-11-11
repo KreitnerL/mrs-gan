@@ -106,13 +106,13 @@ def generate_labels(source_dir, labels, save_dir, val_split, test_split):
     """
     This function generates the labels for the validation of the target domain.
     """
-    train_split = (1-val_split-test_split)
+    train_split = 1-val_split-test_split
     params = io.loadmat(source_dir)
     labels_dict = dict()
     for label in labels:
         p = np.squeeze(params[label])
-        num_train = int(train_split*len(p))
-        num_val = int(val_split*len(p))
+        num_train = round(train_split*len(p))
+        num_val = round(val_split*len(p))
         p = p[num_train : num_train+num_val]
         labels_dict[label] = p.tolist()
     with open(save_dir+'/labels.dat', 'w') as file:

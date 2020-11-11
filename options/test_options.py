@@ -9,7 +9,7 @@ class TestOptions(BaseOptions):
         BaseOptions.initialize(self)
         self.parser.add_argument('--results_dir', type=str, default='./results/', help='saves results here.')
         self.parser.add_argument('--aspect_ratio', type=float, default=1.0, help='aspect ratio of result images')
-        self.parser.add_argument('--phase', type=str, default='val', help='train, val, test, etc')
+        self.parser.add_argument('--phase', type=str, default='test', help='train, val, test, etc')
         self.parser.add_argument('--epoch_count', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
         self.parser.add_argument('--num_test', type=int, default=50, help='how many test images to run')
         # visdom and HTML visualization parameters

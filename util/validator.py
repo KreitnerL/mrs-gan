@@ -27,6 +27,8 @@ class Validator:
             params:dict = json.load(file)
             self.labels = list(params.keys())
             self.y_test =  np.transpose(np.array([params[k] for k in params]))
+            num_test = min(self.dataset_size, self.opt.num_test)
+            self.y_test = self.y_test[:num_test]
         self.rf = RandomForest(num_trees=100, labels= self.labels, load_from=self.opt.rf_path)
 
     def get_validation_score(self, model: CycleGANModel):
@@ -43,9 +45,9 @@ class Validator:
             - The average relative error per metabolite. (M) with M=number of metabolites
         """
         fakes = []
-        num_test = min(self.dataset_size, self.opt.num_test)
+       
         for i, data in enumerate(self.dataset):
-            if i>=num_test:
+            if i>=len(self.y_test):
                 break
             model.set_input(data)  # unpack data from data loader
             model.test()           # run inference
@@ -53,5 +55,5 @@ class Validator:
         fakes = np.squeeze(np.array(fakes))
 
         predictions = self.rf.test(fakes)
-        err_rel, avg_err_rel = self.rf.compute_error(predictions, self.y_test[:num_test])
+        err_rel, avg_err_rel = self.rf.compute_error(predictions, self.y_test)
         return err_rel, avg_err_rel

@@ -215,7 +215,6 @@ class Visualizer():
     def save_current_losses(self):
         """Stores the current loss as a png image.
         """
-        self.saved_loss = True
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
         else:
@@ -242,7 +241,6 @@ class Visualizer():
         if num_points < 45:
             return
 
-        self.saved_loss = True
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
         else:
