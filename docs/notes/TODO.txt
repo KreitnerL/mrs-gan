@@ -18,11 +18,10 @@ Done:
 - Improve dicom2matlab code
 - Fix loss
 
+- Create Paired Dataset for validation only!
+- Entropy Loss
+- Create baselines with paired dataset
+
 TODO:
 - Add Perceptual Feature Loss
-- Entropy Loss
 - Update README
-
-
-- Create Paired Dataset for validation only!
-- Create baselines with paired dataset

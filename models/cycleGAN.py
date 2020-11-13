@@ -1,3 +1,4 @@
+from models.EntropyProfileLoss import EntropyProfileLoss
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -50,13 +51,14 @@ class CycleGANModel(BaseModel):
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids)
 
-        print('---------- Networks initialized -------------')
-        define.print_network(self.netG_A)
-        define.print_network(self.netG_B)
-        if self.isTrain:
-            define.print_network(self.netD_A)
-            define.print_network(self.netD_B)
-        print('-----------------------------------------------')
+        if not self.opt.quiet:
+            print('---------- Networks initialized -------------')
+            define.print_network(self.netG_A)
+            define.print_network(self.netG_B)
+            if self.isTrain:
+                define.print_network(self.netD_A)
+                define.print_network(self.netD_B)
+            print('-----------------------------------------------')
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -74,6 +76,7 @@ class CycleGANModel(BaseModel):
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
+            self.criterionEntropy = EntropyProfileLoss(gpu_ids=opt.gpu_ids)
             # initialize optimizers
             if not opt.TTUR:
                 self.opt.glr = opt.lr
@@ -90,6 +93,7 @@ class CycleGANModel(BaseModel):
             self.lambda_idt = self.opt.identity
             self.lambda_A = self.opt.lambda_A
             self.lambda_B = self.opt.lambda_B
+            self.lambda_entropy = self.opt.lambda_entropy
 
     def init_optimizers(self, opt):
         """
@@ -190,9 +194,16 @@ class CycleGANModel(BaseModel):
         self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
         # Backward cycle loss
         self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
+        # Entropy loss
+        if self.lambda_entropy != 0:
+            self.loss_entropy_A: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_A, self.real_A)
+            self.loss_entropy_B: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_B, self.real_B)
+        else:
+            self.loss_entropy_A = self.loss_entropy_B = 0
+
 
         # combined loss
-        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
+        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_entropy_A + self.loss_entropy_B
         self.loss_G.backward()
 
     def calculate_identity_loss(self):

@@ -60,9 +60,7 @@ class RandomForest:
         -------
         prediction : The predicted values. N2 x M
         """
-        start = time.time()
         prediction =  self.regressor.predict(x)
-        print('prediction of', len(x), 'samples completed in {:.3f} sec'.format(time.time()-start))
         return np.array(prediction)
 
     def compute_error(self, predictions: list, y):
