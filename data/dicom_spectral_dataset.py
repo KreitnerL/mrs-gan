@@ -43,7 +43,6 @@ class DicomSpectralDataset(BaseDataset):
         self.counter=0
         if self.opt.phase == 'val':
             self.opt.phase = 'test'
-        print('Dataset sampler loaded')
 
     def init_val(self, opt):
         self.letter = 'A' if opt.AtoB else 'B'
@@ -54,7 +53,6 @@ class DicomSpectralDataset(BaseDataset):
         self.size = sizes[index[self.opt.phase]]
         self.sampler = np.memmap(path, dtype='double', mode='r', shape=(self.size,sizes[4],sizes[3]))
         self.counter=0
-        print('Dataset sampler loaded')
 
     def __getitem__(self, index):
         # 'Generates one sample of data'

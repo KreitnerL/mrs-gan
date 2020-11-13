@@ -29,10 +29,9 @@ print('------------ Creating Test Set ------------')
 data_loader = CreateDataLoader(opt)     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
-print('#test spectra = %d' % dataset_size)
-print('#test batches = %d' % len(dataset))
+print('test spectra = %d' % dataset_size)
+print('test batches = %d' % len(dataset))
 
-print('--------------- Creating Model ---------------')
 model = create_model(opt)      # create a model given opt.model and other options
 
 
@@ -46,9 +45,9 @@ for data in progressbar(dataset, num_iters = opt.num_test):
     model.set_input(data)  # unpack data from data loader
     model.test()           # run inference
     fakes.append(model.get_fake().detach().squeeze(dim=0).cpu().numpy())
-    visuals = model.get_current_visuals()  # get image results
-    image_paths = model.get_image_paths()
-    save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
+    # visuals = model.get_current_visuals()  # get image results
+    # image_paths = model.get_image_paths()
+    # save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
 fakes = np.squeeze(np.array(fakes))
 io.savemat(opt.results_dir + opt.name + '/fakes.mat', {"spectra": fakes})
-webpage.save()  # save the HTML
+# webpage.save()  # save the HTML

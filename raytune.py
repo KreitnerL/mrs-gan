@@ -31,10 +31,9 @@ def training_function(config):
     data_loader = CreateDataLoader(opt)     # get training options
     dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
     dataset_size = len(data_loader)         # get the number of samples in the dataset., 
-    print('#training spectra = %d' % dataset_size)
-    print('#training batches = %d' % len(dataset))
+    print('training spectra = %d' % dataset_size)
+    print('training batches = %d' % len(dataset))
 
-    print('--------------- Creating Model ---------------')
     model = create_model(opt)       # create a model given opt.model and other options
 
     validator = Validator(opt)

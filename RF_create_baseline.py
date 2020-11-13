@@ -10,13 +10,13 @@ from random_forest.random_forest import train_val
 import numpy as np
 
 
-ideal_path = '/home/kreitnerl/Datasets/paired_samples/datasetpair_magnitude.mat'
-ideal_parameter_path = '/home/kreitnerl/Datasets/paired_samples/datasetpair_quantities.mat'
+ideal_path = '/home/kreitnerl/Datasets/paired_samples/dataset_ideal_magnitude.mat'
+ideal_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_ideal_quantities.mat'
 ideal_var_name = 'mag'
 real_path = '/home/kreitnerl/Datasets/paired_samples/dataset_magnitude.mat'
 real_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
 real_var_name = 'mag'
-fakes_path = '/home/kreitnerl/mrs-gan/results/spectra_cyclegan_4/fakes.mat'
+fakes_path = '/home/kreitnerl/mrs-gan/results/spec_cyc_entropy/fakes.mat'
 fakes_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
 fakes_var_name = 'spectra'
 fakes_parameter_offset = 0.1

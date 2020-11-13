@@ -11,10 +11,9 @@ print('------------ Creating Training Set ------------')
 data_loader = CreateDataLoader(opt)     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
-print('#training spectra = %d' % dataset_size)
-print('#training batches = %d' % len(dataset))
+print('training spectra = %d' % dataset_size)
+print('training batches = %d' % len(dataset))
 
-print('--------------- Creating Model ---------------')
 model = create_model(opt)       # create a model given opt.model and other options
 visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
 
@@ -46,7 +45,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         optimize_gen = not(i % opt.n_critic)
         model.optimize_parameters(optimize_G=optimize_gen)   # calculate loss functions, get gradients, update network weights
 
-        if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
+        if opt.display_id > 0 and total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
             save_result = total_iters % opt.update_html_freq == 0
             visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
@@ -54,22 +53,24 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             losses = model.get_current_losses()
             t_comp = (time.time() - iter_start_time) / opt.batch_size
             visualizer.print_current_losses(epoch, epoch_iter, losses, t_comp, t_data, float(total_iters)/1000)
+            
+        if total_iters % opt.plot_freq == 0:
             if opt.display_id > 0:
                 visualizer.plot_current_losses()
             visualizer.save_current_losses()
 
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
+            if opt.rf_path:
+                _, avg_err_rel = validator.get_validation_score(model)
+                visualizer.plot_current_validation_error(sum(avg_err_rel))
             print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
             save_suffix = 'iter_%d' % total_iters if opt.save_by_iter else 'latest'
             model.save(save_suffix)
 
         iter_data_time = time.time()
 
-    if opt.rf_path:
-        _, avg_err_rel = validator.get_validation_score(model)
-        visualizer.plot_current_validation_error(sum(avg_err_rel))
-
     visualizer.save_smooth_loss()
+    visualizer.display_current_results(model.get_current_visuals(), epoch, True)
 
     model.update_learning_rate()    # update learning rates in the end of every epoch.
 
@@ -80,3 +81,8 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
+
+if opt.rf_path:
+    _, avg_err_rel = validator.get_validation_score(model)
+    visualizer.plot_current_validation_error(sum(avg_err_rel))
+model.save('latest')

@@ -1,7 +1,6 @@
 
 def create_model(opt):
     model = None
-    print(opt.model)
     if opt.model == 'cycleGAN_PFL':
         assert(opt.dataset_mode == 'unaligned')
         from .cycleGAN_PFL import CycleGAN_PFL

@@ -17,12 +17,13 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
         self.parser.add_argument('--update_html_freq', type=int, default=1000, help='frequency of saving training results to html')
         self.parser.add_argument('--print_freq', type=int, default=100, help='frequency of showing training results on console')
+        self.parser.add_argument('--plot_freq', type=int, default=1000, help="number of iterations between plotting")
         self.parser.add_argument('--no_html', action='store_true', help='do not save intermediate training results to [opt.checkpoints_dir]/[opt.name]/web/')
         self.parser.add_argument('--rf_path', type=str, default=None, help='File path to the pretrained random forest dump.')
         self.parser.add_argument('--num_test', type=int, default=float("inf"), help='how many test images to run')
 
         # network saving and loading parameters
-        self.parser.add_argument('--save_latest_freq', type=int, default=5000, help='frequency of saving the latest results')
+        self.parser.add_argument('--save_latest_freq', type=int, default=20000, help='frequency of saving the latest results')
         self.parser.add_argument('--save_epoch_freq', type=int, default=5, help='frequency of saving checkpoints at the end of epochs')
         self.parser.add_argument('--save_by_iter', action='store_true', help='whether saves model by iteration')
         self.parser.add_argument('--continue_train', action='store_true', help='continue training: load the latest model')
@@ -59,6 +60,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lambda_feat_fBrecA', type=float, default=0, help='weight for perception loss between fake B and reconstructed A ')
         self.parser.add_argument('--lambda_feat_ArecA', type=float, default=0, help='weight for perception loss between real A and reconstructed A ')
         self.parser.add_argument('--lambda_feat_BrecB', type=float, default=0, help='weight for perception loss between real B and reconstruced B ')
+        self.parser.add_argument('--lambda_entropy', type=float, default=0, help='weight for entropy loss')
 
         
         self.isTrain = True
