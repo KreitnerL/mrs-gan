@@ -85,12 +85,13 @@ class BaseOptions():
             print('-------------- End ----------------')
 
         # save to the disk
-        expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
-        util.mkdirs(expr_dir)
-        file_name = os.path.join(expr_dir, 'opt.txt')
-        with open(file_name, 'wt') as opt_file:
-            opt_file.write('------------ Options -------------\n')
-            for k, v in sorted(args.items()):
-                opt_file.write('%s: %s\n' % (str(k), str(v)))
-            opt_file.write('-------------- End ----------------\n')
+        if self.opt.isTrain:
+            expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
+            util.mkdirs(expr_dir)
+            file_name = os.path.join(expr_dir, 'opt.txt')
+            with open(file_name, 'wt') as opt_file:
+                opt_file.write('------------ Options -------------\n')
+                for k, v in sorted(args.items()):
+                    opt_file.write('%s: %s\n' % (str(k), str(v)))
+                opt_file.write('-------------- End ----------------\n')
         return self.opt

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision
-from models.spectral_normalization import SpectralNorm
+from torch.nn.utils import spectral_norm
 
 import math
 import functools
@@ -75,9 +75,6 @@ def get_norm_layer(norm_type='instance'):
 ##############################################################################
 # Classes
 ##############################################################################
-
-# TODO Add Wasserstein Loss
-
 # Defines the GAN loss which uses either LSGAN or the regular GAN.
 # When LSGAN is used, it is basically same as MSELoss,
 # but it abstracts away the need to create the target label tensor
@@ -403,7 +400,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
         # Simultaniously upscale Feature dimension C to 2**_n_layers 
         for _ in range(n_layers):
             self.sequence.extend([
-                SpectralNorm(get_conv()(c_in, c_out,
+                spectral_norm(get_conv()(c_in, c_out,
                           kernel_size=kernel_size, stride=stride, padding=padding)),
                 nn.LeakyReLU(0.2, True)
             ])
@@ -411,9 +408,9 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
             c_out *= 2
 
         self.sequence.extend([
-            SpectralNorm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
+            spectral_norm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
             Flatten(),
-            SpectralNorm(nn.Linear(int(1024 / (2**(n_layers+1))), 1))
+            spectral_norm(nn.Linear(int(1024 / (2**(n_layers+1))), 1))
         ])
 
     def forward(self, input):

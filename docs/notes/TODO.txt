@@ -21,7 +21,12 @@ Done:
 - Create Paired Dataset for validation only!
 - Entropy Loss
 - Create baselines with paired dataset
+- Fix loss plots 
+- Create Dataset without noise
 
 TODO:
+- Train with lr=0.0001
+- Try TTUR with 0.0003 & 0.00002
+
 - Add Perceptual Feature Loss
 - Update README

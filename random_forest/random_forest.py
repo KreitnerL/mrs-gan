@@ -98,7 +98,7 @@ class RandomForest:
             self.figure = plt.figure()
         else:
             plt.figure(self.figure.number)
-        plt.boxplot(err_rel, notch = True, labels=self.labels)
+        plt.boxplot(err_rel, notch = True, labels=self.labels, showmeans=True, meanline=True)
         plt.ylabel('Relative Error')
         plt.title('Error per predicted metabolite')
         plt.gca().set_ylim([0,max_y])

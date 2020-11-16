@@ -4,7 +4,6 @@ from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 from ray import tune
-import hyperopt as hp
 from ray.tune.schedulers import HyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
 
