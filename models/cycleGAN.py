@@ -90,7 +90,7 @@ class CycleGANModel(BaseModel):
             self.init_optimizers(opt)
 
             # Set loss weights
-            self.lambda_idt = self.opt.identity
+            self.lambda_idt = self.opt.lambda_identity
             self.lambda_A = self.opt.lambda_A
             self.lambda_B = self.opt.lambda_B
             self.lambda_entropy = self.opt.lambda_entropy
@@ -243,11 +243,11 @@ class CycleGANModel(BaseModel):
         G_B = self.loss_G_B.data
         Cyc_B = self.loss_cycle_B.data
         G = self.loss_G
-        if self.opt.identity > 0.0:
+        if self.opt.lambda_identity > 0.0:
             idt_A = self.loss_idt_A.data
             idt_B = self.loss_idt_B.data
-            return OrderedDict([('D_A', D_A), ('G_A', G_A), ('Cyc_A', Cyc_A), ('idt_A', idt_A),
-                                ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B), ('idt_B', idt_B)])
+            return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G), ('G_A', G_A), ('G_B', G_B), 
+                                ('Cyc_B', Cyc_B), ('Cyc_A', Cyc_A), ('idt_A', idt_A), ('idt_B', idt_B)])
         else:
             return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G),
                                 ('G_A', G_A), ('G_B', G_B), ('Cyc_A', Cyc_A), ('Cyc_B', Cyc_B), ])

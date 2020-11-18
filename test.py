@@ -21,7 +21,6 @@ opt = TestOptions().parse()  # get test options
 # hard-code some parameters for test
 opt.num_threads = 0   # test code only supports num_threads = 1
 opt.batch_size = 1    # test code only supports batch_size = 1
-# opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 
 
@@ -45,9 +44,9 @@ for data in progressbar(dataset, num_iters = opt.num_test):
     model.set_input(data)  # unpack data from data loader
     model.test()           # run inference
     fakes.append(model.get_fake().detach().squeeze(dim=0).cpu().numpy())
-    # visuals = model.get_current_visuals()  # get image results
-    # image_paths = model.get_image_paths()
-    # save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
+    visuals = model.get_current_visuals()  # get image results
+    image_paths = model.get_image_paths()
+    save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
 fakes = np.squeeze(np.array(fakes))
 io.savemat(opt.results_dir + opt.name + '/fakes.mat', {"spectra": fakes})
-# webpage.save()  # save the HTML
+webpage.save()  # save the HTML

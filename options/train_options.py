@@ -52,7 +52,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--gan_mode', type=str, default='vanilla', help='type of GAN loss [vanilla | lsgan | wgangp]')
         self.parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')
         self.parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
-        self.parser.add_argument('--identity', type=float, default=0.0, help='use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1')
+        self.parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1')
         self.parser.add_argument('--lambda_feat', type=float, default=0, help='weight for perception loss (overwrite all)')
         self.parser.add_argument('--lambda_feat_AfB', type=float, default=0, help='weight for perception loss between real A and fake B ')
         self.parser.add_argument('--lambda_feat_BfA', type=float, default=0, help='weight for perception loss between real B and fake A ')
