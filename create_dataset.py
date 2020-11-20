@@ -122,7 +122,7 @@ print('Generating dataset A...')
 generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.save_dir)
 print('Generating dataset B...')
 generate_dataset('B', opt.source_path_B, opt.B_mat_var_name, opt.save_dir)
-if len(opt.source_path_target_labels):
+if len(opt.source_path_target_labels) and opt.val_split>0:
     print('Generating labels...')
     generate_labels(opt.source_path_target_labels, labels, opt.save_dir+opt.name, opt.val_split, opt.test_split)
 print('Done! You can find you dataset at', opt.save_dir + opt.name + '/')

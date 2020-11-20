@@ -83,5 +83,5 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
 if opt.rf_path:
     _, avg_err_rel = validator.get_validation_score(model)
-    visualizer.plot_current_validation_error(sum(avg_err_rel))
+    visualizer.plot_current_validation_error(sum(avg_err_rel), total_iters)
 model.save('latest')

@@ -21,8 +21,8 @@ class Validator:
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
-        print('test spectra = %d' % self.dataset_size)
-        print('test batches = %d' % len(self.dataset))
+        print('val spectra = %d' % self.dataset_size)
+        print('val batches = %d' % len(self.dataset))
 
         label_path = self.opt.dataroot + '/labels.dat'
         with open(label_path, 'r') as file:

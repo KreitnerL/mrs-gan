@@ -23,10 +23,26 @@ Done:
 - Create baselines with paired dataset
 - Fix loss plots 
 - Create Dataset without noise
+- Update README
+- Switch to simple dataset
+- Only use small kernels for entropy loss (2,3,4)
+- Test entropy loss + identity loss
 
 TODO:
-- Train with lr=0.0001
-- Try TTUR with 0.0003 & 0.00002
 
-- Add Perceptual Feature Loss
-- Update README
+Crop range to 300-800
+
+- USCF:
+- Use cre map for selection of voxels
+- Throw away cre=0 (outliers)
+- Calculate cho/cre and NAA/cre
+- Compare Datadsitributions (also across patients)
+- Use new borders for synthetic data generation
+- For RF:
+    - crop ranges of spectra to only include peaks
+    - Use pearson coefficient for validation metric
+    
+docs:
+- Refine network architecture image
+- Update READMEs
+- Add UCSF description

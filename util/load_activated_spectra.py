@@ -43,8 +43,9 @@ def get_activated_indices(metabolic_map_path):
     # Most of the voxels are not activated. They contain the a fix baseline value
     baseline = np.bincount(metabolic_map_flat).argmax()
     # Get the index of all activated voxels
-    activated_indices = [i for i, val in enumerate(metabolic_map_flat) if val != baseline]
-    return activated_indices, shape
+    activated_indices = [i for i, val in enumerate(metabolic_map_flat) if val != baseline and val!=0]
+    relativator_values = np.array([val for i,val in enumerate(metabolic_map_flat) if i in activated_indices])
+    return activated_indices, shape, relativator_values
 
 
 def get_activated_spectra(spectra_path, activated_index, shape):
@@ -109,7 +110,7 @@ def get_activated_spectra(spectra_path, activated_index, shape):
 
     return data_real, data_imag
 
-def get_activated_metabolite_values(metabolic_map_path, activated_index, shape):
+def get_activated_metabolite_values(metabolic_map_path, activated_index, shape, relativator_values):
     """
     Extracts the activated metabolite quantities from a given dicom file.
 
@@ -133,4 +134,7 @@ def get_activated_metabolite_values(metabolic_map_path, activated_index, shape):
     
     metabolic_map = np.flip(np.flip(data, 1), 2)
     metabolic_map_flat = metabolic_map.flatten()
-    return np.array([val for i,val in enumerate(metabolic_map_flat) if i in activated_index])
+    absolute_quantities = np.array([val for i,val in enumerate(metabolic_map_flat) if i in activated_index])
+    relative_quantities = absolute_quantities/relativator_values
+
+    return relative_quantities

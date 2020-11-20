@@ -76,7 +76,7 @@ class CycleGANModel(BaseModel):
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
-            self.criterionEntropy = EntropyProfileLoss(gpu_ids=opt.gpu_ids)
+            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
             # initialize optimizers
             if not opt.TTUR:
                 self.opt.glr = opt.lr
