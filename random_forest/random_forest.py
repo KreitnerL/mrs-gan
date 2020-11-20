@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 from joblib import dump, load
+from scipy.stats import pearsonr
 
 class RandomForest:
     """
@@ -79,10 +80,13 @@ class RandomForest:
         """
         err_rel = []
         avg_err_rel = []
+        pearson_coefficient = []
         for metabolite in range(len(self.labels)):
             err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
-        return err_rel, avg_err_rel
+            pearson_coefficient.append(pearsonr(predictions[:,metabolite], y[:,metabolite])[0])
+        
+        return err_rel, avg_err_rel, pearson_coefficient
 
     def save_plot(self, err_rel, avg_err_rel, path: str):
         """
@@ -121,7 +125,8 @@ def train_val(x_train, x_test, y_train, y_test, labels, path, rf_path = None, nu
         else:
             rf.store(path+'.joblib')
     predictions = rf.test(x_test)
-    err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
+    err_rel, avg_err_rel, pearson_coefficient = rf.compute_error(predictions, y_test)
     for metabolite in range(len(avg_err_rel)):
         print('Average Relative Error {0}: {1}'.format(labels[metabolite], avg_err_rel[metabolite]))
+        print('Pearson Coefficient: {0}, {1}'.format(labels[metabolite], pearson_coefficient))
     rf.save_plot(err_rel, avg_err_rel, path)

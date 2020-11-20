@@ -27,10 +27,13 @@ Done:
 - Switch to simple dataset
 - Only use small kernels for entropy loss (2,3,4)
 - Test entropy loss + identity loss
+- Crop range to 300-800
+- Use pearson coefficient for validation metric
+- Refine network architecture image
 
 TODO:
 
-Crop range to 300-800
+Make magnitude an option for the dataloader
 
 - USCF:
 - Use cre map for selection of voxels
@@ -38,11 +41,7 @@ Crop range to 300-800
 - Calculate cho/cre and NAA/cre
 - Compare Datadsitributions (also across patients)
 - Use new borders for synthetic data generation
-- For RF:
-    - crop ranges of spectra to only include peaks
-    - Use pearson coefficient for validation metric
     
 docs:
-- Refine network architecture image
 - Update READMEs
 - Add UCSF description

@@ -13,8 +13,8 @@ from ray.tune.suggest.hyperopt import HyperOptSearch
 # def objective(losses: dict):
 #     return sum([v.detach().cpu().numpy() for v in losses.values()])
 def report(validator: Validator, model):
-    _, avg_err_rel = validator.get_validation_score(model)
-    tune.report(err_rate=sum(avg_err_rel))
+    _, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
+    tune.report(score=sum(pearson_coefficient))
 
 def extract_config(config):
     opt = vars(init_opt)
@@ -58,10 +58,10 @@ def training_function(config):
 
     report(validator, model)
 
-# Create HyperBand scheduler and minimize err_rate
-hyperband = HyperBandScheduler(metric="err_rate", mode="min")
-# Specify the search space and maximize err_rate
-hyperopt = HyperOptSearch(metric="err_rate", mode="min")
+# Create HyperBand scheduler and maximize score
+hyperband = HyperBandScheduler(metric="score", mode="max")
+# Specify the search space and maximize score
+hyperopt = HyperOptSearch(metric="score", mode="max")
 
 init_opt = TrainOptions().parse()
 analysis = tune.run(
@@ -76,5 +76,5 @@ analysis = tune.run(
     scheduler=hyperband,
     search_alg=hyperopt
 )
-print("best config: ", analysis.get_best_config(metric="err_rate", mode="min"))
+print("best config: ", analysis.get_best_config(metric="score", mode="max"))
 print(analysis.results)

@@ -61,6 +61,6 @@ class Validator:
         fakes = np.concatenate(np.array(fakes))
 
         predictions = self.rf.test(fakes)
-        err_rel, avg_err_rel = self.rf.compute_error(predictions, self.y_test)
+        err_rel, avg_err_rel, pearson_coefficient = self.rf.compute_error(predictions, self.y_test)
         print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
-        return err_rel, avg_err_rel
+        return err_rel, avg_err_rel, pearson_coefficient

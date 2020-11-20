@@ -22,7 +22,8 @@ opt.no_flip = True    # no flip; comment this line if results on flipped images 
 model = create_model(opt)      # create a model given opt.model and other options
 
 validator = Validator(opt)
-err_rel, avg_err_rel = validator.get_validation_score(model)
+err_rel, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
 print('average realative error:', avg_err_rel)
+print('pearson coefficient:', pearson_coefficient)
 validator.rf.save_plot(err_rel, avg_err_rel, opt.results_dir + opt.name)
 print('Done. You can find you the generated validaton plot at', opt.results_dir + opt.name)

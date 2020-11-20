@@ -58,11 +58,11 @@ class DicomSpectralDataset(BaseDataset):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
             if self.channel_index is not None:
-                A = np.expand_dims(np.asarray(self.sampler_A[index % self.A_size,self.channel_index,:]).astype(float),0)
-                B = np.expand_dims(np.asarray(self.sampler_B[index % self.B_size,self.channel_index,:]).astype(float),0)
+                A = np.expand_dims(np.asarray(self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float),0)
+                B = np.expand_dims(np.asarray(self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float),0)
             else:
-                A = np.asarray(self.sampler_A[index % self.A_size,:,:]).astype(float)
-                B = np.asarray(self.sampler_B[index % self.B_size,:,:]).astype(float)
+                A = np.asarray(self.sampler_A[index % self.A_size,:,self.opt.crop_start:self.opt.crop_end]).astype(float)
+                B = np.asarray(self.sampler_B[index % self.B_size,:,self.opt.crop_start:self.opt.crop_end]).astype(float)
             return {
                 'A': from_numpy(A),
                 'B': from_numpy(B),

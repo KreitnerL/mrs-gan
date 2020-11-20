@@ -9,17 +9,18 @@ import scipy.io as io
 from random_forest.random_forest import train_val
 import numpy as np
 
-
-ideal_path = '/home/kreitnerl/Datasets/paired_samples/dataset_ideal_magnitude.mat'
-ideal_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_ideal_quantities.mat'
+ideal_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_magnitude.mat'
+ideal_parameter_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_quantities.mat'
 ideal_var_name = 'mag'
-real_path = '/home/kreitnerl/Datasets/paired_samples/dataset_magnitude.mat'
-real_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
+real_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_magnitude.mat'
+real_parameter_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_quantities.mat'
 real_var_name = 'mag'
-fakes_path = '/home/kreitnerl/mrs-gan/results/spec_cyc_entropy/fakes.mat'
+fakes_path = '/home/kreitnerl/mrs-gan/results/spec_cyc_entropy_2/fakes.mat'
 fakes_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
 fakes_var_name = 'spectra'
 fakes_parameter_offset = 0.1
+crop_start = 300
+crop_end = 800
 
 
 save_dir = './results/'
@@ -39,7 +40,7 @@ def load_dataset(path, var_name, param_path):
     if data.ndim == 2:
         data = np.expand_dims(data, 1)
     data = normalize(data).squeeze()
-    
+    data = data[:,crop_start:crop_end]
     print('load parameters from:', param_path)
     params = []
     for label in labels:
@@ -66,13 +67,13 @@ class BaselineCreator:
 
     def create_baselines(self):
         print('Creating baseline 1: real to real')
-        train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'R2R', save_dir+'R.joblib')
+        train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'R2R_crop', save_dir+'R_crop_2.joblib')
 
         print('Creating baseline 2: ideal to real')
-        train_val(self.ideal_train, self.real_test, self.ideal_param_train, self.real_param_test, labels, save_dir+'I2R', save_dir+'I.joblib')
+        train_val(self.ideal_train, self.real_test, self.ideal_param_train, self.real_param_test, labels, save_dir+'I2R_crop', save_dir+'I_crop_2.joblib')
 
         print('Creating baseline 3: ideal to ideal')
-        train_val(self.ideal_train, self.ideal_test, self.ideal_param_train, self.ideal_param_test, labels, save_dir+'I2I', save_dir+'I.joblib')
+        train_val(self.ideal_train, self.ideal_test, self.ideal_param_train, self.ideal_param_test, labels, save_dir+'I2I_crop', save_dir+'I_crop_2.joblib')
 
 class Tester():
     def __init__(self):
@@ -85,8 +86,8 @@ class Tester():
         train_val(None, self.fakes, None, self.fake_params, labels, save_dir+'fake', save_dir+'I.joblib')
 
 if __name__ == "__main__":
-    # b = BaselineCreator()
-    # b.create_baselines()
-    t = Tester()
-    t.test()
+    b = BaselineCreator()
+    b.create_baselines()
+    # t = Tester()
+    # t.test()
 
