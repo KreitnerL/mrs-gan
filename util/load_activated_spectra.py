@@ -20,6 +20,7 @@ def get_activated_indices(metabolic_map_path):
     -------
         - activated_index: List of indices of activated voxels (Flattened)
         - shape: The shape of the voxel matrix
+        - relativator_values: List of absolute relativator metabolite quantities
     """
     ############################################################
     # Load the matabolic map to know which voxels are activated
@@ -29,22 +30,23 @@ def get_activated_indices(metabolic_map_path):
     dimY = int(metabolic_map_info.Columns)
     dimX = int(metabolic_map_info.Rows)
     shape = (dimX, dimY, dimZ)
-    num_voxels = dimX*dimY*dimZ
+    num_voxels = np.prod(shape)
 
-    # Stored as a byte array where each value takes 2 bytes!
-    data = metabolic_map_info.PixelData
-    # Transform to a uint16 array
-    data = struct.unpack('H' * (num_voxels), data)
-    data = np.array(data).reshape(shape, order='F')
+    # Following 3 steps are equal to matlabs "squeeze(double(dicomread(info)))""
+    # Stored as a byte array where each value takes 2 bytes! 
+    data = struct.unpack('H' * (num_voxels), metabolic_map_info.PixelData)
+    data = np.reshape(data, np.flip(shape), order='C')
+    data = np.moveaxis(data, [0,1,2], [2,0,1])
 
     
     metabolic_map = np.flip(np.flip(data, 0), 1)
-    metabolic_map_flat = metabolic_map.flatten()
+    metabolic_map_flat = metabolic_map.flatten('F')
+
     # Most of the voxels are not activated. They contain the a fix baseline value
     baseline = np.bincount(metabolic_map_flat).argmax()
     # Get the index of all activated voxels
-    activated_indices = [i for i, val in enumerate(metabolic_map_flat) if val != baseline and val!=0]
-    relativator_values = np.array([val for i,val in enumerate(metabolic_map_flat) if i in activated_indices])
+    activated_indices = (metabolic_map_flat != baseline) & (metabolic_map_flat != 0)
+    relativator_values = metabolic_map_flat[activated_indices]
     return activated_indices, shape, relativator_values
 
 
@@ -73,22 +75,19 @@ def get_activated_spectra(spectra_path, activated_index, shape):
     else:
         dimS = 2048
 
+    # The following steps are equal to matlabs "reshape(info.SpectroscopyData,2,dimS,dimX,dimY,dimZ)"
     # Stored as a byte array where each value takes 4 bytes!
-    spectra_data = spectra_info.SpectroscopyData
-    # Transform to a float array
-    spectra_data = struct.unpack('f' * (num_voxels*dimS*2), spectra_data)
-    spectra_data = np.array(spectra_data).reshape((2, dimS, *shape), order='F')
+    spectra_data = struct.unpack('f' * (num_voxels*dimS*2), spectra_info.SpectroscopyData)
+    spectra_data = np.array(spectra_data).reshape(np.flip((2, dimS, *shape)), order='C')
+    spectra_data = np.moveaxis(spectra_data, [0,1,2,3,4], [4,3,2,1,0])
     # Get the activate spectra
     spectra_real = spectra_data[0]
     spectra_imag = spectra_data[1]
     spectra_complex = spectra_real + 1j * spectra_imag
+    # TODO moveaxis necessary? Check for 18x18x16
     specProc = np.flip(np.flip(np.moveaxis(spectra_complex, [0,1,2,3], [0,2,1,3]),1),2)
-    I, J, K = np.unravel_index(activated_index, shape)
-    num_spectra = len(I)
-    spectra = np.empty((num_spectra,dimS), dtype=complex)
-    for m in range(num_spectra):
-        spectra[m] =  specProc[:,I[m], J[m], K[m]]
-
+    spectra = specProc.reshape((dimS, np.prod(shape)), order='F')[:,activated_index].transpose()
+    num_spectra = len(spectra)
     # Split real and imaginary parts
     data_real = spectra.real
     data_imag = spectra.imag
@@ -104,6 +103,8 @@ def get_activated_spectra(spectra_path, activated_index, shape):
     data_imag = np.array([(data_imag[i] + max_imag[i]) / (2 * max_imag[i]) * 2 - 1 for i in range(num_spectra)])
 
 
+    assert sum(sum(np.isnan(data_real))) == 0
+    assert sum(sum(np.isnan(data_real))) == 0
     # Set NaN values to 0 
     data_real[np.isnan(data_real)] = 0
     data_imag[np.isnan(data_imag)] = 0
@@ -126,15 +127,15 @@ def get_activated_metabolite_values(metabolic_map_path, activated_index, shape, 
     """
     metabolic_map_info = load_dicom(metabolic_map_path)
 
-    # Stored as a byte array where each value takes 2 bytes!
-    data = metabolic_map_info.PixelData
-    # Transform to a uint16 array
-    data = struct.unpack('H' * (np.prod(shape)), data)
-    data = np.array(data).reshape(shape, order='F')
+    # Following 3 steps are equal to matlabs "squeeze(double(dicomread(info)))""
+    # Stored as a byte array where each value takes 2 bytes! 
+    data = struct.unpack('H' * np.prod(shape), metabolic_map_info.PixelData)
+    data = np.reshape(data, np.flip(shape), order='C')
+    data = np.moveaxis(data, [0,1,2], [2,0,1])
     
-    metabolic_map = np.flip(np.flip(data, 1), 2)
-    metabolic_map_flat = metabolic_map.flatten()
-    absolute_quantities = np.array([val for i,val in enumerate(metabolic_map_flat) if i in activated_index])
+    metabolic_map = np.flip(np.flip(data, 0), 1)
+    metabolic_map_flat = metabolic_map.flatten('F')
+    absolute_quantities = metabolic_map_flat[activated_index]
     relative_quantities = absolute_quantities/relativator_values
 
     return relative_quantities

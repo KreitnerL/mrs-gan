@@ -8,15 +8,20 @@ from util.process_spectra import preprocess_numpy_spectra
 
 opt = Dicom2MatlabOptions().parse()
 
-def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:str, metabolites: list, save_dir):
+def remove_outliers(quantities:dict, num_indices: int):
+    valid_indices = np.ones(num_indices, dtype=bool)
+    for met_qantities in quantities.values():
+        valid_indices &= (met_qantities[-1] < opt.outlier_cutoff) & (met_qantities[-1] != 0)
+    return valid_indices
+
+def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:str, metabolites: list, relativator_met: str, save_dir):
     spectra_paths = sorted(make_dataset(sourceDir, file_ext=file_name_spec))
     num_patient = len(spectra_paths)
     print('Number of patients:', num_patient)
     metabolite_paths = {}
     for metabolite in metabolites:
         metabolite_paths[metabolite] = sorted(make_dataset(sourceDir, file_ext=file_ext_metabolite + metabolite + '.dcm'))
-        # TODO make cre an option
-    activation_map_paths=sorted(make_dataset(sourceDir, file_ext=file_ext_metabolite + 'cre.dcm'))
+    activation_map_paths=sorted(make_dataset(sourceDir, file_ext=file_ext_metabolite + relativator_met + '.dcm'))
     assert len(metabolite_paths) == len(metabolites)
 
     spectra_real = []
@@ -26,15 +31,13 @@ def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:st
     num_spectra_per_patient = []
     for i in progressbar(range(num_patient), "Processing patient data: ", 20):
         activated_indices, shape, relativator_values = get_activated_indices(activation_map_paths[i])
-        # Ind valid voxels for every metabolite
-        valid_indices = list(range(0,len(activated_indices)))
         for metabolite, paths in metabolite_paths.items():
             quantities[metabolite].append(get_activated_metabolite_values(paths[i], activated_indices, shape, relativator_values))
-            valid_indices = np.intersect1d(valid_indices, np.nonzero(quantities[metabolite][-1]))
-        num_spectra_per_patient.append(len(valid_indices))
+        valid_indices = remove_outliers(quantities, len(relativator_values))
+        num_spectra_per_patient.append(sum(valid_indices))
         # Sort out invalid voxels for every metabolite
         for metabolite in metabolites:
-            quantities[metabolite][-1] = np.take(quantities[metabolite][-1],valid_indices)
+            quantities[metabolite][-1] = quantities[metabolite][-1][valid_indices]
                     
         dataR, dataI = get_activated_spectra(spectra_paths[i], activated_indices, shape)
         spectra_real.append(dataR[valid_indices])
@@ -65,7 +68,7 @@ def dcm2mat(source_dir, save_dir):
     if not is_set_of_type(source_dir, '.dcm'):
         raise ValueError("Source directory does not contain any valid spectra")
 
-    spectra, quantities, num_spectra_per_patient = extract_from_DCM(source_dir, opt.file_ext_spectra, opt.file_ext_metabolite, ['cho', 'NAA'], opt.save_dir)
+    spectra, quantities, num_spectra_per_patient = extract_from_DCM(source_dir, opt.file_ext_spectra, opt.file_ext_metabolite, ['cho', 'NAA'], 'cre', opt.save_dir)
     
     if opt.real:
         name = 'spectra_real'
@@ -77,5 +80,6 @@ def dcm2mat(source_dir, save_dir):
         name = 'spectra'
     export_mat({'spectra': np.array(spectra), 'num_spectra_per_patient': num_spectra_per_patient}, opt.save_dir + name)
     export_mat(quantities, save_dir + 'quantities')
+    print('Done. You can find the exported matlab file at', save_dir + 'quantities.mat')
 
 dcm2mat(opt.source_dir,  opt.save_dir)

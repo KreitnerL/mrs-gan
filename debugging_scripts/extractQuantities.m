@@ -1,4 +1,4 @@
-path_cre = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t8771\ucsf\t8771_UCSF_cre.dcm"
+path_cre = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t10169\ucsf\t10169_UCSF_cre.dcm";
 file = string(path_cre);
 info = dicominfo(file);
 image = dicomread(info);
@@ -9,7 +9,7 @@ index = find(map~=baseline);
 cre_absolute = map(index);
 figure, histogram(cre_absolute), title("cre")
 
-path_cho = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t8771\ucsf\t8771_UCSF_cho.dcm"
+path_cho = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t10169\ucsf\t10169_UCSF_cho.dcm";
 file = string(path_cho);
 info = dicominfo(file);
 image = dicomread(info);
@@ -20,7 +20,7 @@ index = find(map~=baseline);
 cho_absolute = map(index);
 figure, histogram(cho_absolute), title("cho")
 
-path_NAA = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t8771\ucsf\t8771_UCSF_NAA.dcm"
+path_NAA = "D:\Datasets\UCSF_TUM_MRSI\batch_1\tar_bundle\data\p41\jasonc\BjoernRandomTrees\data_to_share\for_tum_t10169\ucsf\t10169_UCSF_NAA.dcm";
 file = string(path_NAA);
 info = dicominfo(file);
 image = dicomread(info);
