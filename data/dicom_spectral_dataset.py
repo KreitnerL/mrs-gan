@@ -37,6 +37,7 @@ class DicomSpectralDataset(BaseDataset):
 
         self.A_size = sizes_A[index[self.opt.phase]]
         self.B_size = sizes_B[index[self.opt.phase]]
+        self.length = sizes_A[3]
 
         self.sampler_A = np.memmap(path_A, dtype='double', mode='r', shape=(self.A_size,sizes_A[4],sizes_A[3]))
         self.sampler_B = np.memmap(path_B, dtype='double', mode='r', shape=(self.B_size,sizes_B[4],sizes_B[3]))
@@ -48,7 +49,7 @@ class DicomSpectralDataset(BaseDataset):
         self.letter = 'A' if opt.AtoB else 'B'
         self.dir = os.path.join(opt.dataroot, opt.phase + self.letter)
         sizes = np.genfromtxt(os.path.join(self.root,'sizes_' + self.letter) ,delimiter=',').astype(np.int64)
-
+        self.length = sizes[3]
         path = str(os.path.join(self.root, self.opt.phase + '_{0}.dat'.format(self.letter)))
         self.size = sizes[index[self.opt.phase]]
         self.sampler = np.memmap(path, dtype='double', mode='r', shape=(self.size,sizes[4],sizes[3]))
@@ -57,12 +58,15 @@ class DicomSpectralDataset(BaseDataset):
     def __getitem__(self, index):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
-            if self.channel_index is not None:
+            if self.channel_index:
                 A = np.expand_dims(np.asarray(self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float),0)
                 B = np.expand_dims(np.asarray(self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float),0)
             else:
                 A = np.asarray(self.sampler_A[index % self.A_size,:,self.opt.crop_start:self.opt.crop_end]).astype(float)
                 B = np.asarray(self.sampler_B[index % self.B_size,:,self.opt.crop_start:self.opt.crop_end]).astype(float)
+                if self.opt.mag:
+                    A = np.expand_dims(np.sqrt(A[0,:]**2 + A[1,:]**2), 0)
+                    B = np.expand_dims(np.sqrt(B[0,:]**2 + B[1,:]**2), 0)
             return {
                 'A': from_numpy(A),
                 'B': from_numpy(B),
@@ -74,6 +78,8 @@ class DicomSpectralDataset(BaseDataset):
                 data = np.expand_dims(np.asarray(self.sampler[index % self.size,self.channel_index,:]).astype(float),0)
             else:
                 data = np.asarray(self.sampler[index % self.size,:,:]).astype(float)
+                if self.opt.mag:
+                    data = np.expand_dims(np.sqrt(data[0,:]**2 + data[1,:]**2), 0)
             return {
                 self.letter: from_numpy(data),
                 'A_paths': '{:03d}.foo'.format(index % self.size)
@@ -84,6 +90,15 @@ class DicomSpectralDataset(BaseDataset):
             return max(self.A_size, self.B_size) # Determines the length of the dataloader
         else:
             return self.size
+    
+    def get_length(self):
+        if self.opt.crop_start != None and self.opt.crop_end != None:
+            l = self.opt.crop_end - self.opt.crop_start
+        else:
+            l = self.length
+        # length must be power of 2
+        assert (l & (l-1) == 0) and l != 0
+        return l
 
     def name(self):
         return 'DicomSpectralDataset'

@@ -57,6 +57,7 @@ def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:st
 
 def export_mat(mat_dict, path):
     """ Saves the given dictionary as a matlab file at the given path"""
+    mat_dict = {k.lower() :v for k,v in mat_dict.items()}
     io.savemat(path + '.mat', mdict=mat_dict)
 
 def dcm2mat(source_dir, save_dir):

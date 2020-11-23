@@ -12,7 +12,7 @@ class CreateDatasetOptions():
         self.parser.add_argument('--source_path_A', type=str, help='File path of the dataset of domain A')
         self.parser.add_argument('--source_path_B', type=str, help='File path of the dataset of domain B')
         self.parser.add_argument('--save_dir', type=str, help='Directory where the dataset will be saved')
-        self.parser.add_argument('--source_path_target_labels', type=str, help='File path of the labels of the target domain')
+        self.parser.add_argument('--source_path_source_labels', type=str, help='File path of the labels of the target domain')
         self.parser.add_argument('--A_mat_var_name', type=str, default='spectra', help='Name of the matlab variable containing the spectra for domain A')
         self.parser.add_argument('--B_mat_var_name', type=str, default='spectra', help='Name of the matlab variable containing the spectra for domain B')
         self.parser.add_argument('--name', type=str, default='spectra', help='Name of the dataset')

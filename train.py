@@ -1,3 +1,5 @@
+from argparse import Namespace
+from data.dicom_spectral_dataset import DicomSpectralDataset
 import time
 from util.validator import Validator
 from options.train_options import TrainOptions
@@ -14,6 +16,10 @@ dataset = data_loader.load_data()       # create a dataset given opt.dataset_mod
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
 print('training spectra = %d' % dataset_size)
 print('training batches = %d' % len(dataset))
+if isinstance(dataset.dataset, DicomSpectralDataset):
+    opt = vars(opt)
+    opt.update({'data_length': dataset.dataset.get_length()})
+    opt = Namespace(**opt)
 
 model = create_model(opt)       # create a model given opt.model and other options
 visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
@@ -44,7 +50,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         # Only update critic every n_critic steps
         optimize_gen = not(i % opt.n_critic)
         model.optimize_parameters(optimize_G=optimize_gen)   # calculate loss functions, get gradients, update network weights
-
+        
         if opt.display_id > 0 and total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
             save_result = total_iters % opt.update_html_freq == 0
             visdom.display_current_results(model.get_current_visuals(), epoch, save_result)

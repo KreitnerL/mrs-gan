@@ -345,7 +345,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[]):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -371,7 +371,7 @@ class SpectraNLayerDiscriminator(nn.Module):
         self.sequence.extend([
             get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
             Flatten(),
-            nn.Linear(int(1024 / (2**(n_layers+1))), 1)
+            nn.Linear(int(data_length / (2**(n_layers+1))), 1)
         ])
 
     def forward(self, input):
@@ -385,7 +385,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
     and finally uses a Linear layer to compute a scalar that represents the networks prediction.
     Additionally, the spectral norm of each layer will be contrained by spectral normalization to control the Lipschitz constant.
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, data_length=1024, gpu_ids=[]):
         super(SpectraNLayerDiscriminator_SN, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -410,7 +410,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
         self.sequence.extend([
             spectral_norm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
             Flatten(),
-            spectral_norm(nn.Linear(int(1024 / (2**(n_layers+1))), 1))
+            spectral_norm(nn.Linear(int(data_length / (2**(n_layers+1))), 1))
         ])
 
     def forward(self, input):

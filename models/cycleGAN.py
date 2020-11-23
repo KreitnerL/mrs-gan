@@ -44,10 +44,10 @@ class CycleGANModel(BaseModel):
 
         # Discriminators
         if self.isTrain:
-            self.netD_A = define.define_D(opt.input_nc,
+            self.netD_A = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, 
                                             opt.n_layers_D, opt.norm, self.gpu_ids)
-            self.netD_B = define.define_D(opt.input_nc,
+            self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids)
 

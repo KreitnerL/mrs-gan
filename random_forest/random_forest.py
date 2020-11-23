@@ -61,6 +61,7 @@ class RandomForest:
         -------
         prediction : The predicted values. N2 x M
         """
+        print('Predicting values for', len(x), 'samples')
         prediction =  self.regressor.predict(x)
         return np.array(prediction)
 
@@ -97,7 +98,7 @@ class RandomForest:
         - err_rel: List of relative errors. M x N2
         - path: directory where the plot should be saved.
         """
-        max_y = min(max(np.array(avg_err_rel)+0.15),1)
+        max_y = max(np.array(avg_err_rel)+0.15)
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
         else:
@@ -128,5 +129,5 @@ def train_val(x_train, x_test, y_train, y_test, labels, path, rf_path = None, nu
     err_rel, avg_err_rel, pearson_coefficient = rf.compute_error(predictions, y_test)
     for metabolite in range(len(avg_err_rel)):
         print('Average Relative Error {0}: {1}'.format(labels[metabolite], avg_err_rel[metabolite]))
-        print('Pearson Coefficient: {0}, {1}'.format(labels[metabolite], pearson_coefficient))
+        print('Pearson Coefficient: {0}, {1}'.format(labels[metabolite], pearson_coefficient[metabolite]))
     rf.save_plot(err_rel, avg_err_rel, path)

@@ -34,7 +34,7 @@ figure, histogram(NAA_absolute), title("NAA")
 
 
 
-outlier_cutoff = 10;
+outlier_cutoff = 4;
 not_zero_ind = find(cre_absolute>0);
 
 cho_rel = cho_absolute(not_zero_ind) ./ cre_absolute(not_zero_ind);

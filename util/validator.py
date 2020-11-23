@@ -1,4 +1,5 @@
 from argparse import Namespace
+from data.dicom_spectral_dataset import DicomSpectralDataset
 import numpy as np
 import json
 import torch
@@ -23,6 +24,10 @@ class Validator:
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
         print('val spectra = %d' % self.dataset_size)
         print('val batches = %d' % len(self.dataset))
+        if isinstance(self.dataset, DicomSpectralDataset):
+            opt = vars(opt)
+            opt.update({'data_length': self.dataset.get_length()})
+            opt = Namespace(**vars(opt))
 
         label_path = self.opt.dataroot + '/labels.dat'
         with open(label_path, 'r') as file:

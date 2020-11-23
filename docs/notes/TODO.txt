@@ -25,23 +25,27 @@ Done:
 - Create Dataset without noise
 - Update README
 - Switch to simple dataset
+
+
 - Only use small kernels for entropy loss (2,3,4)
 - Test entropy loss + identity loss
 - Crop range to 300-800
 - Use pearson coefficient for validation metric
 - Refine network architecture image
+- Make magnitude an option for the dataloader
 
-TODO:
-
-Make magnitude an option for the dataloader
-
-- USCF:
+USCF:
 - Use cre map for selection of voxels
 - Throw away cre=0 (outliers)
 - Calculate cho/cre and NAA/cre
-- Compare Datadsitributions (also across patients)
+- Compare Data distributions (also across patients)
+
+
+
+
+TODO:
 - Use new borders for synthetic data generation
-    
+- test entropy + identity for cropped
 docs:
 - Update READMEs
 - Add UCSF description
