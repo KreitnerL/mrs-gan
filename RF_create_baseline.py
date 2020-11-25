@@ -12,16 +12,23 @@ import numpy as np
 ideal_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_magnitude.mat'
 ideal_parameter_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_quantities.mat'
 ideal_var_name = 'mag'
-real_path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/spectra.mat'
-real_parameter_path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/quantities.mat'
-real_var_name = 'spectra'
+
+# real_path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/spectra.mat'
+# real_parameter_path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/quantities.mat'
+# real_var_name = 'spectra'
+# real_mag = True
+
+real_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_magnitude.mat'
+real_parameter_path = '/home/kreitnerl/Datasets/spectra_3_pair/dataset_quantities.mat'
+real_var_name = 'mag'
+real_mag = False
+
 fakes_path = '/home/kreitnerl/mrs-gan/results/spec_cyc_entropy_2/fakes.mat'
 fakes_parameter_path = '/home/kreitnerl/Datasets/paired_samples/dataset_quantities.mat'
 fakes_var_name = 'spectra'
 fakes_parameter_offset = 0.1
-crop_start = 300
-crop_end = 812
-real_mag = True
+crop_start = 0
+crop_end = 1024
 
 
 save_dir = './results/'
@@ -74,7 +81,7 @@ class BaselineCreator:
         # train_val(self.real_train, self.real_test, self.real_param_train, self.real_param_test, labels, save_dir+'ucsf', save_dir+'ucsf.joblib')
 
         print('Creating baseline 2: ideal to real')
-        train_val(self.ideal_train, self.real_test, self.ideal_param_train, self.real_param_test, labels, save_dir+'I2ucsf_crop', save_dir+'I_crop.joblib')
+        train_val(self.ideal_train, self.real_test, self.ideal_param_train, self.real_param_test, labels, save_dir+'I2R', save_dir+'I.joblib')
 
         # print('Creating baseline 3: ideal to ideal')
         # train_val(self.ideal_train, self.ideal_test, self.ideal_param_train, self.ideal_param_test, labels, save_dir+'I2I_crop', save_dir+'I_crop_2.joblib')

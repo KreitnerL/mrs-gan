@@ -85,7 +85,7 @@ class RandomForest:
         for metabolite in range(len(self.labels)):
             err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
-            pearson_coefficient.append(pearsonr(predictions[:,metabolite], y[:,metabolite])[0])
+            pearson_coefficient.append(abs(pearsonr(predictions[:,metabolite], y[:,metabolite])[0]))
         
         return err_rel, avg_err_rel, pearson_coefficient
 

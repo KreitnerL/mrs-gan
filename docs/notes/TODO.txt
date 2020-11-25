@@ -46,6 +46,18 @@ USCF:
 TODO:
 - Use new borders for synthetic data generation
 - test entropy + identity for cropped
+
+
+- Check LCM distributions
+- Check on Auto-encoder (Talk with Bjoern)
+- Create & train Auto-encoder
+- Integrate Auto-Encoder to CycleGAN
+- Get MLP Regressor working
+- Reasons for CycleGAN:
+    - CycleGAN as preprocessing step for other methods
+    - We can compare different methods on the same domain
+
+
 docs:
 - Update READMEs
 - Add UCSF description

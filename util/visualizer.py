@@ -78,7 +78,8 @@ class Visualizer():
         plt.title(self.name + ' validation error over time')
         step_size = int(total_iters/len(self.validation_error))
         x = list(range(step_size, total_iters+1, step_size))
-        plt.plot(x, self.validation_error)
+        for i in range(len(error)):
+            plt.plot(x, np.array(self.validation_error)[:,i])
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_error.png')
         plt.savefig(path, format='png')
