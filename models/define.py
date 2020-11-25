@@ -58,7 +58,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dr
     else:
         return netG
 
-def define_D(input_nc, ndf, which_model_netD,
+def define_D(opt, input_nc, ndf, which_model_netD,
              n_layers_D=3, norm='instance', gpu_ids=[]):
     netD = None
     use_gpu = len(gpu_ids) > 0
@@ -71,9 +71,9 @@ def define_D(input_nc, ndf, which_model_netD,
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'spectra':
-        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, gpu_ids=gpu_ids)   
+        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids)   
     elif which_model_netD == 'spectra_sn':
-        netD = SpectraNLayerDiscriminator_SN(input_nc, ndf, n_layers=3, gpu_ids=gpu_ids)  
+        netD = SpectraNLayerDiscriminator_SN(input_nc, ndf, n_layers=3, data_length=opt.data_length, gpu_ids=gpu_ids)  
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)

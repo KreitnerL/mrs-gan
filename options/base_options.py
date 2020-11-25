@@ -21,11 +21,14 @@ class BaseOptions():
         self.parser.add_argument('--input_dim', type=int, default=1, help='dimension of input data - "1" for spectra, "2" for images,"3" for image volumes')
         self.parser.add_argument('--real', action="store_true", default=False, help='Use only the real portion of the signal')
         self.parser.add_argument('--imag', action="store_true", default=False, help='Use only the real portion of the signal')
+        self.parser.add_argument('--mag', action="store_true", default=False, help='Use the magnitude of the spectra')
         self.parser.add_argument('--shuffle_data', action='store_true', help='Shuffle sequence of data when initially extracted from dataset')
         self.parser.add_argument('--normalize', action='store_true', default=False, help='Normalize the input data')
         self.parser.add_argument('--standardize', action='store_true', default=False, help='Standardize the input data')
         self.parser.add_argument('--norm_range', type=list, default=[-1, 1], help='Range in which the input data should be normalized')
         self.parser.add_argument('--pad_data', type=int, default=0, help='Pad data when loading. Most ResNet architectures require padding MRS data by 21')
+        self.parser.add_argument('--crop_start', type=int, default=None, help="Start index for cropping")
+        self.parser.add_argument('--crop_end', type=int, default=None, help="End index for cropping")
 
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
         self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
@@ -85,12 +88,13 @@ class BaseOptions():
             print('-------------- End ----------------')
 
         # save to the disk
-        expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
-        util.mkdirs(expr_dir)
-        file_name = os.path.join(expr_dir, 'opt.txt')
-        with open(file_name, 'wt') as opt_file:
-            opt_file.write('------------ Options -------------\n')
-            for k, v in sorted(args.items()):
-                opt_file.write('%s: %s\n' % (str(k), str(v)))
-            opt_file.write('-------------- End ----------------\n')
+        if self.opt.isTrain:
+            expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
+            util.mkdirs(expr_dir)
+            file_name = os.path.join(expr_dir, 'opt.txt')
+            with open(file_name, 'wt') as opt_file:
+                opt_file.write('------------ Options -------------\n')
+                for k, v in sorted(args.items()):
+                    opt_file.write('%s: %s\n' % (str(k), str(v)))
+                opt_file.write('-------------- End ----------------\n')
         return self.opt

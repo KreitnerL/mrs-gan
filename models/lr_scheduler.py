@@ -13,9 +13,13 @@ def setup_for_no_TTUR(opt):
         opt.n_epochs_dis_decay = opt.n_epochs_decay
 
 def get_scheduler_G(optimizer, opt):
+    if not initialized:
+        setup_for_no_TTUR(opt)
     return get_scheduler(optimizer, opt, opt.n_epochs_gen, opt.n_epochs_gen_decay)
 
 def get_scheduler_D(optimizer, opt):
+    if not initialized:
+        setup_for_no_TTUR(opt)
     return get_scheduler(optimizer, opt, opt.n_epochs_dis, opt.n_epochs_dis_decay)
 
 
@@ -32,8 +36,6 @@ def get_scheduler(optimizer, opt, n_epochs, n_epochs_decay):
     For other schedulers (step, plateau, and cosine), we use the default PyTorch schedulers.
     See https://pytorch.org/docs/stable/optim.html for more details.
     """
-    if not initialized:
-        setup_for_no_TTUR(opt)
     if opt.lr_policy == 'linear':
         def lambda_rule(epoch):
             lr_l = 1.0 - max(0, epoch + opt.epoch_count - n_epochs) / float(n_epochs_decay + 1)

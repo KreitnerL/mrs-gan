@@ -1,3 +1,4 @@
+from models.EntropyProfileLoss import EntropyProfileLoss
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -43,20 +44,21 @@ class CycleGANModel(BaseModel):
 
         # Discriminators
         if self.isTrain:
-            self.netD_A = define.define_D(opt.input_nc,
+            self.netD_A = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, 
                                             opt.n_layers_D, opt.norm, self.gpu_ids)
-            self.netD_B = define.define_D(opt.input_nc,
+            self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids)
 
-        print('---------- Networks initialized -------------')
-        define.print_network(self.netG_A)
-        define.print_network(self.netG_B)
-        if self.isTrain:
-            define.print_network(self.netD_A)
-            define.print_network(self.netD_B)
-        print('-----------------------------------------------')
+        if not self.opt.quiet:
+            print('---------- Networks initialized -------------')
+            define.print_network(self.netG_A)
+            define.print_network(self.netG_B)
+            if self.isTrain:
+                define.print_network(self.netD_A)
+                define.print_network(self.netD_B)
+            print('-----------------------------------------------')
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
@@ -74,6 +76,7 @@ class CycleGANModel(BaseModel):
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
+            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
             # initialize optimizers
             if not opt.TTUR:
                 self.opt.glr = opt.lr
@@ -87,9 +90,10 @@ class CycleGANModel(BaseModel):
             self.init_optimizers(opt)
 
             # Set loss weights
-            self.lambda_idt = self.opt.identity
+            self.lambda_idt = self.opt.lambda_identity
             self.lambda_A = self.opt.lambda_A
             self.lambda_B = self.opt.lambda_B
+            self.lambda_entropy = self.opt.lambda_entropy
 
     def init_optimizers(self, opt):
         """
@@ -190,9 +194,16 @@ class CycleGANModel(BaseModel):
         self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
         # Backward cycle loss
         self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
+        # Entropy loss
+        if self.lambda_entropy != 0:
+            self.loss_entropy_A: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_A, self.real_A)
+            self.loss_entropy_B: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_B, self.real_B)
+        else:
+            self.loss_entropy_A = self.loss_entropy_B = 0
+
 
         # combined loss
-        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B
+        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_entropy_A + self.loss_entropy_B
         self.loss_G.backward()
 
     def calculate_identity_loss(self):
@@ -232,11 +243,11 @@ class CycleGANModel(BaseModel):
         G_B = self.loss_G_B.data
         Cyc_B = self.loss_cycle_B.data
         G = self.loss_G
-        if self.opt.identity > 0.0:
+        if self.opt.lambda_identity > 0.0:
             idt_A = self.loss_idt_A.data
             idt_B = self.loss_idt_B.data
-            return OrderedDict([('D_A', D_A), ('G_A', G_A), ('Cyc_A', Cyc_A), ('idt_A', idt_A),
-                                ('D_B', D_B), ('G_B', G_B), ('Cyc_B', Cyc_B), ('idt_B', idt_B)])
+            return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G), ('G_A', G_A), ('G_B', G_B), 
+                                ('Cyc_B', Cyc_B), ('Cyc_A', Cyc_A), ('idt_A', idt_A), ('idt_B', idt_B)])
         else:
             return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G),
                                 ('G_A', G_A), ('G_B', G_B), ('Cyc_A', Cyc_A), ('Cyc_B', Cyc_B), ])

@@ -18,11 +18,46 @@ Done:
 - Improve dicom2matlab code
 - Fix loss
 
-TODO:
-- Add Perceptual Feature Loss
-- Entropy Loss
-- Update README
-
-
 - Create Paired Dataset for validation only!
+- Entropy Loss
 - Create baselines with paired dataset
+- Fix loss plots 
+- Create Dataset without noise
+- Update README
+- Switch to simple dataset
+
+
+- Only use small kernels for entropy loss (2,3,4)
+- Test entropy loss + identity loss
+- Crop range to 300-800
+- Use pearson coefficient for validation metric
+- Refine network architecture image
+- Make magnitude an option for the dataloader
+
+USCF:
+- Use cre map for selection of voxels
+- Throw away cre=0 (outliers)
+- Calculate cho/cre and NAA/cre
+- Compare Data distributions (also across patients)
+
+
+
+
+TODO:
+- Use new borders for synthetic data generation
+- test entropy + identity for cropped
+
+
+- Check LCM distributions
+- Check on Auto-encoder (Talk with Bjoern)
+- Create & train Auto-encoder
+- Integrate Auto-Encoder to CycleGAN
+- Get MLP Regressor working
+- Reasons for CycleGAN:
+    - CycleGAN as preprocessing step for other methods
+    - We can compare different methods on the same domain
+
+
+docs:
+- Update READMEs
+- Add UCSF description

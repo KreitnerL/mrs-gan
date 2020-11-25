@@ -6,6 +6,8 @@ It will load a saved model from '--checkpoints_dir' and save the results to '--r
 It first creates model and dataset given the option. It will hard-code some parameters.
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
+from argparse import Namespace
+from data.dicom_spectral_dataset import DicomSpectralDataset
 import os
 from util.util import progressbar
 from options.test_options import TestOptions
@@ -21,7 +23,6 @@ opt = TestOptions().parse()  # get test options
 # hard-code some parameters for test
 opt.num_threads = 0   # test code only supports num_threads = 1
 opt.batch_size = 1    # test code only supports batch_size = 1
-# opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 
 
@@ -29,10 +30,13 @@ print('------------ Creating Test Set ------------')
 data_loader = CreateDataLoader(opt)     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
-print('#test spectra = %d' % dataset_size)
-print('#test batches = %d' % len(dataset))
+print('test spectra = %d' % dataset_size)
+print('test batches = %d' % len(dataset))
+if isinstance(dataset, DicomSpectralDataset):
+    opt = vars(opt)
+    opt.update({'data_length': dataset.get_length()})
+    opt = Namespace(**vars(opt))
 
-print('--------------- Creating Model ---------------')
 model = create_model(opt)      # create a model given opt.model and other options
 
 

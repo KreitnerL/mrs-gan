@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import time
 from joblib import dump, load
+from scipy.stats import pearsonr
 
 class RandomForest:
     """
@@ -60,9 +61,8 @@ class RandomForest:
         -------
         prediction : The predicted values. N2 x M
         """
-        start = time.time()
+        print('Predicting values for', len(x), 'samples')
         prediction =  self.regressor.predict(x)
-        print('prediction of', len(x), 'samples completed in {:.3f} sec'.format(time.time()-start))
         return np.array(prediction)
 
     def compute_error(self, predictions: list, y):
@@ -81,10 +81,13 @@ class RandomForest:
         """
         err_rel = []
         avg_err_rel = []
+        pearson_coefficient = []
         for metabolite in range(len(self.labels)):
             err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
-        return err_rel, avg_err_rel
+            pearson_coefficient.append(abs(pearsonr(predictions[:,metabolite], y[:,metabolite])[0]))
+        
+        return err_rel, avg_err_rel, pearson_coefficient
 
     def save_plot(self, err_rel, avg_err_rel, path: str):
         """
@@ -95,12 +98,12 @@ class RandomForest:
         - err_rel: List of relative errors. M x N2
         - path: directory where the plot should be saved.
         """
-        max_y = min(max(np.array(avg_err_rel)+0.15),1)
+        max_y = max(np.array(avg_err_rel)+0.15)
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
         else:
             plt.figure(self.figure.number)
-        plt.boxplot(err_rel, notch = True, labels=self.labels)
+        plt.boxplot(err_rel, notch = True, labels=self.labels, showmeans=True, meanline=True)
         plt.ylabel('Relative Error')
         plt.title('Error per predicted metabolite')
         plt.gca().set_ylim([0,max_y])
@@ -123,7 +126,8 @@ def train_val(x_train, x_test, y_train, y_test, labels, path, rf_path = None, nu
         else:
             rf.store(path+'.joblib')
     predictions = rf.test(x_test)
-    err_rel, avg_err_rel = rf.compute_error(predictions, y_test)
+    err_rel, avg_err_rel, pearson_coefficient = rf.compute_error(predictions, y_test)
     for metabolite in range(len(avg_err_rel)):
         print('Average Relative Error {0}: {1}'.format(labels[metabolite], avg_err_rel[metabolite]))
+        print('Pearson Coefficient: {0}, {1}'.format(labels[metabolite], pearson_coefficient[metabolite]))
     rf.save_plot(err_rel, avg_err_rel, path)

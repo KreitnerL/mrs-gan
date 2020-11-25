@@ -15,6 +15,7 @@ class Dicom2MatlabOptions():
         self.parser.add_argument('--file_ext_metabolite', type=str, default='UCSF_', help='File extension of the metabolic map')
         self.parser.add_argument('--force', action='store_true', help='If true, overwrites all exisiting .npz, .mat, .dat files')
 
+        self.parser.add_argument('--outlier_cutoff', type=float, default=10.0, help='Max valid value for any metabolite')
         self.parser.add_argument('--normalize', type=bool, default=False, help='normalize the spectra in preprocessing')
         self.parser.add_argument('--standardize', type=bool, default=False, help='standardize the spectra in preprocessing')
         self.parser.add_argument('--pad_data', type=bool, default=False, help='pad_data the spectra in preprocessing')
