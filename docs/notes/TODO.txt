@@ -42,14 +42,16 @@ USCF:
 
 ########
 - Check LCM distributions
-- Check on Auto-encoder (Talk with Bjoern)
+- Check on Auto-encoder (Talk with Prof. Menze)
+- Get MLP Regressor working
+- Improve baseline creation
+- Check RF performance for univariate regression
+
 
 TODO:
-- Get MLP Regressor working
 
 - Use new borders for synthetic data generation (+- 0.5 for cho, naa)
 - Check RF performance for bigger cho interval
-- Check RF performance for univariate regression
 
 - Compare inner feature representations before and after transformation with L1 loss
 - Compare inner feature representations of before-before and after-after
