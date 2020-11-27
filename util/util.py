@@ -193,3 +193,20 @@ def load_loss_from_file(opt, path):
 
     return {'X': x, 'Y': y, 'legend': legend}
 
+def normalize(spectra: np.ndarray) -> np.ndarray:
+    """
+    Normalizes the given set of spectra to [-1,1].
+
+    Parameters
+    ---------
+        - spectra: Numpy array of shape NxCxL containing N spectra of length L
+
+    Returns
+    -------
+        - Numpy array of Shape NxCxL containing the normalized spectra
+    """
+    max_per_spectrum = np.amax(abs(spectra),(1,2))
+    max_per_spectrum = np.repeat(max_per_spectrum[:, np.newaxis], spectra.shape[1], axis=1)
+    max_per_spectrum = np.repeat(max_per_spectrum[:, :, np.newaxis], spectra.shape[2], axis=2)
+    return np.divide(spectra, max_per_spectrum)
+

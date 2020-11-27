@@ -33,26 +33,30 @@ Done:
 - Use pearson coefficient for validation metric
 - Refine network architecture image
 - Make magnitude an option for the dataloader
-
 USCF:
 - Use cre map for selection of voxels
 - Throw away cre=0 (outliers)
 - Calculate cho/cre and NAA/cre
 - Compare Data distributions (also across patients)
+- test entropy + identity for cropped
 
-
+########
+- Check LCM distributions
+- Check on Auto-encoder (Talk with Prof. Menze)
+- Get MLP Regressor working
+- Improve baseline creation
+- Check RF performance for univariate regression
 
 
 TODO:
-- Use new borders for synthetic data generation
-- test entropy + identity for cropped
 
+- Use new borders for synthetic data generation (+- 0.5 for cho, naa)
+- Check RF performance for bigger cho interval
 
-- Check LCM distributions
-- Check on Auto-encoder (Talk with Bjoern)
+- Compare inner feature representations before and after transformation with L1 loss
+- Compare inner feature representations of before-before and after-after
 - Create & train Auto-encoder
 - Integrate Auto-Encoder to CycleGAN
-- Get MLP Regressor working
 - Reasons for CycleGAN:
     - CycleGAN as preprocessing step for other methods
     - We can compare different methods on the same domain

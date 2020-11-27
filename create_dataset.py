@@ -17,7 +17,7 @@ from pathlib import Path
 
 from data.image_folder import make_dataset
 from data.data_auxiliary import splitData
-from util.util import mkdir
+from util.util import mkdir, normalize
 
 from options.create_dataset_options import CreateDatasetOptions
 opt = CreateDatasetOptions().parse()
@@ -40,12 +40,6 @@ def load_from_mat(source_dir, var_name):
     spectra = normalize(spectra)
     spectra = torch.from_numpy(spectra)
     return spectra
-
-def normalize(spectra):
-    max_per_spectrum = np.amax(abs(spectra),(1,2))
-    max_per_spectrum = np.repeat(max_per_spectrum[:, np.newaxis], spectra.shape[1], axis=1)
-    max_per_spectrum = np.repeat(max_per_spectrum[:, :, np.newaxis], spectra.shape[2], axis=2)
-    return np.divide(spectra, max_per_spectrum)
 
 
 def split_dataset(spectra, save_dir, type):
