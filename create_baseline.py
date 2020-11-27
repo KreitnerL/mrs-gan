@@ -140,7 +140,7 @@ paths = {
 gpu = 6
 
 if __name__ == "__main__":
-    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/', labels=["cho", "naa"], mag=True, cropping=slice(300, 812), val_split=0.05)
+    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=True, cropping=slice(300, 812), val_split=0.05)
     model = 'MLP'
 
     b.create_baseline('I', 'I', model)
