@@ -14,7 +14,7 @@ def remove_outliers(quantities:dict, num_indices: int):
         valid_indices &= (met_qantities[-1] < opt.outlier_cutoff) & (met_qantities[-1] != 0)
     return valid_indices
 
-def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:str, metabolites: list, relativator_met: str, save_dir):
+def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:str, metabolites: list, relativator_met: str, save_dir: str, double_check_activated=None):
     spectra_paths = sorted(make_dataset(sourceDir, file_ext=file_name_spec))
     num_patient = len(spectra_paths)
     print('Number of patients:', num_patient)
@@ -22,6 +22,12 @@ def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:st
     for metabolite in metabolites:
         metabolite_paths[metabolite] = sorted(make_dataset(sourceDir, file_ext=file_ext_metabolite + metabolite + '.dcm'))
     activation_map_paths=sorted(make_dataset(sourceDir, file_ext=file_ext_metabolite + relativator_met + '.dcm'))
+
+    if double_check_activated:
+        double_check_map_paths = sorted(make_dataset(sourceDir, file_ext=double_check_activated))
+    else:
+        double_check_map_paths=None
+
     assert len(metabolite_paths) == len(metabolites)
 
     spectra_real = []
@@ -30,7 +36,7 @@ def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:st
 
     num_spectra_per_patient = []
     for i in progressbar(range(num_patient), "Processing patient data: ", 20):
-        activated_indices, shape, relativator_values = get_activated_indices(activation_map_paths[i])
+        activated_indices, shape, relativator_values = get_activated_indices(activation_map_paths[i], None if not double_check_activated else double_check_map_paths[i])
         for metabolite, paths in metabolite_paths.items():
             quantities[metabolite].append(get_activated_metabolite_values(paths[i], activated_indices, shape, relativator_values))
         valid_indices = remove_outliers(quantities, len(relativator_values))
@@ -69,7 +75,7 @@ def dcm2mat(source_dir, save_dir):
     if not is_set_of_type(source_dir, '.dcm'):
         raise ValueError("Source directory does not contain any valid spectra")
 
-    spectra, quantities, num_spectra_per_patient = extract_from_DCM(source_dir, opt.file_ext_spectra, opt.file_ext_metabolite, ['cho', 'NAA'], 'cre', opt.save_dir)
+    spectra, quantities, num_spectra_per_patient = extract_from_DCM(source_dir, opt.file_ext_spectra, opt.file_ext_metabolite, ['cho', 'NAA'], 'cre', opt.save_dir, opt.double_check_activated)
     
     if opt.real:
         name = 'spectra_real'
