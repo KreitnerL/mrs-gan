@@ -13,6 +13,7 @@ class Dicom2MatlabOptions():
         self.parser.add_argument('--save_dir', type=str, help='Directory where the matlab dataset will be saved')
         self.parser.add_argument('--file_ext_spectra', type=str, default='proc.dcm', help='File extension of the processed spectra DICOM files')
         self.parser.add_argument('--file_ext_metabolite', type=str, default='UCSF_', help='File extension of the metabolic map')
+        self.parser.add_argument('--double_check_activated', type=str, default=None, help='File extension of the metabolic map used for finding the activated voxels')
         self.parser.add_argument('--force', action='store_true', help='If true, overwrites all exisiting .npz, .mat, .dat files')
 
         self.parser.add_argument('--outlier_cutoff', type=float, default=10.0, help='Max valid value for any metabolite')

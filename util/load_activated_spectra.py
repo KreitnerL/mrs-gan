@@ -8,20 +8,7 @@ def load_dicom(path):
     # print('load', path)
     return pydicom.dcmread(path)
 
-def get_activated_indices(metabolic_map_path):
-    """
-    Indetifies the actiated voxels and returns their indices
-
-    Parameters
-    ----------
-        - metabolicMapPath: file path of the dicom file containing the metabolite information
-
-    Returns
-    -------
-        - activated_index: List of indices of activated voxels (Flattened)
-        - shape: The shape of the voxel matrix
-        - relativator_values: List of absolute relativator metabolite quantities
-    """
+def load_metabolic_map(metabolic_map_path):
     ############################################################
     # Load the matabolic map to know which voxels are activated
     ############################################################
@@ -41,11 +28,35 @@ def get_activated_indices(metabolic_map_path):
     
     metabolic_map = np.flip(np.flip(data, 0), 1)
     metabolic_map_flat = metabolic_map.flatten('F')
+    return metabolic_map_flat, shape
+
+def get_activated_indices(metabolic_map_path, metabolic_map_path_double_check=None):
+    """
+    Indetifies the actiated voxels and returns their indices
+
+    Parameters
+    ----------
+        - metabolicMapPath: file path of the dicom file containing the metabolite information
+
+    Returns
+    -------
+        - activated_index: List of indices of activated voxels (Flattened)
+        - shape: The shape of the voxel matrix
+        - relativator_values: List of absolute relativator metabolite quantities
+    """
+    metabolic_map_flat, shape = load_metabolic_map(metabolic_map_path)
 
     # Most of the voxels are not activated. They contain the a fix baseline value
     baseline = np.bincount(metabolic_map_flat).argmax()
     # Get the index of all activated voxels
     activated_indices = (metabolic_map_flat != baseline) & (metabolic_map_flat != 0)
+
+    if metabolic_map_path_double_check:
+        double_check, _ = load_metabolic_map(metabolic_map_path_double_check)
+        baseline2 = np.bincount(double_check).argmax()
+        activated_indices_double_check = (double_check != baseline2) & (double_check != 0)
+        activated_indices &= activated_indices_double_check
+
     relativator_values = metabolic_map_flat[activated_indices]
     return activated_indices, shape, relativator_values
 
@@ -124,16 +135,8 @@ def get_activated_metabolite_values(metabolic_map_path, activated_index, shape, 
     -------
         - nparray of quantities for activated voxels
     """
-    metabolic_map_info = load_dicom(metabolic_map_path)
-
-    # Following 3 steps are equal to matlabs "squeeze(double(dicomread(info)))""
-    # Stored as a byte array where each value takes 2 bytes! 
-    data = struct.unpack('H' * np.prod(shape), metabolic_map_info.PixelData)
-    data = np.reshape(data, np.flip(shape), order='C')
-    data = np.moveaxis(data, [0,1,2], [2,0,1])
+    metabolic_map_flat, _ = load_metabolic_map(metabolic_map_path)
     
-    metabolic_map = np.flip(np.flip(data, 0), 1)
-    metabolic_map_flat = metabolic_map.flatten('F')
     absolute_quantities = metabolic_map_flat[activated_index]
     relative_quantities = absolute_quantities/relativator_values
 

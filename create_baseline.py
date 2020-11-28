@@ -143,12 +143,12 @@ if __name__ == "__main__":
     b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=True, cropping=slice(300, 812), val_split=0.05)
     model = 'MLP'
 
-    b.create_baseline('I', 'I', model)
-    b.create_baseline('I', 'R', model)
-    b.create_baseline('R', 'R', model)
+    # b.create_baseline('I', 'I', model)
+    # b.create_baseline('I', 'R', model)
+    # b.create_baseline('R', 'R', model)
 
-    b.create_baseline('I', 'UCSF', model)
-    b.create_baseline('UCSF', 'UCSF', model)
+    # b.create_baseline('I', 'UCSF', model)
+    # b.create_baseline('UCSF', 'UCSF', model)
 
-    b.create_baseline('I', 'LCM', model)
+    # b.create_baseline('I', 'LCM', model)
     b.create_baseline('LCM', 'LCM', model)
