@@ -17,6 +17,10 @@ def create_model(opt):
         assert(opt.dataset_mode == 'dicom_spectral_dataset')
         from .cycleGAN_WSN import CycleGAN_WSN
         model = CycleGAN_WSN(opt)
+    elif opt.model == 'cycleGAN_WGP_IFL':
+        assert(opt.dataset_mode == 'dicom_spectral_dataset')
+        from .cycleGAN_WGP_IFL import CycleGAN_WGP_IFL
+        model = CycleGAN_WGP_IFL(opt)
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
     print("model [%s] was created" % (model.name()))

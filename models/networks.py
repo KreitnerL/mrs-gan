@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch.nn.modules.container import Sequential
 import torchvision
 from torch.nn.utils import spectral_norm
 
@@ -142,6 +143,102 @@ class GANLoss(nn.Module):
             target_tensor = self.get_target_tensor(input, target_is_real)
             loss = self.loss(input, target_tensor)
         return loss
+
+
+class Encoder(nn.Module):
+    def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2):
+        """
+        Create an Encoder network that downsamples the given input and encodes it into a sparse feature representation.
+        Parameters
+        ----------
+            - input_nc (int)      -- the number of channels in input images
+            - ngf (int)           -- the number of filters in the last conv layer
+            - norm_layer          -- normalization layer
+            - n_downsampling (int)-- the number of downsampling steps
+        """ 
+        super().__init__()
+        model = [get_padding('reflect')(3),
+                 get_conv()(input_nc, ngf, kernel_size=7, padding=0),
+                 norm_layer(ngf),
+                 nn.ReLU(True)]
+
+        for i in range(n_downsampling):
+            mult = 2**i
+            model += [get_conv()(ngf * mult, ngf * mult * 2, kernel_size=3,
+                                stride=2, padding=1),
+                      norm_layer(ngf * mult * 2),
+                      nn.ReLU(True)]
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        return self.model(input)
+
+class Decoder(nn.Module):
+    def __init__(self, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), n_upsampling=2):
+        """
+        Create a Decoder network that upsamples the given input and decodes it from a sparse feature representation.
+        Parameters
+        ----------
+            - output_nc (int)     -- the number of channels in output images
+            - ngf (int)           -- the number of filters in the last conv layer
+            - norm_layer          -- normalization layer
+            - n_upsampling (int)-- the number of downsampling steps
+        """ 
+        super().__init__()
+        model = []
+        for i in range(n_upsampling):
+            mult = 2**(n_upsampling - i)
+            model += [get_conv_transpose()(ngf * mult, int(ngf * mult / 2),
+                                         kernel_size=3, stride=2,
+                                         padding=1, output_padding=1),
+                      norm_layer(int(ngf * mult / 2)),
+                      nn.ReLU(True)]
+        model += [get_padding('reflect')(3)]
+        model += [get_conv()(ngf, output_nc, kernel_size=7, padding=0)]
+        model += [nn.Tanh()]
+
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        return self.model(input)
+
+class Transformer(nn.Module):
+    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero'):
+        """
+        Create a Transformer network that applies style transform on a sparse feature representation.
+        Parameters:
+        ----------
+            - input_nc (int) -- the number of channels in input images
+            - ngf (int)      -- the number of filters in the last conv layer
+            - norm_layer     -- normalization layer
+            - use_dropout (bool)  -- if use dropout layers
+            - n_blocks (int)      -- the number of ResNet blocks
+            - padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
+        """
+        super().__init__()
+        model = []
+        for i in range(n_blocks):
+            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+        self.model = nn.Sequential(*model)
+
+    def forward(self, input):
+        return self.model(input)
+
+class Encoder_Transform_Decoder(nn.Module):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero'):
+        super().__init__()
+        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling)
+        transformer_nc = (2**n_downsampling) * ngf
+        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type)
+        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling)
+        self.model = nn.Sequential(*self.get_components())
+
+    def get_components(self):
+        return self.encoder, self.transformer, self.decoder
+
+    def forward(self, input):
+        return self.model(input)
+
 
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.
