@@ -54,8 +54,11 @@ USCF:
 TODO:
 
 - Use new borders for synthetic data generation (+- 0.5 for cho, naa)
+- raytune: Increase duration for reportss + max iter
 
 - RMSE for MLP
+
+- CBAM module
 
 - Create & train Auto-encoder
 - Integrate Auto-Encoder to CycleGAN
