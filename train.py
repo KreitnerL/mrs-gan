@@ -89,5 +89,5 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
 if opt.val_path:
     _, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
-    visualizer.plot_current_validation_score(sum(pearson_coefficient), total_iters)
+    visualizer.plot_current_validation_score(pearson_coefficient, total_iters)
 model.save('latest')

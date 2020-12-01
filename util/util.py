@@ -129,7 +129,8 @@ def smooth_kernel(x, kernel_size=5):
     """
     x_smooth = []
     for i in range(len(x)-kernel_size):
-        x_smooth.append(x[i:i+kernel_size])
+        x_smooth.append(np.mean(x[i:i+kernel_size]))
+    return x_smooth
 
 def smooth(x, window_len=11, window='hanning'):
     """smooth the data using a window with requested size.
@@ -267,11 +268,11 @@ def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):
     if fig is None:
         fig = plt.figure()
     plt.figure(fig.number)
-    max_y = max(np.array(avg_err_rel)+0.15)
+    max_y = 0.15 if max(np.array(avg_err_rel)) < 0.1 else 1.0
     plt.boxplot(err_rel, notch = True, labels=labels, showmeans=True, meanline=True)
     plt.ylabel('Relative Error')
     plt.title('Error per predicted metabolite')
-    plt.gca().set_ylim([0,max_y])
+    plt.ylim([0,max_y])
     path = path+'_rel_err_boxplot.png'
     plt.savefig(path, format='png')
     plt.cla()
