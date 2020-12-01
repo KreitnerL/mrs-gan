@@ -5,7 +5,7 @@ import ntpath
 import time
 from . import util
 import matplotlib.pyplot as plt
-from util.util import smooth, load_loss_from_file
+from util.util import smooth_kernel, load_loss_from_file
 
 class Visualizer():
     """This class includes several functions that can display/save images and print/save logging information.
@@ -61,27 +61,29 @@ class Visualizer():
         plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
+        plt.tight_layout()
         plt.savefig(path, format='png')
         plt.cla()
 
-    def plot_current_validation_error(self, error, total_iters):
-        if not hasattr(self, 'validation_error'):
-            self.validation_error = []
-        self.validation_error.append(error)
+    def plot_current_validation_score(self, score, total_iters):
+        if not hasattr(self, 'validation_score'):
+            self.validation_score = []
+        self.validation_score.append(score)
         if not hasattr(self, 'figure2'):
             self.figure2 = plt.figure()
         else:
             plt.figure(self.figure2.number)
 
         plt.xlabel('epoch')
-        plt.ylabel('Average Relative Validation Error')
-        plt.title(self.name + ' validation error over time')
-        step_size = int(total_iters/len(self.validation_error))
+        plt.ylabel('R-score')
+        plt.title(self.name + ' validation score over time')
+        plt.ylim([0,1])
+        step_size = int(total_iters/len(self.validation_score))
         x = list(range(step_size, total_iters+1, step_size))
-        for i in range(len(error)):
-            plt.plot(x, np.array(self.validation_error)[:,i])
+        for i in range(len(score)):
+            plt.plot(x, np.array(self.validation_score)[:,i])
 
-        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_error.png')
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
         plt.savefig(path, format='png')
         plt.cla()
 
@@ -113,8 +115,6 @@ class Visualizer():
         """Stores the current loss as a png image.
         """
         num_points = len(self.plot_data['Y'])
-        if num_points < 45:
-            return
 
         if not hasattr(self, 'figure'):
             self.figure = plt.figure()
@@ -127,7 +127,7 @@ class Visualizer():
         y_all = np.array(self.plot_data['Y']).transpose()
         y = []
         for y_i in y_all:
-            y.append(smooth(y_i, window_len=int(num_points/15)))
+            y.append(smooth_kernel(y_i))
         x = np.linspace(x[0],x[-1],len(y[0]))
         for i, loss in enumerate(y):
             plt.plot(x, loss, label=self.plot_data['legend'][i])

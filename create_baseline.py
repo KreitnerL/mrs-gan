@@ -9,8 +9,7 @@ import scipy.io as io
 import numpy as np
 from validation_networks.random_forest.random_forest import RandomForest
 from validation_networks.MLP.MLP import MLP
-from scipy.stats import pearsonr
-import matplotlib.pyplot as plt
+from util.util import compute_error, save_boxplot
 from util.util import normalize
 
 
@@ -71,69 +70,23 @@ class BaselineCreator:
             if not model.pretrained:
                 model.train(train_set.spectra_train, train_set.param_train)
         elif model_type=='MLP':
-            model = MLP(self.save_dir+train, lambda pred, y: self.compute_error(pred, y)[2], gpu=gpu, in_out= (len(train_set.spectra_train[0]), len(self.labels)), batch_size=200)
+            model = MLP(self.save_dir+train, lambda pred, y: compute_error(pred, y)[2], gpu=gpu, in_out= (len(train_set.spectra_train[0]), len(self.labels)), batch_size=200)
             if not model.pretrained:
                 model.train(train_set.spectra_train, train_set.param_train, test_set.spectra_test, test_set.param_test)
         else:
             raise NotImplementedError()
 
         predictions = model.predict(test_set.spectra_test)
-        err_rel, avg_err_rel, pearson_coefficient = self.compute_error(predictions, test_set.param_test)
+        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, test_set.param_test)
         for metabolite in range(len(avg_err_rel)):
             print('Average Relative Error {0}: {1}'.format(self.labels[metabolite], avg_err_rel[metabolite]))
             print('Pearson Coefficient: {0}, {1}'.format(self.labels[metabolite], pearson_coefficient[metabolite]))
-        self.save_plot(err_rel, avg_err_rel,  self.save_dir + train + '2' + test + '_' + model_type)
+        save_boxplot(err_rel, avg_err_rel,  self.save_dir + train + '2' + test + '_' + model_type, self.labels)
 
-    def compute_error(self, predictions: list, y):
-        """
-        Compute the realtive errors and the average per metabolite
-
-        Parameters
-        ---------
-        - predictions: List of predicted quantifications by the random forest
-        - y: List of quantifications. N2xM, M = number of metabolites, N2 = number of spectra
-        
-        Returns
-        -------
-        - err_rel: List of relative errors. M x N2
-        - avg_err_rel: Average relative error per metabolite. M x 1
-        """
-        err_rel = []
-        avg_err_rel = []
-        pearson_coefficient = []
-        for metabolite in range(len(self.labels)):
-            err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
-            avg_err_rel.append(np.mean(err_rel[metabolite]))
-            pearson_coefficient.append(abs(pearsonr(predictions[:,metabolite], y[:,metabolite])[0]))
-        
-        return err_rel, avg_err_rel, pearson_coefficient
-
-    def save_plot(self, err_rel, avg_err_rel, path: str):
-        """
-        Save a boxplot from the given relative errors.
-
-        Parameters
-        ---------
-        - err_rel: List of relative errors. M x N2
-        - path: directory where the plot should be saved.
-        """
-        max_y = max(np.array(avg_err_rel)+0.15)
-        if not hasattr(self, 'figure'):
-            self.figure = plt.figure()
-        else:
-            plt.figure(self.figure.number)
-        plt.boxplot(err_rel, notch = True, labels=self.labels, showmeans=True, meanline=True)
-        plt.ylabel('Relative Error')
-        plt.title('Error per predicted metabolite')
-        plt.gca().set_ylim([0,max_y])
-        path = path+'_rel_err_boxplot.png'
-        plt.savefig(path, format='png')
-        plt.cla()
-        print('Saved error plot at', path)
 
 paths = {
-    "I": ('/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_spectra.mat', '/home/kreitnerl/Datasets/spectra_3_pair/dataset_ideal_quantities.mat', 'spectra'),
-    "R": ('/home/kreitnerl/Datasets/spectra_3_pair/dataset_spectra.mat', '/home/kreitnerl/Datasets/spectra_3_pair/dataset_quantities.mat', 'spectra'),
+    "I": ('/home/kreitnerl/Datasets/spectra_4_pair/dataset_ideal_spectra.mat', '/home/kreitnerl/Datasets/spectra_4_pair/dataset_ideal_quantities.mat', 'spectra'),
+    "R": ('/home/kreitnerl/Datasets/spectra_4_pair/dataset_spectra.mat', '/home/kreitnerl/Datasets/spectra_4_pair/dataset_quantities.mat', 'spectra'),
     "UCSF": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/spectra.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/quantities.mat', 'spectra'),
     "LCM": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra')
 }
@@ -144,11 +97,11 @@ if __name__ == "__main__":
     model = 'MLP'
 
     # b.create_baseline('I', 'I', model)
-    # b.create_baseline('I', 'R', model)
+    b.create_baseline('I', 'R', model)
     # b.create_baseline('R', 'R', model)
 
     # b.create_baseline('I', 'UCSF', model)
     # b.create_baseline('UCSF', 'UCSF', model)
 
     # b.create_baseline('I', 'LCM', model)
-    b.create_baseline('LCM', 'LCM', model)
+    # b.create_baseline('LCM', 'LCM', model)

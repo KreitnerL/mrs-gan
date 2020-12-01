@@ -37,10 +37,10 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = define.define_G(opt.input_nc, opt.output_nc, 
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
-        self.netG_B = define.define_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids)
+        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, 
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
+        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc,
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
 
         # Discriminators
         if self.isTrain:
@@ -180,7 +180,7 @@ class CycleGANModel(BaseModel):
         fake_A = self.fake_A_pool.query(self.fake_A)
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A)
 
-    def backward_G(self):
+    def calculate_G_loss(self):
         """Calculate the loss for generators G_A and G_B"""
         self.calculate_identity_loss()
 
@@ -204,7 +204,7 @@ class CycleGANModel(BaseModel):
 
         # combined loss
         self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_entropy_A + self.loss_entropy_B
-        self.loss_G.backward()
+        return self.loss_G
 
     def calculate_identity_loss(self):
         """Calculates the idetity loss"""
@@ -226,7 +226,7 @@ class CycleGANModel(BaseModel):
         # G_A and G_B
         if optimize_G:
             self.optimizer_G.zero_grad()
-            self.backward_G()
+            self.calculate_G_loss().backward()
             self.optimizer_G.step()
         if optimize_D:
             # D_A and D_B

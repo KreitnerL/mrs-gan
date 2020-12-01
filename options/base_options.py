@@ -14,7 +14,6 @@ class BaseOptions():
 
     def initialize(self):
         self.parser.add_argument('--split', action='store_true', default=False, help='split the dataset into training, validating, and testing segments')
-        self.parser.add_argument('--val_split', type=float, default=0.2, help='percent of data to use for validation')
         self.parser.add_argument('--test_split', type=float, default=0.0, help='percent of data to use for testing') #default=0.1
         self.parser.add_argument('--phase_data_path', type=str, help='if data has already been split, indicate the path for the data split index')#, default='./tests/SpectraGAN_test_012/data')#, default='/home/john/Documents/Research/SpectraGAN/tests/SpectraGAN_test_010/data')
         self.parser.add_argument('--CpoolSize', type=int, default=50, help='critic value pool size for relative loss')
@@ -43,14 +42,15 @@ class BaseOptions():
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
         self.parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-        self.parser.add_argument('--which_model_netG', type=str, default='resnet_9blocks', help='selects model to use for netG')
+        self.parser.add_argument('--which_model_netG', type=int, default=9, help='selects model to use for netG')
         self.parser.add_argument('--which_model_feat', type=str, default='resnet34', help='selects model to use for feature network')
         self.parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
+        self.parser.add_argument('--n_downsampling', type=int, default=2, help='Number of down-/upsampling steps in the Generator')
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
         self.parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded.  [unaligned | LabeledMatSpectralDataset]')
         self.parser.add_argument('--model', type=str, default='cycleGAN_PFL', help='chooses which model to use. [cycleGAN_PFL, cycleGAN_spectra]')
-        self.parser.add_argument('--nThreads', default=2, type=int, help='# threads for loading data')
+        self.parser.add_argument('--nThreads', default=0, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')

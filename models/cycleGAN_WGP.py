@@ -1,6 +1,5 @@
 from models.cycleGAN_spectra import CycleGAN_spectra
 import torch
-from collections import OrderedDict
 
 class CycleGAN_WGP(CycleGAN_spectra):
     """

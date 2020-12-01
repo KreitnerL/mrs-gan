@@ -1,4 +1,5 @@
 from __future__ import print_function
+from argparse import Namespace
 import numpy as np
 from PIL import Image
 import os
@@ -7,6 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 import sys
 import re
+from scipy.stats import pearsonr
 
 fig = ax = None
 
@@ -112,57 +114,75 @@ def is_set_of_type(dir, type):
             return True
     return False
 
+def smooth_kernel(x, kernel_size=5):
+    """
+    Smoothes the given graph by sliding a kernel along each datapoint that takes the average of the selected values.
+
+    Parameters:
+    ----------
+        - x (list): List of length L
+        - kernel_size (int): Size of the kernel. Default = 5
+
+    Returns:
+    -------
+        - List of length L-kernelsize+1
+    """
+    x_smooth = []
+    for i in range(len(x)-kernel_size):
+        x_smooth.append(np.mean(x[i:i+kernel_size]))
+    return x_smooth
+
 def smooth(x, window_len=11, window='hanning'):
-        """smooth the data using a window with requested size.
-        Taken from
-        https://scipy-cookbook.readthedocs.io/items/SignalSmooth.html
+    """smooth the data using a window with requested size.
+    Taken from
+    https://scipy-cookbook.readthedocs.io/items/SignalSmooth.html
+
+    This method is based on the convolution of a scaled window with the signal.
+    The signal is prepared by introducing reflected copies of the signal 
+    (with the window size) in both ends so that transient parts are minimized
+    in the begining and end part of the output signal.
     
-        This method is based on the convolution of a scaled window with the signal.
-        The signal is prepared by introducing reflected copies of the signal 
-        (with the window size) in both ends so that transient parts are minimized
-        in the begining and end part of the output signal.
+    Parameters
+    ----------
+        x: the input signal 
+        window_len: the dimension of the smoothing window; should be an odd integer
+        window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
+            flat window will produce a moving average smoothing.
+
+    Returns
+    -------
+        the smoothed signal
         
-        Parameters
-        ----------
-            x: the input signal 
-            window_len: the dimension of the smoothing window; should be an odd integer
-            window: the type of window from 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
-                flat window will produce a moving average smoothing.
+    Example
+    --------
 
-        Returns
-        -------
-            the smoothed signal
-            
-        Example
-        --------
+    t=linspace(-2,2,0.1)
+    x=sin(t)+randn(len(t))*0.1
+    y=smooth(x)
+    
+    see also: 
+    
+    numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
+    scipy.signal.lfilter
 
-        t=linspace(-2,2,0.1)
-        x=sin(t)+randn(len(t))*0.1
-        y=smooth(x)
-        
-        see also: 
-        
-        numpy.hanning, numpy.hamming, numpy.bartlett, numpy.blackman, numpy.convolve
-        scipy.signal.lfilter
+    NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
+    """
+    if x.ndim != 1:
+        raise ValueError("smooth only accepts 1 dimension arrays.")
+    if x.size < window_len or window_len < 3:
+        return x
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
 
-        NOTE: length(output) != length(input), to correct this: return y[(window_len/2-1):-(window_len/2)] instead of just y.
-        """
-        if x.ndim != 1:
-            raise ValueError("smooth only accepts 1 dimension arrays.")
-        if x.size < window_len or window_len < 3:
-            return x
-        if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
-            raise ValueError("Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'")
+    s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+    #print(len(s))
+    if window == 'flat': #moving average
+        w=np.ones(window_len,'d')
+    else:
+        w=eval('np.'+window+'(window_len)')
 
-        s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
-        #print(len(s))
-        if window == 'flat': #moving average
-            w=np.ones(window_len,'d')
-        else:
-            w=eval('np.'+window+'(window_len)')
-
-        y=np.convolve(w/w.sum(),s,mode='valid')
-        return y
+    y=np.convolve(w/w.sum(),s,mode='valid')
+    return y
 
 def load_loss_from_file(opt, path):
     """
@@ -209,4 +229,72 @@ def normalize(spectra: np.ndarray) -> np.ndarray:
     max_per_spectrum = np.repeat(max_per_spectrum[:, np.newaxis], spectra.shape[1], axis=1)
     max_per_spectrum = np.repeat(max_per_spectrum[:, :, np.newaxis], spectra.shape[2], axis=2)
     return np.divide(spectra, max_per_spectrum)
+
+def compute_error(predictions: list, y):
+        """
+        Compute the realtive errors and the average per metabolite
+
+        Parameters
+        ---------
+        - predictions: List of predicted quantifications by the random forest
+        - y: List of quantifications. N2xM, M = number of metabolites, N2 = number of spectra
+        
+        Returns
+        -------
+        - err_rel: List of relative errors. M x N2
+        - avg_err_rel: Average relative error per metabolite. M x 1
+        """
+        err_rel = []
+        avg_err_rel = []
+        pearson_coefficient = []
+        for metabolite in range(len(y[0])):
+            err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
+            avg_err_rel.append(np.mean(err_rel[metabolite]))
+            pearson_coefficient.append(abs(pearsonr(predictions[:,metabolite], y[:,metabolite])[0]))
+        
+        return err_rel, avg_err_rel, pearson_coefficient
+
+
+def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):
+    """
+    Save a boxplot from the given relative errors.
+
+    Parameters
+    ---------
+    - err_rel: List of relative errors. M x N2
+    - path: directory where the plot should be saved.
+    """
+    global fig
+    if fig is None:
+        fig = plt.figure()
+    plt.figure(fig.number)
+    max_y = 0.15 if max(np.array(avg_err_rel)) < 0.1 else 1.0
+    plt.boxplot(err_rel, notch = True, labels=labels, showmeans=True, meanline=True)
+    plt.ylabel('Relative Error')
+    plt.title('Error per predicted metabolite')
+    plt.ylim([0,max_y])
+    path = path+'_rel_err_boxplot.png'
+    plt.savefig(path, format='png')
+    plt.cla()
+    print('Saved error plot at', path)
+
+# def load_options(path):
+#     with open(path) as file:
+#         opt = dict()
+#         for line in file:
+#             line = line.rstrip()
+#             if line.startswith('-'):
+#                 continue
+#             args = line.split(': ')
+#             try:
+#                 opt[args[0]] = eval(args[1])
+#             except:
+#                 opt[args[0]] = args[1]
+#     return opt
+
+def update_options(opt: Namespace, update_opts: dict):
+    opt = vars(opt)
+    opt.update(update_opts)
+    opt = Namespace(**opt)
+    return opt
 

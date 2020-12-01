@@ -79,7 +79,7 @@ See [options](options/README.md) for more information.
 
 To validate the pre-trained model, run:
 ```sh
-python val.py --dataroot [PATH TO DATASET] --results_dir [PATH TO RESULTS FOLDER] --name [NAME OF EXPERIMENT] --model [GAN MODEL] --rf_path [PATH TO RANDOM FOREST] --num_test [NUMBER OF BATCHES]
+python val.py --dataroot [PATH TO DATASET] --results_dir [PATH TO RESULTS FOLDER] --name [NAME OF EXPERIMENT] --model [GAN MODEL] --val_path [PATH TO RANDOM FOREST] --num_test [NUMBER OF BATCHES]
 ```
 
 The validation results will be saved as a boxplot at 

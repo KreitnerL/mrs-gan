@@ -1,4 +1,5 @@
 from argparse import Namespace
+from util.util import update_options
 from util.validator import Validator
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
@@ -16,20 +17,14 @@ def report(validator: Validator, model):
     _, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
     tune.report(score=sum(pearson_coefficient))
 
-def extract_config(config):
-    opt = vars(init_opt)
-    print('[RayTune]: optimizing', config)
-    opt.update(config)
-    opt = Namespace(**opt)
-    return opt
-
 def training_function(config):
-    opt = extract_config(config)
+    opt = update_options(init_opt, config)
 
     print('------------ Creating Training Set ------------')
     data_loader = CreateDataLoader(opt)     # get training options
     dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
     dataset_size = len(data_loader)         # get the number of samples in the dataset., 
+    opt = update_options(init_opt, {'data_length': dataset.dataset.get_length()})
     print('training spectra = %d' % dataset_size)
     print('training batches = %d' % len(dataset))
 
@@ -59,7 +54,7 @@ def training_function(config):
     report(validator, model)
 
 # Create HyperBand scheduler and maximize score
-hyperband = HyperBandScheduler(metric="score", mode="max")
+hyperband = HyperBandScheduler(metric="score", mode="max", max_t=400)
 # Specify the search space and maximize score
 hyperopt = HyperOptSearch(metric="score", mode="max")
 
@@ -70,11 +65,16 @@ analysis = tune.run(
         # "dlr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
         # "glr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
         # "batch_size": tune.choice(list(range(1,100))) 50
+        "which_model_netG": tune.choice(list(range(3,9))),
+        # "lambda_feat": tune.quniform(0, 5, 0.2) 3
+        # "n_downsampling": tune.choice(list(range(1,5))),
+        # "n_layers_D": tune.choice(list(range(1,6)))
     },
-    resources_per_trial={"gpu": 0.25},
+    resources_per_trial={"gpu": 0.3},
     num_samples=12,
     scheduler=hyperband,
-    search_alg=hyperopt
+    search_alg=hyperopt,
+    raise_on_failed_trial=False
 )
-print("best config: ", analysis.get_best_config(metric="score", mode="max"))
+print("best config: ", analysis.get_best_config(metric="score", mode="max", scope="last-5-avg"))
 print(analysis.results)

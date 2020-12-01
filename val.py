@@ -7,6 +7,7 @@ It will load a saved model from '--checkpoints_dir' and save the results to '--r
 It first creates model and dataset given the option. It will hard-code some parameters.
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
+from util.util import save_boxplot
 from util.validator import Validator
 from options.val_options import ValidationOptions
 from models.models import create_model
@@ -25,5 +26,5 @@ validator = Validator(opt)
 err_rel, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
 print('average realative error:', avg_err_rel)
 print('pearson coefficient:', pearson_coefficient)
-validator.rf.save_plot(err_rel, avg_err_rel, opt.results_dir + opt.name)
+save_boxplot(err_rel, avg_err_rel, opt.results_dir + opt.name, ['Cho', 'NAA'])
 print('Done. You can find you the generated validaton plot at', opt.results_dir + opt.name)
