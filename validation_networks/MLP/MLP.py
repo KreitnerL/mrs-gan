@@ -9,7 +9,7 @@ from util.util import progressbar
 from validation_networks.MLP.MLP_dataset import MLPDataset
 
 class MLP(nn.Module):
-    def __init__(self, save_path:str, val_fun, gpu: int = None, in_out = (1,1), num_neurons = (100, 100, 100), lr=0.001, batch_size: int = 1, num_epoch: int = 15, validate_every: int = 5000):
+    def __init__(self, save_path:str, val_fun=None, gpu: int = None, in_out = (1,1), num_neurons = (100, 100, 100), lr=0.001, batch_size: int = 1, num_epoch: int = 15, validate_every: int = 5000):
         super(MLP, self).__init__()
         self.layers = nn.Sequential()
         num_neurons = [in_out[0], *num_neurons, in_out[1]]
@@ -58,7 +58,7 @@ class MLP(nn.Module):
 
     def predict(self, x):
         dataset = DataLoader(MLPDataset(x, None), batch_size=self.batch_size,
-                             num_workers=1, drop_last=False, shuffle=False)
+                             num_workers=0, drop_last=False, shuffle=False)
         return self._predict(dataset)
 
     def _predict(self, val_dataset: DataLoader):
@@ -72,12 +72,12 @@ class MLP(nn.Module):
     def train(self, spectra_train, labels_train, spectra_test, labels_test, tol: float = 1e-3, n_iter_no_change: int = 3):
         dataset_train = DataLoader(MLPDataset(spectra_train, labels_train),
                                     batch_size=self.batch_size,
-                                    num_workers=1,
+                                    num_workers=0,
                                     shuffle=True,
                                     drop_last=False)
         dataset_test = DataLoader(MLPDataset(spectra_test, labels_test),
                                     batch_size=self.batch_size,
-                                    num_workers=1,
+                                    num_workers=0,
                                     shuffle=False,
                                     drop_last=False)
 
@@ -128,7 +128,7 @@ class MLP(nn.Module):
 
         dataset_train = DataLoader(MLPDataset(spectra[:num_train], labels[:num_train]),
                                     batch_size=self.batch_size,
-                                    num_workers=1,
+                                    num_workers=0,
                                     shuffle=True,
                                     drop_last=False)
 
