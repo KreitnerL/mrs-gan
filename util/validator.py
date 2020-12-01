@@ -1,4 +1,5 @@
 from argparse import Namespace
+from util.util import compute_error
 from data.dicom_spectral_dataset import DicomSpectralDataset
 import numpy as np
 import json
@@ -7,7 +8,7 @@ import time
 
 from models.cycleGAN import CycleGANModel
 from data.data_loader import CreateDataLoader
-from random_forest.random_forest import RandomForest
+from validation_networks.MLP.MLP import MLP
 
 
 class Validator:
@@ -37,7 +38,8 @@ class Validator:
             self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
             self.opt.num_test = int(self.num_test/self.opt.batch_size)
             self.y_test = self.y_test[:self.num_test]
-        self.rf = RandomForest(num_trees=100, labels= self.labels, load_from=self.opt.rf_path)
+
+        self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
 
     def get_validation_score(self, model: CycleGANModel):
         """
@@ -65,7 +67,7 @@ class Validator:
             fakes.append(fake)
         fakes = np.concatenate(np.array(fakes))
 
-        predictions = self.rf.test(fakes)
-        err_rel, avg_err_rel, pearson_coefficient = self.rf.compute_error(predictions, self.y_test)
+        predictions = self.val_network.predict(np.squeeze(fakes))
+        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, self.y_test)
         print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
         return err_rel, avg_err_rel, pearson_coefficient

@@ -19,7 +19,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--print_freq', type=int, default=100, help='frequency of showing training results on console')
         self.parser.add_argument('--plot_freq', type=int, default=1000, help="number of iterations between plotting")
         self.parser.add_argument('--no_html', action='store_true', help='do not save intermediate training results to [opt.checkpoints_dir]/[opt.name]/web/')
-        self.parser.add_argument('--rf_path', type=str, default=None, help='File path to the pretrained random forest dump.')
+        self.parser.add_argument('--val_path', type=str, default=None, help='File path to the pretrained random forest dump.')
         self.parser.add_argument('--num_test', type=int, default=float("inf"), help='how many test images to run')
 
         # network saving and loading parameters
@@ -54,12 +54,12 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--lambda_B', type=float, default=10.0, help='weight for cycle loss (B -> A -> B)')
         self.parser.add_argument('--lambda_identity', type=float, default=0.0, help='use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1')
         self.parser.add_argument('--lambda_feat', type=float, default=0, help='weight for perception loss (overwrite all)')
-        self.parser.add_argument('--lambda_feat_AfB', type=float, default=0, help='weight for perception loss between real A and fake B ')
-        self.parser.add_argument('--lambda_feat_BfA', type=float, default=0, help='weight for perception loss between real B and fake A ')
-        self.parser.add_argument('--lambda_feat_fArecB', type=float, default=0, help='weight for perception loss between fake A and reconstructed B ')
-        self.parser.add_argument('--lambda_feat_fBrecA', type=float, default=0, help='weight for perception loss between fake B and reconstructed A ')
-        self.parser.add_argument('--lambda_feat_ArecA', type=float, default=0, help='weight for perception loss between real A and reconstructed A ')
-        self.parser.add_argument('--lambda_feat_BrecB', type=float, default=0, help='weight for perception loss between real B and reconstruced B ')
+        # self.parser.add_argument('--lambda_feat_AfB', type=float, default=0, help='weight for perception loss between real A and fake B ')
+        # self.parser.add_argument('--lambda_feat_BfA', type=float, default=0, help='weight for perception loss between real B and fake A ')
+        # self.parser.add_argument('--lambda_feat_fArecB', type=float, default=0, help='weight for perception loss between fake A and reconstructed B ')
+        # self.parser.add_argument('--lambda_feat_fBrecA', type=float, default=0, help='weight for perception loss between fake B and reconstructed A ')
+        # self.parser.add_argument('--lambda_feat_ArecA', type=float, default=0, help='weight for perception loss between real A and reconstructed A ')
+        # self.parser.add_argument('--lambda_feat_BrecB', type=float, default=0, help='weight for perception loss between real B and reconstruced B ')
         self.parser.add_argument('--lambda_entropy', type=float, default=0, help='weight for entropy loss')
 
         
