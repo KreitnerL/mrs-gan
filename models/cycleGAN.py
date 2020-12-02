@@ -9,10 +9,6 @@ from . import networks, auxiliary, define
 T = torch.Tensor
 from models.lr_scheduler import get_scheduler_G, get_scheduler_D
 
-
-def mse_loss(input, target):
-    return torch.sum((input - target)**2) / input.data.nelement()
-
 class CycleGANModel(BaseModel):
     """
     This class implements a CycleGAN model for learning domain to domain translation without paired data.
@@ -37,9 +33,9 @@ class CycleGANModel(BaseModel):
 
         # Generators
         self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, 
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, cbam=opt.cbam)
         self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
+                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, cbam=opt.cbam)
 
         # Discriminators
         if self.isTrain:

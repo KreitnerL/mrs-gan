@@ -5,9 +5,6 @@ import util.util as util
 T = torch.Tensor
 
 
-def mse_loss(input, target):
-    return torch.sum((input - target)**2) / input.data.nelement()
-
 class CycleGAN_spectra(CycleGANModel):
     """
     This class implements a CycleGAN model for learning 1d signal translation without paired data.

@@ -9,3 +9,4 @@ dominate
 opencv-python
 ray[tune]
 hyperopt
+tensorboard

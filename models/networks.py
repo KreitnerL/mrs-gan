@@ -7,6 +7,7 @@ import math
 import numpy as np
 
 from models.auxiliary import *
+from models.CBAM import CBAM1d
 
 
 ##############################################################################
@@ -82,7 +83,7 @@ class GANLoss(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2):
+    def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2, cbam=False):
         """
         Create an Encoder network that downsamples the given input and encodes it into a sparse feature representation.
         Parameters
@@ -110,7 +111,7 @@ class Encoder(nn.Module):
         return self.model(input)
 
 class Decoder(nn.Module):
-    def __init__(self, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), n_upsampling=2):
+    def __init__(self, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), n_upsampling=2, cbam=False):
         """
         Create a Decoder network that upsamples the given input and decodes it from a sparse feature representation.
         Parameters
@@ -139,7 +140,7 @@ class Decoder(nn.Module):
         return self.model(input)
 
 class Transformer(nn.Module):
-    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero'):
+    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero', cbam=False):
         """
         Create a Transformer network that applies style transform on a sparse feature representation.
         Parameters:
@@ -161,7 +162,7 @@ class Transformer(nn.Module):
         return self.model(input)
 
 class Encoder_Transform_Decoder(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero'):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero', cbam=False):
         super().__init__()
         self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling)
         transformer_nc = (2**n_downsampling) * ngf
@@ -235,11 +236,11 @@ class ResnetGenerator(nn.Module):
 
 # Define a resnet block
 class ResnetBlock(nn.Module):
-    def __init__(self, dim, padding_type, norm_layer, use_dropout):
+    def __init__(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, cbam=cbam)
 
-    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout):
+    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         conv_block = []
         p = 0
         if padding_type == 'zero':
@@ -261,6 +262,8 @@ class ResnetBlock(nn.Module):
 
         conv_block += [get_conv()(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim)]
+        if cbam:
+            conv_block.append(CBAM1d(dim))
 
         return nn.Sequential(*conv_block)
 

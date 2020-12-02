@@ -67,12 +67,12 @@ def get_norm_layer(norm_type='instance'):
 
 
 avg_pooling = {
-    1: F.avg_pool1d,
-    2: F.avg_pool2d
+    1: nn.AvgPool1d,
+    2: nn.AvgPool2d
 }
 max_pooling = {
-    1: F.max_pool1d,
-    2: F.max_pool2d
+    1: nn.MaxPool1d,
+    2: nn.MaxPool2d
 }
 def get_pooling(pool_type: str):
     if pool_type == 'avg':
@@ -83,12 +83,12 @@ def get_pooling(pool_type: str):
         raise NotImplementedError('Pooling type [%s] not implemented' % pool_type)
 
 adaptive_avg_pooling = {
-    1: F.adaptive_avg_pool1d,
-    2: F.adaptive_avg_pool2d
+    1: nn.AdaptiveAvgPool1d,
+    2: nn.AdaptiveAvgPool2d
 }
 adaptive_max_pooling = {
-    1: F.adaptive_max_pool1d,
-    2: F.adaptive_max_pool2d
+    1: nn.AdaptiveMaxPool1d,
+    2: nn.AdaptiveMaxPool2d
 }
 def get_adaptive_pooling(pool_type: str):
     if pool_type == 'avg':

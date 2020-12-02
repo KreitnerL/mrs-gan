@@ -4,11 +4,11 @@ from models.networks import *
 # Generator / Discriminator
 ##############################################################################
 
-def define_modular_G(input_nc: int, output_nc: int, ngf: int, num_res_blocks: int, norm='instance', use_dropout=False, gpu_ids=[], n_downsampling=2):
+def define_modular_G(input_nc: int, output_nc: int, ngf: int, num_res_blocks: int, norm='instance', use_dropout=False, gpu_ids=[], n_downsampling=2, cbam=False):
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
 
-    netG = Encoder_Transform_Decoder(input_nc=input_nc, output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=num_res_blocks, n_downsampling=n_downsampling)
+    netG = Encoder_Transform_Decoder(input_nc=input_nc, output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=num_res_blocks, n_downsampling=n_downsampling, cbam=cbam)
 
     if use_gpu:
         assert(torch.cuda.is_available())
