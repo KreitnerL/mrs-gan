@@ -1,4 +1,3 @@
-from argparse import Namespace
 from util.util import update_options
 from util.validator import Validator
 from options.train_options import TrainOptions
@@ -10,6 +9,7 @@ from ray.tune.suggest.hyperopt import HyperOptSearch
 
 # export RAY_MEMORY_MONITOR_ERROR_THRESHOLD=1
 # export CUDA_VISIBLE_DEVICES=1
+# tensorboard --logdir /home/kreitnerl/ray_results
 
 # def objective(losses: dict):
 #     return sum([v.detach().cpu().numpy() for v in losses.values()])
@@ -54,7 +54,7 @@ def training_function(config):
     report(validator, model)
 
 # Create HyperBand scheduler and maximize score
-hyperband = HyperBandScheduler(metric="score", mode="max", max_t=400)
+hyperband = HyperBandScheduler(metric="score", mode="max", max_t=250)
 # Specify the search space and maximize score
 hyperopt = HyperOptSearch(metric="score", mode="max")
 
@@ -65,13 +65,13 @@ analysis = tune.run(
         # "dlr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
         # "glr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
         # "batch_size": tune.choice(list(range(1,100))) 50
-        "which_model_netG": tune.choice(list(range(3,9))),
+        "which_model_netG": tune.choice([3,4,5,6]),
         # "lambda_feat": tune.quniform(0, 5, 0.2) 3
         # "n_downsampling": tune.choice(list(range(1,5))),
         # "n_layers_D": tune.choice(list(range(1,6)))
     },
     resources_per_trial={"gpu": 0.3},
-    num_samples=12,
+    num_samples=8,
     scheduler=hyperband,
     search_alg=hyperopt,
     raise_on_failed_trial=False

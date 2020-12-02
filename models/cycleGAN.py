@@ -32,19 +32,21 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, 
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, cbam=opt.cbam)
-        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, cbam=opt.cbam)
+        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling,
+                                            cbam=opt.cbam, init_type=opt.init_type)
+        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, 
+                                            cbam=opt.cbam, init_type=opt.init_type)
 
         # Discriminators
         if self.isTrain:
             self.netD_A = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, 
-                                            opt.n_layers_D, opt.norm, self.gpu_ids)
+                                            opt.n_layers_D, opt.norm, self.gpu_ids, init_type=opt.init_type)
             self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
-                                            opt.norm, self.gpu_ids)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
 
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
