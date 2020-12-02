@@ -1,76 +1,12 @@
 import torch
 import torch.nn as nn
-from torch.nn.modules.container import Sequential
 import torchvision
 from torch.nn.utils import spectral_norm
 
 import math
-import functools
 import numpy as np
 
-num_dimensions = 2
-
-def set_num_dimensions(num_dim):
-    global num_dimensions
-    num_dimensions = num_dim
-
-def get_conv():
-    if num_dimensions == 1:
-        return nn.Conv1d
-    elif num_dimensions == 2:
-        return nn.Conv2d
-
-def get_conv_transpose():
-    if num_dimensions == 1:
-        return nn.ConvTranspose1d
-    elif num_dimensions == 2:
-        return nn.ConvTranspose2d
-
-def get_padding(type: str):
-    if type == 'reflect':
-        if num_dimensions == 1:
-            return nn.ReflectionPad1d
-        elif num_dimensions == 2:
-            return nn.ReflectionPad2d
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    elif type == 'replicate':
-        if num_dimensions == 1:
-            return nn.ReplicationPad1d
-        elif num_dimensions == 2:
-            return nn.ReplicationPad2d
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    else:
-        raise NotImplementedError('padding type [%s] is not found' % type)
-
-
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        m.weight.data.normal_(0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.02)
-        m.bias.data.fill_(0)
-
-def get_norm_layer(norm_type='instance'):
-    if norm_type == 'batch':
-        if num_dimensions == 1:
-            norm_layer = functools.partial(nn.BatchNorm1d, affine=True)
-        elif num_dimensions == 2:
-            norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    elif norm_type == 'instance':
-        if num_dimensions == 1:
-            norm_layer = functools.partial(nn.InstanceNorm1d, affine=False)
-        elif num_dimensions == 2:
-            norm_layer = functools.partial(nn.InstanceNorm2d, affine=False)
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    else:
-        raise NotImplementedError('normalization layer [%s] is not found' % norm_type)
-    return norm_layer
+from models.auxiliary import *
 
 
 ##############################################################################
@@ -429,13 +365,6 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             return torch.cat([self.model(x), x], 1)
 
-class Flatten(nn.Module):
-    """
-    Flattens a Tensor of size [B, C, L_1, ..., L_N] to size [B, C * L_1 * ... * L_N]
-    """
-    def forward(self, input: torch.Tensor):
-        return input.flatten(1)
-
 
 class SpectraNLayerDiscriminator(nn.Module):
     """
@@ -467,7 +396,7 @@ class SpectraNLayerDiscriminator(nn.Module):
 
         self.sequence.extend([
             get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
-            Flatten(),
+            nn.Flatten(),
             nn.Linear(int(data_length / (2**(n_layers+1))), 1)
         ])
 
@@ -506,7 +435,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
 
         self.sequence.extend([
             spectral_norm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
-            Flatten(),
+            nn.Flatten(),
             spectral_norm(nn.Linear(int(data_length / (2**(n_layers+1))), 1))
         ])
 
