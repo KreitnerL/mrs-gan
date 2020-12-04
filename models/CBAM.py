@@ -26,8 +26,8 @@ class BasicConv(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1, groups=1, relu=True, bn=True, bias=False, dim=1):
         super(BasicConv, self).__init__()
         self.out_channels = out_planes
-        self.conv = get_conv()(in_planes, out_planes, kernel_size, groups=groups, stride=stride, pad=padding, bias=bias)
-        self.bn = nn.BatchNorm1d(out_planes,eps=1e-5, momentum=0.01, affine=True) if bn else None
+        self.conv = get_conv()(in_planes, out_planes, kernel_size, groups=groups, stride=stride, padding=padding, bias=bias)
+        self.bn = nn.InstanceNorm1d(out_planes,eps=1e-5, momentum=0.01, affine=True) if bn else None
         self.relu = nn.ReLU() if relu else None
     
     def forward(self, x):
@@ -46,7 +46,7 @@ class EfficientChannelAttention(nn.Module):
         t =int(torch.abs((torch.log2(torch.tensor(num_channels, dtype=torch.float64)) + b) / gamma))
         k = t if t % 2 else t + 1
 
-        self.conv = get_conv()(1, 1, kernel=k, stride=1, pad=int(k/2), bias=False)
+        self.conv = get_conv()(1, 1, kernel_size=k, stride=1, padding=int(k/2), bias=False)
         
     def forward(self, x):
         out = x.transpose(-1,-2)
@@ -77,11 +77,11 @@ class ChannelGate(nn.Module):
         channel_att_sum = None
         for pool_type in self.pool_types:
             if pool_type=='avg':
-                avg_pool = self.avg_pool(x, 1)
-                channel_att_raw = self.attention(avg_pool, 1)
+                avg_pool = self.avg_pool(x)
+                channel_att_raw = self.attention(avg_pool)
             elif pool_type=='max':
-                max_pool = self.max_pool(x, 1)
-                channel_att_raw = self.attention(max_pool, 1)
+                max_pool = self.max_pool(x)
+                channel_att_raw = self.attention(max_pool)
             else:
                 raise ValueError(x)
 
@@ -115,9 +115,13 @@ class SpatialGate(nn.Module):
 
 class CBAM1d(nn.Module):
     no_dropout = True
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False):
+    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False, no_channel=True):
         super(CBAM1d, self).__init__()
-        self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types, dim=1)
+        if no_channel:
+            self.ChannelGate = nn.Identity()
+        else:
+            self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types, dim=1)
+        # self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types, dim=1)
         self.no_spatial=no_spatial
         if not no_spatial:
             self.SpatialGate = SpatialGate(dim=1)

@@ -98,6 +98,8 @@ class Encoder(nn.Module):
                  get_conv()(input_nc, ngf, kernel_size=7, padding=0),
                  norm_layer(ngf),
                  nn.ReLU(True)]
+        if cbam:
+            model.append(CBAM1d(ngf))
 
         for i in range(n_downsampling):
             mult = 2**i
@@ -105,6 +107,8 @@ class Encoder(nn.Module):
                                 stride=2, padding=1),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
+            if cbam:
+                model.append(CBAM1d(ngf * mult * 2))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
@@ -130,6 +134,8 @@ class Decoder(nn.Module):
                                          padding=1, output_padding=1),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
+            if cbam:
+                model.append(CBAM1d(ngf * mult * 2))
         model += [get_padding('reflect')(3)]
         model += [get_conv()(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
@@ -155,7 +161,7 @@ class Transformer(nn.Module):
         super().__init__()
         model = []
         for i in range(n_blocks):
-            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, cbam=cbam)]
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
@@ -164,17 +170,16 @@ class Transformer(nn.Module):
 class Encoder_Transform_Decoder(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero', cbam=False):
         super().__init__()
-        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling)
+        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling, cbam=cbam)
         transformer_nc = (2**n_downsampling) * ngf
-        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type)
-        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling)
-        self.model = nn.Sequential(*self.get_components())
+        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type, cbam=cbam)
+        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling, cbam=cbam)
 
     def get_components(self):
         return self.encoder, self.transformer, self.decoder
 
     def forward(self, input):
-        return self.model(input)
+        return self.decoder(self.transformer(self.encoder(input)))
 
 
 # Defines the generator that consists of Resnet blocks between a few
@@ -374,7 +379,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -389,11 +394,12 @@ class SpectraNLayerDiscriminator(nn.Module):
         # Simultaniously upscale Feature dimension C to 2**_n_layers 
         for _ in range(n_layers):
             self.sequence.extend([
-                get_conv()(c_in, c_out,
-                          kernel_size=kernel_size, stride=stride, padding=padding),
+                get_conv()(c_in, c_out, kernel_size=kernel_size, stride=stride, padding=padding),
                 norm_layer(c_out),
                 nn.LeakyReLU(0.2, True)
             ])
+            if cbam:
+                self.sequence.extend([CBAM1d(c_out)])
             c_in = c_out
             c_out *= 2
 

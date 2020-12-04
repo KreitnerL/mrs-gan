@@ -114,7 +114,7 @@ def is_set_of_type(dir, type):
             return True
     return False
 
-def smooth_kernel(x, kernel_size=5):
+def smooth_kernel(x, kernel_size=20):
     """
     Smoothes the given graph by sliding a kernel along each datapoint that takes the average of the selected values.
 

@@ -50,16 +50,13 @@ USCF:
 - Compare inner feature representations of before-before and after-after
 - improve smooth loss (sliding kernel=5)
 - raytune: Increase duration for reportss + max iter
-
+- change raytune sum to avg
+- CBAM module
+- apply CBAM
 
 TODO:
 
 - Use new borders for synthetic data generation (+- 0.5 for cho, naa)
-
-- CBAM module
-- apply CBAM
-
-- change raytune sum to avg
 
 - Create & train Auto-encoder
 - Integrate Auto-Encoder to CycleGAN

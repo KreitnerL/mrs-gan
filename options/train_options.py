@@ -48,7 +48,6 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--n_epochs_dis_decay', type=int, default=100, help='# of iter to linearly decay discriminator learning rate to zero')
         self.parser.add_argument('--glr', type=float, default=0.0002, help='initial generator learning rate for adam')
         self.parser.add_argument('--dlr', type=float, default=0.0002, help='initial discriminator learning rate for adam')
-        self.parser.add_argument('--init_type', type=str, default='kaiming', help='network initialization [normal | xavier | kaiming | orthogonal]')
 
         self.parser.add_argument('--gan_mode', type=str, default='vanilla', help='type of GAN loss [vanilla | lsgan | wgangp]')
         self.parser.add_argument('--lambda_A', type=float, default=10.0, help='weight for cycle loss (A -> B -> A)')

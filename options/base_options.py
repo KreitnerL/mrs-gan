@@ -61,6 +61,7 @@ class BaseOptions():
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
         self.parser.add_argument('--AtoB', dest='AtoB', action='store_true', help="Validate fakes of domain B")
         self.parser.add_argument('--BtoA', dest='AtoB', action='store_false', help="Validate fakes of domain A")
+        self.parser.add_argument('--init_type', type=str, default='kaiming', help='network initialization [normal | xavier | kaiming | orthogonal]')
         self.parser.set_defaults(AtoB=True)
 
         self.initialized = True

@@ -58,6 +58,18 @@ class BaseModel():
         if len(gpu_ids) and torch.cuda.is_available():
             network.cuda()
 
+    def save_network_architecture(self, networks):
+        save_filename = 'architecture.txt'
+        save_path = os.path.join(self.save_dir, save_filename)
+
+        architecture = ''
+        for n in networks:
+            architecture += str(n) + '\n'
+        with open(save_path, 'w') as f:
+            f.write(architecture)
+            f.flush()
+            f.close()
+
     # helper loading function that can be used by subclasses
     def load_network(self, network, network_label, epoch_label):
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)

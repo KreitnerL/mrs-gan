@@ -6,6 +6,7 @@ from models.models import create_model
 from ray import tune
 from ray.tune.schedulers import HyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
+import numpy as np
 
 # export RAY_MEMORY_MONITOR_ERROR_THRESHOLD=1
 # export CUDA_VISIBLE_DEVICES=1
@@ -15,7 +16,7 @@ from ray.tune.suggest.hyperopt import HyperOptSearch
 #     return sum([v.detach().cpu().numpy() for v in losses.values()])
 def report(validator: Validator, model):
     _, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
-    tune.report(score=sum(pearson_coefficient))
+    tune.report(score=np.mean(pearson_coefficient))
 
 def training_function(config):
     opt = update_options(init_opt, config)
@@ -54,7 +55,7 @@ def training_function(config):
     report(validator, model)
 
 # Create HyperBand scheduler and maximize score
-hyperband = HyperBandScheduler(metric="score", mode="max", max_t=250)
+hyperband = HyperBandScheduler(metric="score", mode="max", max_t=200)
 # Specify the search space and maximize score
 hyperopt = HyperOptSearch(metric="score", mode="max")
 
@@ -62,16 +63,17 @@ init_opt = TrainOptions().parse()
 analysis = tune.run(
     training_function,
     config={
-        # "dlr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
-        # "glr": tune.quniform(0.0001, 0.0006, 0.0001), 0.0002
+        "dlr": tune.quniform(0.0002, 0.0005, 0.0001),
+        "glr": tune.quniform(0.0002, 0.0005, 0.0001),
         # "batch_size": tune.choice(list(range(1,100))) 50
-        "which_model_netG": tune.choice([3,4,5,6]),
+
+        # "which_model_netG": tune.choice([3,4,5,6]), 6
         # "lambda_feat": tune.quniform(0, 5, 0.2) 3
-        # "n_downsampling": tune.choice(list(range(1,5))),
-        # "n_layers_D": tune.choice(list(range(1,6)))
+        # "n_downsampling": tune.choice(list(range(2,5))),
+        # "n_layers_D": tune.choice(list(range(3,6)))
     },
     resources_per_trial={"gpu": 0.3},
-    num_samples=8,
+    num_samples=20,
     scheduler=hyperband,
     search_alg=hyperopt,
     raise_on_failed_trial=False

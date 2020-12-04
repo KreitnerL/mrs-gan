@@ -42,11 +42,11 @@ class CycleGANModel(BaseModel):
         # Discriminators
         if self.isTrain:
             self.netD_A = define.define_D(opt, opt.input_nc,
-                                            opt.ndf, opt.which_model_netD, 
-                                            opt.n_layers_D, opt.norm, self.gpu_ids, init_type=opt.init_type)
+                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbam)
             self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
-                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbam)
 
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
@@ -56,6 +56,7 @@ class CycleGANModel(BaseModel):
                 define.print_network(self.netD_A)
                 define.print_network(self.netD_B)
             print('-----------------------------------------------')
+        self.save_network_architecture([self.netG_A, self.netG_B, self.netD_A, self.netD_B])
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
