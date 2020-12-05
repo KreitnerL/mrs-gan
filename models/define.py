@@ -1,25 +1,26 @@
 from models.networks import *
+from models.auxiliary import init_weights
 
 ##############################################################################
 # Generator / Discriminator
 ##############################################################################
 
-def define_modular_G(input_nc: int, output_nc: int, ngf: int, num_res_blocks: int, norm='instance', use_dropout=False, gpu_ids=[], n_downsampling=2):
+def define_modular_G(input_nc: int, output_nc: int, ngf: int, num_res_blocks: int, norm='instance', use_dropout=False, gpu_ids=[], n_downsampling=2, cbam=False, init_type='normal'):
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
 
-    netG = Encoder_Transform_Decoder(input_nc=input_nc, output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=num_res_blocks, n_downsampling=n_downsampling)
+    netG = Encoder_Transform_Decoder(input_nc=input_nc, output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=num_res_blocks, n_downsampling=n_downsampling, cbam=cbam)
 
     if use_gpu:
         assert(torch.cuda.is_available())
 
     if len(gpu_ids) > 0:
         netG.cuda()
-    netG.apply(weights_init)
+    init_weights(netG, init_type)
     return netG
     
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dropout=False, gpu_ids=[]):
+def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dropout=False, gpu_ids=[], init_type='normal'):
     """Create a generator
     Parameters:
         ngf (int) -- the number of filters in the last conv layer
@@ -67,14 +68,14 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dr
         raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
     if len(gpu_ids) > 0:
         netG.cuda()
-    netG.apply(weights_init)
+    init_weights(netG, init_type, activation='relu')
     if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
         return nn.DataParallel(netG, device_ids=gpu_ids)
     else:
         return netG
 
 def define_D(opt, input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='instance', gpu_ids=[]):
+             n_layers_D=3, norm='instance', gpu_ids=[], init_type='normal', cbam=False):
     netD = None
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
@@ -86,7 +87,7 @@ def define_D(opt, input_nc, ndf, which_model_netD,
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'spectra':
-        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids)   
+        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids, cbam=cbam)   
     elif which_model_netD == 'spectra_sn':
         netD = SpectraNLayerDiscriminator_SN(input_nc, ndf, n_layers=3, data_length=opt.data_length, gpu_ids=gpu_ids)  
     else:
@@ -95,7 +96,7 @@ def define_D(opt, input_nc, ndf, which_model_netD,
     if use_gpu:
         netD.cuda()
     if not which_model_netD == 'spectra_sn':
-        netD.apply(weights_init)
+        init_weights(netD, init_type)
 
     if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
         return nn.DataParallel(netD, device_ids=gpu_ids)

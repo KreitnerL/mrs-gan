@@ -52,6 +52,7 @@ class Visualizer():
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
+        plt.yscale('symlog')
         x = self.plot_data['X']
         y = np.array(self.plot_data['Y']).transpose()
         for i, loss in enumerate(y):
@@ -123,6 +124,7 @@ class Visualizer():
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
+        plt.yscale('symlog')
         x = self.plot_data['X']
         y_all = np.array(self.plot_data['Y']).transpose()
         y = []

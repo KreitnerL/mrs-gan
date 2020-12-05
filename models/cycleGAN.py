@@ -5,14 +5,9 @@ from collections import OrderedDict
 import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
-from . import networks
-from . import define
+from . import networks, auxiliary, define
 T = torch.Tensor
 from models.lr_scheduler import get_scheduler_G, get_scheduler_D
-
-
-def mse_loss(input, target):
-    return torch.sum((input - target)**2) / input.data.nelement()
 
 class CycleGANModel(BaseModel):
     """
@@ -25,7 +20,7 @@ class CycleGANModel(BaseModel):
 
     def __init__(self, opt, num_dimensions=2):
         super().__init__(opt)
-        networks.set_num_dimensions(num_dimensions)
+        auxiliary.set_num_dimensions(num_dimensions)
 
         nb = opt.batch_size
         size = opt.fineSize
@@ -37,19 +32,21 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, 
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
-        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc,
-                                        opt.ngf, opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling)
+        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling,
+                                            cbam=opt.cbamG, init_type=opt.init_type)
+        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, 
+                                            cbam=opt.cbamG, init_type=opt.init_type)
 
         # Discriminators
         if self.isTrain:
             self.netD_A = define.define_D(opt, opt.input_nc,
-                                            opt.ndf, opt.which_model_netD, 
-                                            opt.n_layers_D, opt.norm, self.gpu_ids)
+                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
             self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
-                                            opt.norm, self.gpu_ids)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
 
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
@@ -58,6 +55,9 @@ class CycleGANModel(BaseModel):
             if self.isTrain:
                 define.print_network(self.netD_A)
                 define.print_network(self.netD_B)
+                self.save_network_architecture([self.netG_A, self.netG_B, self.netD_A, self.netD_B])
+            else:
+                self.save_network_architecture([self.netG_A, self.netG_B])
             print('-----------------------------------------------')
 
         # Load checkpoint

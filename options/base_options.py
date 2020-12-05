@@ -45,6 +45,8 @@ class BaseOptions():
         self.parser.add_argument('--which_model_netG', type=int, default=9, help='selects model to use for netG')
         self.parser.add_argument('--which_model_feat', type=str, default='resnet34', help='selects model to use for feature network')
         self.parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
+        self.parser.add_argument('--cbamG', action='store_true', help='Use the convolutional block attention module for the Generator')
+        self.parser.add_argument('--cbamD', action='store_true', help='Use the convolutional block attention module for the Discriminator')
         self.parser.add_argument('--n_downsampling', type=int, default=2, help='Number of down-/upsampling steps in the Generator')
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
@@ -60,6 +62,7 @@ class BaseOptions():
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
         self.parser.add_argument('--AtoB', dest='AtoB', action='store_true', help="Validate fakes of domain B")
         self.parser.add_argument('--BtoA', dest='AtoB', action='store_false', help="Validate fakes of domain A")
+        self.parser.add_argument('--init_type', type=str, default='kaiming', help='network initialization [normal | xavier | kaiming | orthogonal]')
         self.parser.set_defaults(AtoB=True)
 
         self.initialized = True

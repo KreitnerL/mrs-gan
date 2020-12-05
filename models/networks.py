@@ -1,76 +1,13 @@
 import torch
 import torch.nn as nn
-from torch.nn.modules.container import Sequential
 import torchvision
 from torch.nn.utils import spectral_norm
 
 import math
-import functools
 import numpy as np
 
-num_dimensions = 2
-
-def set_num_dimensions(num_dim):
-    global num_dimensions
-    num_dimensions = num_dim
-
-def get_conv():
-    if num_dimensions == 1:
-        return nn.Conv1d
-    elif num_dimensions == 2:
-        return nn.Conv2d
-
-def get_conv_transpose():
-    if num_dimensions == 1:
-        return nn.ConvTranspose1d
-    elif num_dimensions == 2:
-        return nn.ConvTranspose2d
-
-def get_padding(type: str):
-    if type == 'reflect':
-        if num_dimensions == 1:
-            return nn.ReflectionPad1d
-        elif num_dimensions == 2:
-            return nn.ReflectionPad2d
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    elif type == 'replicate':
-        if num_dimensions == 1:
-            return nn.ReplicationPad1d
-        elif num_dimensions == 2:
-            return nn.ReplicationPad2d
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    else:
-        raise NotImplementedError('padding type [%s] is not found' % type)
-
-
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        m.weight.data.normal_(0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
-        m.weight.data.normal_(1.0, 0.02)
-        m.bias.data.fill_(0)
-
-def get_norm_layer(norm_type='instance'):
-    if norm_type == 'batch':
-        if num_dimensions == 1:
-            norm_layer = functools.partial(nn.BatchNorm1d, affine=True)
-        elif num_dimensions == 2:
-            norm_layer = functools.partial(nn.BatchNorm2d, affine=True)
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    elif norm_type == 'instance':
-        if num_dimensions == 1:
-            norm_layer = functools.partial(nn.InstanceNorm1d, affine=False)
-        elif num_dimensions == 2:
-            norm_layer = functools.partial(nn.InstanceNorm2d, affine=False)
-        else:
-            raise NotImplementedError('num_dimensions [%d] is not found' % num_dimensions)
-    else:
-        raise NotImplementedError('normalization layer [%s] is not found' % norm_type)
-    return norm_layer
+from models.auxiliary import *
+from models.CBAM import CBAM1d
 
 
 ##############################################################################
@@ -146,7 +83,7 @@ class GANLoss(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2):
+    def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2, cbam=False):
         """
         Create an Encoder network that downsamples the given input and encodes it into a sparse feature representation.
         Parameters
@@ -161,6 +98,8 @@ class Encoder(nn.Module):
                  get_conv()(input_nc, ngf, kernel_size=7, padding=0),
                  norm_layer(ngf),
                  nn.ReLU(True)]
+        # if cbam:
+        #     model.append(CBAM1d(ngf))
 
         for i in range(n_downsampling):
             mult = 2**i
@@ -168,13 +107,15 @@ class Encoder(nn.Module):
                                 stride=2, padding=1),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
+            # if cbam:
+            #     model.append(CBAM1d(ngf * mult * 2))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
         return self.model(input)
 
 class Decoder(nn.Module):
-    def __init__(self, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), n_upsampling=2):
+    def __init__(self, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), n_upsampling=2, cbam=False):
         """
         Create a Decoder network that upsamples the given input and decodes it from a sparse feature representation.
         Parameters
@@ -193,6 +134,8 @@ class Decoder(nn.Module):
                                          padding=1, output_padding=1),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
+            # if cbam:
+            #     model.append(CBAM1d(ngf * mult * 2))
         model += [get_padding('reflect')(3)]
         model += [get_conv()(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
@@ -203,7 +146,7 @@ class Decoder(nn.Module):
         return self.model(input)
 
 class Transformer(nn.Module):
-    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero'):
+    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero', cbam=False):
         """
         Create a Transformer network that applies style transform on a sparse feature representation.
         Parameters:
@@ -217,27 +160,30 @@ class Transformer(nn.Module):
         """
         super().__init__()
         model = []
+        if cbam:
+            model.append(CBAM1d(input_nc))
         for i in range(n_blocks):
             model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+        if cbam:
+            model.append(CBAM1d(input_nc))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
         return self.model(input)
 
 class Encoder_Transform_Decoder(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero'):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero', cbam=False):
         super().__init__()
-        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling)
+        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling, cbam=cbam)
         transformer_nc = (2**n_downsampling) * ngf
-        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type)
-        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling)
-        self.model = nn.Sequential(*self.get_components())
+        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type, cbam=cbam)
+        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling, cbam=cbam)
 
     def get_components(self):
         return self.encoder, self.transformer, self.decoder
 
     def forward(self, input):
-        return self.model(input)
+        return self.decoder(self.transformer(self.encoder(input)))
 
 
 # Defines the generator that consists of Resnet blocks between a few
@@ -299,11 +245,11 @@ class ResnetGenerator(nn.Module):
 
 # Define a resnet block
 class ResnetBlock(nn.Module):
-    def __init__(self, dim, padding_type, norm_layer, use_dropout):
+    def __init__(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, cbam=cbam)
 
-    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout):
+    def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         conv_block = []
         p = 0
         if padding_type == 'zero':
@@ -325,6 +271,8 @@ class ResnetBlock(nn.Module):
 
         conv_block += [get_conv()(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim)]
+        if cbam:
+            conv_block.append(CBAM1d(dim))
 
         return nn.Sequential(*conv_block)
 
@@ -429,20 +377,13 @@ class UnetSkipConnectionBlock(nn.Module):
         else:
             return torch.cat([self.model(x), x], 1)
 
-class Flatten(nn.Module):
-    """
-    Flattens a Tensor of size [B, C, L_1, ..., L_N] to size [B, C * L_1 * ... * L_N]
-    """
-    def forward(self, input: torch.Tensor):
-        return input.flatten(1)
-
 
 class SpectraNLayerDiscriminator(nn.Module):
     """
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[]):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -457,17 +398,18 @@ class SpectraNLayerDiscriminator(nn.Module):
         # Simultaniously upscale Feature dimension C to 2**_n_layers 
         for _ in range(n_layers):
             self.sequence.extend([
-                get_conv()(c_in, c_out,
-                          kernel_size=kernel_size, stride=stride, padding=padding),
+                get_conv()(c_in, c_out, kernel_size=kernel_size, stride=stride, padding=padding),
                 norm_layer(c_out),
                 nn.LeakyReLU(0.2, True)
             ])
+            if cbam:
+                self.sequence.extend([CBAM1d(c_out)])
             c_in = c_out
             c_out *= 2
 
         self.sequence.extend([
             get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
-            Flatten(),
+            nn.Flatten(),
             nn.Linear(int(data_length / (2**(n_layers+1))), 1)
         ])
 
@@ -506,7 +448,7 @@ class SpectraNLayerDiscriminator_SN(nn.Module):
 
         self.sequence.extend([
             spectral_norm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
-            Flatten(),
+            nn.Flatten(),
             spectral_norm(nn.Linear(int(data_length / (2**(n_layers+1))), 1))
         ])
 
