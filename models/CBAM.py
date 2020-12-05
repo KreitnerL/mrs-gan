@@ -47,10 +47,12 @@ class EfficientChannelAttention(nn.Module):
         k = t if t % 2 else t + 1
 
         self.conv = get_conv()(1, 1, kernel_size=k, stride=1, padding=int(k/2), bias=False)
+        # self.sigmoid = nn.Sigmoid()
         
     def forward(self, x):
         out = x.transpose(-1,-2)
         out = self.conv(out)
+        # out = self.sigmoid(out)
         out = out.transpose(-1, -2)
         return out
 
@@ -115,7 +117,7 @@ class SpatialGate(nn.Module):
 
 class CBAM1d(nn.Module):
     no_dropout = True
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False, no_channel=True):
+    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False, no_channel=False):
         super(CBAM1d, self).__init__()
         if no_channel:
             self.ChannelGate = nn.Identity()

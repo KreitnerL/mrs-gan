@@ -98,8 +98,8 @@ class Encoder(nn.Module):
                  get_conv()(input_nc, ngf, kernel_size=7, padding=0),
                  norm_layer(ngf),
                  nn.ReLU(True)]
-        if cbam:
-            model.append(CBAM1d(ngf))
+        # if cbam:
+        #     model.append(CBAM1d(ngf))
 
         for i in range(n_downsampling):
             mult = 2**i
@@ -107,8 +107,8 @@ class Encoder(nn.Module):
                                 stride=2, padding=1),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
-            if cbam:
-                model.append(CBAM1d(ngf * mult * 2))
+            # if cbam:
+            #     model.append(CBAM1d(ngf * mult * 2))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
@@ -134,8 +134,8 @@ class Decoder(nn.Module):
                                          padding=1, output_padding=1),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
-            if cbam:
-                model.append(CBAM1d(ngf * mult * 2))
+            # if cbam:
+            #     model.append(CBAM1d(ngf * mult * 2))
         model += [get_padding('reflect')(3)]
         model += [get_conv()(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
@@ -160,8 +160,12 @@ class Transformer(nn.Module):
         """
         super().__init__()
         model = []
+        if cbam:
+            model.append(CBAM1d(input_nc))
         for i in range(n_blocks):
-            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, cbam=cbam)]
+            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+        if cbam:
+            model.append(CBAM1d(input_nc))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
