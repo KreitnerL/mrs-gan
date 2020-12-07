@@ -5,7 +5,7 @@ import ntpath
 import time
 from . import util
 import matplotlib.pyplot as plt
-from util.util import smooth_kernel, load_loss_from_file
+from util.util import load_validation_from_file, smooth_kernel, load_loss_from_file
 
 class Visualizer():
     """This class includes several functions that can display/save images and print/save logging information.
@@ -27,16 +27,23 @@ class Visualizer():
         self.name = opt.name
         if opt.isTrain:
             # create a logging file to store training losses
-            self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
-            if opt.continue_train and os.path.isfile(self.log_name):
-                self.plot_data = load_loss_from_file(opt, self.log_name)
-                if len(self.plot_data['legend']) == 0:
-                    del self.plot_data
-            elif os.path.isfile(self.log_name):
+            self.loss_log = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+            self.validation_log = os.path.join(opt.checkpoints_dir, opt.name, 'validation.txt')
+            if opt.continue_train:
+                if os.path.isfile(self.loss_log):
+                    self.plot_data = load_loss_from_file(self.loss_log)
+                    if len(self.plot_data['legend']) == 0:
+                        del self.plot_data
+                    print('Loaded loss from', self.loss_log)
+                if os.path.isfile(self.validation_log):
+                    self.validation_score = load_validation_from_file(self.validation_log)
+                    print('Loaded validation scores from', self.validation_log)
+            elif os.path.isfile(self.loss_log):
                 # Erase old content
-                open(self.log_name, 'w').close()
+                open(self.loss_log, 'w').close()
+                open(self.validation_log, 'w').close()
 
-            with open(self.log_name, "a") as log_file:
+            with open(self.loss_log, "a") as log_file:
                 now = time.strftime("%c")
                 log_file.write('================ Training Loss (%s) ================\n' % now)
 
@@ -70,6 +77,9 @@ class Visualizer():
         plt.cla()
 
     def plot_current_validation_score(self, score, total_iters):
+        with open(self.validation_log, 'a') as f:
+            f.write(', '.join(map(str, score))+'\n')
+
         if not hasattr(self, 'validation_score'):
             self.validation_score = []
         self.validation_score.append(score)
@@ -112,7 +122,7 @@ class Visualizer():
             message += '%s: %.3f ' % (k, v)
 
         print(message)  # print the message
-        with open(self.log_name, "a") as log_file:
+        with open(self.loss_log, "a") as log_file:
             log_file.write('%s\n' % message)  # save the message
 
     def save_smooth_loss(self):

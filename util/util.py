@@ -184,7 +184,7 @@ def smooth(x, window_len=11, window='hanning'):
     y=np.convolve(w/w.sum(),s,mode='valid')
     return y
 
-def load_loss_from_file(opt, path):
+def load_loss_from_file(path):
     """
     Loads the given loss file, extracts all losses and returns them in a struct
     """
@@ -212,6 +212,14 @@ def load_loss_from_file(opt, path):
     x = [*np.array(range(len(y)))/10000]
 
     return {'X': x, 'Y': y, 'legend': legend}
+
+def load_validation_from_file(path):
+    scores = []
+    with open(path) as f:
+        for line in [line.rstrip() for line in f]:
+            values = line.split(', ')
+            scores.append(list(map(float, values)))
+    return scores
 
 def normalize(spectra: np.ndarray) -> np.ndarray:
     """
