@@ -54,9 +54,13 @@ USCF:
 - CBAM module
 - apply CBAM
 
-TODO:
-
+########
+- Try adapted identity loss
+- fixed validation curve
+- simplify val options
 - Use new borders for synthetic data generation (+- 0.5 for cho, naa)
+
+TODO:
 
 - Create & train Auto-encoder
 - Integrate Auto-Encoder to CycleGAN

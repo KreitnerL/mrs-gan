@@ -39,9 +39,9 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
         super(PhysicsModelv3, self).__init__()
         self.gpu_ids = gpu_ids
         # Load basis spectra, concentration ranges, and units
-        paths = ['/home/kreitnerl/generator_for_Linus/basis_spectra/Para_for_spectra_gen.mat',
-                 '/home/kreitnerl/generator_for_Linus/basis_spectra/conc_ranges_for_Linus.mat',
-                 '/home/kreitnerl/generator_for_Linus/basis_spectra/units.mat']
+        paths = ['/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/Para_for_spectra_gen.mat',
+                 '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/conc_ranges_for_Linus.mat',
+                 '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/units.mat']
 
         for path in paths:
             with open(path, 'rb') as file:

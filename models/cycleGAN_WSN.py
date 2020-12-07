@@ -11,6 +11,7 @@ class CycleGAN_WSN(CycleGAN_spectra):
         return 'CycleGAN_WGP'
 
     def __init__(self, opt):
-        opt.gan_mode = 'wgangp'
+        opt.gan_mode = 'wasserstein'
         opt.which_model_netD = 'spectra_sn'
+        opt.gp = False
         super().__init__(opt)

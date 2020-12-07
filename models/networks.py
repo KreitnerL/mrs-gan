@@ -22,7 +22,7 @@ class GANLoss(nn.Module):
                  tensor=torch.FloatTensor):
         """ Initialize the GANLoss class.
         Parameters:
-            gan_mode (str) - - the type of GAN objective. It currently supports vanilla, lsgan, and wgangp.
+            gan_mode (str) - - the type of GAN objective. It currently supports vanilla, lsgan, and wasserstein.
             target_real_label (bool) - - label for a real image
             target_fake_label (bool) - - label of a fake image
         Note: Do not use sigmoid as the last layer of Discriminator.
@@ -39,7 +39,7 @@ class GANLoss(nn.Module):
             self.loss = nn.MSELoss()
         elif gan_mode == 'vanilla':
             self.loss = nn.BCEWithLogitsLoss()
-        elif gan_mode == 'wgangp':
+        elif gan_mode == 'wasserstein':
             self.loss = None
         else:
             raise NotImplementedError('gan mode %s not implemented!', gan_mode)
@@ -71,7 +71,7 @@ class GANLoss(nn.Module):
         Returns:
             the calculated loss.
         """
-        if self.gan_mode == 'wgangp':
+        if self.gan_mode == 'wasserstein':
             if target_is_real:
                 loss = input.mean()
             else:

@@ -5,10 +5,11 @@ import numpy as np
 import scipy.io as io
 import torch
 # from modules.physics_model.physics_model_physiological import PhysicsModelv3
+
 from physics_model_physiological import PhysicsModelv3
 from scipy.interpolate import CubicSpline
 
-# python ../generator_for_Linus/generate_LKreitner.py --savedir '/home/kreitnerl/Datasets/NAME/dataset' --totalEntries 100000 --not_simple --phase train --pair
+# python ./spectra_generation/generate_LKreitner.py --savedir '/home/kreitnerl/Datasets/syn_4_real/dataset' --totalEntries 100000 --not_simple --phase train --pair
 
 
 def train(path, totalEntries=200000, simple=False, pair=False, blank=None): # path,

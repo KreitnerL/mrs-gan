@@ -12,10 +12,10 @@ class CycleGAN_WGP(CycleGAN_spectra):
         return 'CycleGAN_WGP'
 
     def __init__(self, opt):
-        opt.gan_mode = 'wgangp'
-        # TODO add option
+        opt.gan_mode = 'wasserstein'
         opt.clip_value = 0.01
-        opt.gp = True
+        if not hasattr(opt, 'gp'):
+            opt.gp = True
         super().__init__(opt)
         
     def backward_D_basic(self, netD, real, fake):
