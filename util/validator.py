@@ -40,6 +40,7 @@ class Validator:
             self.y_test = self.y_test[:self.num_test]
 
         self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
+        assert self.val_network.pretrained
 
     def get_validation_score(self, model: CycleGANModel):
         """

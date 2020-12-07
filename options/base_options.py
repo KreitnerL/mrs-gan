@@ -32,7 +32,7 @@ class BaseOptions():
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
         self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
         self.parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
-        self.parser.add_argument('--epoch_count', type=str, default='1', help='which epoch to load? set to latest to use latest cached model')
+        self.parser.add_argument('--network_stage', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         self.parser.add_argument('--batch_size', type=int, default=1, help='input batch size')

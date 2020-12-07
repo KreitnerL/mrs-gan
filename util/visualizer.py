@@ -32,6 +32,9 @@ class Visualizer():
                 self.plot_data = load_loss_from_file(opt, self.log_name)
                 if len(self.plot_data['legend']) == 0:
                     del self.plot_data
+            elif os.path.isfile(self.log_name):
+                # Erase old content
+                open(self.log_name, 'w').close()
 
             with open(self.log_name, "a") as log_file:
                 now = time.strftime("%c")

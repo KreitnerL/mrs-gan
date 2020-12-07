@@ -60,12 +60,12 @@ class CycleGANModel(BaseModel):
 
         # Load checkpoint
         if not self.isTrain or opt.continue_train:
-            self.load_network(self.netG_A, 'G_A', opt.epoch_count)
-            self.load_network(self.netG_B, 'G_B', opt.epoch_count)
+            self.load_network(self.netG_A, 'G_A', opt.network_stage)
+            self.load_network(self.netG_B, 'G_B', opt.network_stage)
             if self.isTrain:
-                self.load_network(self.netD_A, 'D_A', opt.epoch_count)
-                self.load_network(self.netD_B, 'D_B', opt.epoch_count)
-            print('Loaded checkpoint', opt.epoch_count)
+                self.load_network(self.netD_A, 'D_A', opt.network_stage)
+                self.load_network(self.netD_B, 'D_B', opt.network_stage)
+            print('Loaded checkpoint', opt.network_stage)
 
         if self.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
