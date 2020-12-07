@@ -7,17 +7,20 @@ It will load a saved model from '--checkpoints_dir' and save the results to '--r
 It first creates model and dataset given the option. It will hard-code some parameters.
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
-from util.util import save_boxplot
+from util.util import load_options, merge_options, save_boxplot
 from util.validator import Validator
 from options.val_options import ValidationOptions
 from models.models import create_model
+import os
 
-opt = ValidationOptions().parse()  # get test options
+validationOptions = ValidationOptions()
+opt = validationOptions.parse()  # get test options
+train_options = load_options(os.path.join(opt.checkpoints_dir, opt.name, 'opt.txt'))
+default_options = validationOptions.get_defaults()
+opt = merge_options(default_options, train_options, opt)
 
 # hard-code some parameters for test
-opt.num_threads = 0   # test code only supports num_threads = 1
-# opt.batch_size = 1    # test code only supports batch_size = 1
-# opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
+opt.phase = 'val'
 opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 
 model = create_model(opt)      # create a model given opt.model and other options

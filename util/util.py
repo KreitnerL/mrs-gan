@@ -278,19 +278,48 @@ def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):
     plt.cla()
     print('Saved error plot at', path)
 
-# def load_options(path):
-#     with open(path) as file:
-#         opt = dict()
-#         for line in file:
-#             line = line.rstrip()
-#             if line.startswith('-'):
-#                 continue
-#             args = line.split(': ')
-#             try:
-#                 opt[args[0]] = eval(args[1])
-#             except:
-#                 opt[args[0]] = args[1]
-#     return opt
+def load_options(path):
+    """
+    Load the option file from the given path
+
+    Parameters
+    ----------
+        path(str): path of the options file
+    Returns
+    -------
+        dictionary containing all options
+    """
+    with open(path) as file:
+        opt = dict()
+        for line in file:
+            line = line.rstrip()
+            if line.startswith('-'):
+                continue
+            args = line.split(': ')
+            try:
+                opt[args[0]] = eval(args[1])
+            except:
+                opt[args[0]] = args[1]
+    return Namespace(**opt)
+
+def merge_options(default, base, overwrite):
+    """
+    Merges the three given Namespaces. The priority will be default < base < overwrite.
+    Note that the overwrite value will only be taken if it differs from base AND default.
+    """
+    default = vars(default)
+    base = vars(base)
+    overwrite = vars(overwrite)
+    opt = dict(**base)
+    for key in overwrite:
+        if not key in base or not key in default:
+            opt[key] = overwrite[key]
+        elif overwrite[key] != base[key] and overwrite[key] != default[key]:
+            opt[key] = overwrite[key]
+        else:
+            opt[key] = base[key]
+    return Namespace(**opt)
+
 
 def update_options(opt: Namespace, update_opts: dict):
     opt = vars(opt)

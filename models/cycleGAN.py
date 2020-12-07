@@ -56,8 +56,6 @@ class CycleGANModel(BaseModel):
                 define.print_network(self.netD_A)
                 define.print_network(self.netD_B)
                 self.save_network_architecture([self.netG_A, self.netG_B, self.netD_A, self.netD_B])
-            else:
-                self.save_network_architecture([self.netG_A, self.netG_B])
             print('-----------------------------------------------')
 
         # Load checkpoint
@@ -74,8 +72,8 @@ class CycleGANModel(BaseModel):
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
-            self.criterionCycle = torch.nn.L1Loss()
-            self.criterionIdt = torch.nn.L1Loss()
+            self.criterionCycle = torch.nn.MSELoss()
+            self.criterionIdt = torch.nn.MSELoss()
             self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
             # initialize optimizers
             if not opt.TTUR:
