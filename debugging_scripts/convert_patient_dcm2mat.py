@@ -56,7 +56,6 @@ spectra_data = np.moveaxis(spectra_data, [0,1,2,3,4], [4,3,2,1,0])
 spectra_real = spectra_data[0]
 spectra_imag = spectra_data[1]
 spectra_complex = spectra_real + 1j * spectra_imag
-# TODO moveaxis necessary? Check for 18x18x16
 specProc = np.flip(np.flip(np.moveaxis(spectra_complex, [0,1,2,3], [0,2,1,3]),1),2)
 spectra = specProc.reshape((dimS, np.prod(shape)), order='F')[:,activated_index].transpose()
 num_spectra = len(spectra)

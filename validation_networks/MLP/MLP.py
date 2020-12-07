@@ -29,11 +29,12 @@ class MLP(nn.Module):
 
         self.input = torch.Tensor(batch_size, 1, 1)
         if gpu is not None:
-            # TODO watch out!
             torch.cuda.set_device(gpu)
             self.input = torch.cuda.FloatTensor(batch_size, 1, 1)
             self.label = torch.cuda.FloatTensor(batch_size, 1, 1)
             self.cuda()
+        else:
+            raise ValueError('MLP should run on a GPU!')
 
     def load(self, path):
         if os.path.isfile(path):
