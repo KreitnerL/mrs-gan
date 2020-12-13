@@ -60,10 +60,15 @@ USCF:
 - simplify val options
 - Use new borders for synthetic data generation (+- 0.5 for cho, naa)
 
+########
+- change x axis to ppm
+- plot UCSF spectra s overlay (same patient and inter patients)
+
 TODO:
 
-- Create & train Auto-encoder
-- Integrate Auto-Encoder to CycleGAN
+
+- Try out New idea
+
 - Reasons for CycleGAN:
     - CycleGAN as preprocessing step for other methods
     - We can compare different methods on the same domain

@@ -32,12 +32,10 @@ class CycleGANModel(BaseModel):
         # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
 
         # Generators
-        self.netG_A = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
-                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling,
-                                            cbam=opt.cbamG, init_type=opt.init_type)
-        self.netG_B = define.define_modular_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
-                                            opt.norm, not opt.no_dropout, self.gpu_ids, n_downsampling=opt.n_downsampling, 
-                                            cbam=opt.cbamG, init_type=opt.init_type)
+        self.netG_A = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
+        self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
+                                            opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
 
         # Discriminators
         if self.isTrain:

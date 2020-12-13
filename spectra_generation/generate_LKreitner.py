@@ -52,6 +52,7 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
         else:
             # sign = torch.tensor([True if torch.rand([1]) > 0.8 else False for _ in range(params.shape[0])])
             params[:,n] = ((0.6 - 0.002) * params[:,n] + 0.002) / 0.6
+            # params[:,n] = torch.tensor(list(range(1,10)))/100.0
 
 
     # Frequency Shift - zeroed out
@@ -89,7 +90,7 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
         params[:,i].fill_(0)
 
     crop_range = (1005, 1280)
-    model = PhysicsModelv3(cropped=False,magnitude=True, range=crop_range)
+    model = PhysicsModelv3(cropped=False,magnitude=False, range=crop_range)
     dictionary, index = model.initialize()
     generate_and_save(model, params, simple, path)
     if pair and not simple:
@@ -280,10 +281,13 @@ if __name__=='__main__':
     elif args.phase=='pair':
         quantitites = io.loadmat(args.param_path)
         params = []
-        params.append(torch.from_numpy(quantitites['cho']/3.5))
+        # num_samples = 9
+        basis_spectra_ratio_cho = 3.0912
+        basis_spectra_ratio_naa = 1.0221
+        params.append(torch.from_numpy(quantitites['cho']/(basis_spectra_ratio_cho*3.5)))
         num_samples = params[0].shape[1]
         params.append(torch.ones(num_samples))
-        params.append(torch.from_numpy(quantitites['naa']/3.5))
+        params.append(torch.from_numpy(quantitites['naa']/(basis_spectra_ratio_naa*3.5)))
         train(totalEntries=num_samples,path=path,simple=True, pair = False, fixed_params=params)
 
 
