@@ -1,3 +1,4 @@
+import functools
 import os
 import os.path
 import numpy as np
@@ -45,6 +46,8 @@ class DicomSpectralDataset(BaseDataset):
         if self.opt.phase == 'val':
             self.opt.phase = 'test'
 
+        self.innit_transformations()
+
     def init_val(self, opt):
         self.letter = 'A' if opt.AtoB else 'B'
         self.dir = os.path.join(opt.dataroot, opt.phase + self.letter)
@@ -54,27 +57,30 @@ class DicomSpectralDataset(BaseDataset):
         self.size = sizes[index[self.opt.phase]]
         self.sampler = np.memmap(path, dtype='double', mode='r', shape=(self.size,sizes[4],sizes[3]))
         self.counter=0
+        self.innit_transformations()
+
+    def innit_transformations(self):
+        self.transformations = [lambda A: np.asarray(A).astype(float)]
+        if self.opt.mag:
+            self.transformations.append(lambda A: np.expand_dims(np.sqrt(A[0,:]**2 + A[1,:]**2), 0))
+        self.transformations.append(lambda A: A/np.amax(abs(A)))
+        self.transformations.append(from_numpy)
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
-            A = np.asarray(self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float)
-            B = np.asarray(self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float)
-            if self.opt.mag and len(A)>1:
-                A = np.expand_dims(np.sqrt(A[0,:]**2 + A[1,:]**2), 0)
-                B = np.expand_dims(np.sqrt(B[0,:]**2 + B[1,:]**2), 0)
+            A = self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
+            B = self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
             return {
-                'A': from_numpy(A),
-                'B': from_numpy(B),
+                'A': self.transform(A),
+                'B': self.transform(B),
                 'A_paths': '{:03d}.foo'.format(index % self.A_size),
                 'B_paths': '{:03d}.foo'.format(index % self.B_size)
             }
         else:
-            data = np.asarray(self.sampler[index % self.size,self.channel_index,self.opt.crop_start:self.opt.crop_end]).astype(float)
-            if self.opt.mag and len(data)>1:
-                data = np.expand_dims(np.sqrt(data[0,:]**2 + data[1,:]**2), 0)
+            data = self.sampler[index % self.size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
             return {
-                self.letter: from_numpy(data),
+                self.letter: self.transform(data),
                 'A_paths': '{:03d}.foo'.format(index % self.size)
             }
 
@@ -95,3 +101,6 @@ class DicomSpectralDataset(BaseDataset):
 
     def name(self):
         return 'DicomSpectralDataset'
+
+    def transform(self, data):
+        return functools.reduce((lambda x, y: y(x)), self.transformations, data)

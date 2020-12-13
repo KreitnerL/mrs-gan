@@ -283,6 +283,10 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
         if gen: print('>>>>> Recovering spectra')
         specSummed = fftshift(fft(fidSumNoise.transpose(2,1),1).transpose(2,1),-1)
 
+        specSummed = remove_zeroorderphase(specSummed)
+        # if not simple:
+            # specSummed = hamming_window(specSummed)
+
         # Rephasing Spectrum
         # if gen: print('>>>>> Rephasing spectra')
         # theta_a = ((self.phi0_max - self.phi0_min) * params[:,16] + self.phi0_min).unsqueeze(-1)
@@ -359,3 +363,23 @@ def complex_adjustment(input, theta):
 
     return out
 
+def angle(z: torch.Tensor, deg=False):
+    zreal = z[:,0,:]
+    zimag = z[:,1,:]
+
+    a = zimag.atan2(zreal)
+    if deg:
+        a = a * 180 / torch.from_numpy(np.pi)
+    return a
+
+def remove_zeroorderphase(spec: torch.Tensor):
+    a = angle(spec, deg=False)
+    return complex_adjustment(spec, -a)
+
+def hamming_window(signal, hz=4):
+    # (N/(N-1)) 2*pi / N = (N/(N-1))
+    l = signal.shape[2]
+    fcn = lambda k: 25/46 + (1 - (25/46)) * torch.cos(((l / (l-1)) * (torch.acos(2*torch.cos(0.25*hz * signal[:,:,k])/np.pi) + 2*np.pi*signal[:,:,k]) / signal[:,:,k]) * signal[:,:,k])
+    smooth = fcn(torch.linspace(0,l-1,l, dtype=torch.long))
+    smooth[torch.isnan(smooth)] = 0
+    return smooth

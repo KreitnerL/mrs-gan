@@ -12,7 +12,7 @@ from scipy.interpolate import CubicSpline
 # python ./spectra_generation/generate_LKreitner.py --savedir '/home/kreitnerl/Datasets/syn_4_real/dataset' --totalEntries 100000 --not_simple --phase train --pair
 
 
-def train(path, totalEntries=200000, simple=False, pair=False, blank=None): # path,
+def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed_params=[]): # path,
     basename = path + 'dataset'
     params = torch.empty((totalEntries, 23)).uniform_(0,1)
 
@@ -28,11 +28,14 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None): # pa
     params[:,5] = ((4 - 1) * params[:,5] + 1) / 4# / (4 - 1))
     params[:,6] = ((4 - 1) * params[:,6] + 1) / 4# / (4 - 1))
 
-    if simple:
-        params[:,3].fill_(0)
-        params[:,4].fill_(0)
-        params[:,5].fill_(0)
-        params[:,6].fill_(0)
+    for i in range(len(fixed_params)):
+        params[:,i] = fixed_params[i]
+
+    # if simple:
+    params[:,3].fill_(0)
+    params[:,4].fill_(0)
+    params[:,5].fill_(0)
+    params[:,6].fill_(0)
 
 
     for n in range(7):
@@ -76,8 +79,8 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None): # pa
     if simple:
         params[:,15].fill_(1)#.47873799725652)#1)
     else:
-        # params[:,15].fill_(0.17)
-        params[:,15].fill_(1)
+        params[:,15].fill_(0.12)
+        # params[:,15].fill_(1)
 
     # Baseline - Entire baseline omitted
     print('>>> Baseline')
@@ -258,6 +261,7 @@ if __name__=='__main__':
     parser.add_argument('--inputdir',type=str)
     parser.add_argument('--not_simple',action='store_false',default=True)
     parser.add_argument('--pair',action='store_true', default=False)
+    parser.add_argument('--param_path',type=str, default=None)
 
     args = parser.parse_args()
 
@@ -273,3 +277,13 @@ if __name__=='__main__':
         quantify(inputdir=args.inputdir,savedir=path)
         # entries = 10000 if not args.totalEntries else args.totalEntries
         # test(totalEntries=entries,path=args.savedir,snr=args.snr,echo=args.echo)
+    elif args.phase=='pair':
+        quantitites = io.loadmat(args.param_path)
+        params = []
+        params.append(torch.from_numpy(quantitites['cho']/3.5))
+        num_samples = params[0].shape[1]
+        params.append(torch.ones(num_samples))
+        params.append(torch.from_numpy(quantitites['naa']/3.5))
+        train(totalEntries=num_samples,path=path,simple=True, pair = False, fixed_params=params)
+
+

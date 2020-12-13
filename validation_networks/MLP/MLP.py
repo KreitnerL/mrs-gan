@@ -70,7 +70,7 @@ class MLP(nn.Module):
         return np.concatenate(pred)
         
 
-    def train(self, spectra_train, labels_train, spectra_test, labels_test, tol: float = 1e-3, n_iter_no_change: int = 3):
+    def train(self, spectra_train, labels_train, spectra_test, labels_test, tol: float = 1e-4, n_iter_no_change: int = 3):
         dataset_train = DataLoader(MLPDataset(spectra_train, labels_train),
                                     batch_size=self.batch_size,
                                     num_workers=0,

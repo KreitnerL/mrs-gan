@@ -103,14 +103,17 @@ def get_activated_spectra(spectra_path, activated_index, shape):
     data_imag = spectra.imag
 
     # Normalize to (-1,1)
-    max_real = np.array([max(data_real[i]) for i in range(num_spectra)])
-    max_imag = np.array([max(data_imag[i]) for i in range(num_spectra)])
+    max_spec = np.array([max(np.amax(abs(data_real[i])), np.amax(abs(data_imag[i]))) for i in range(num_spectra)])
+    # max_imag = np.array([max(data_imag[i]) for i in range(num_spectra)])
 
-    assert not any(v == 0 for v in max_real)
-    assert not any(v == 0 for v in max_imag)
+    assert not any(v == 0 for v in max_spec)
+    # assert not any(v == 0 for v in max_imag)
 
-    data_real = np.array([(data_real[i] + max_real[i]) / (2 * max_real[i]) * 2 - 1 for i in range(num_spectra)])
-    data_imag = np.array([(data_imag[i] + max_imag[i]) / (2 * max_imag[i]) * 2 - 1 for i in range(num_spectra)])
+    # data_real = np.array([(data_real[i] + max_real[i]) / (2 * max_real[i]) * 2 - 1 for i in range(num_spectra)])
+    # data_imag = np.array([(data_imag[i] + max_imag[i]) / (2 * max_imag[i]) * 2 - 1 for i in range(num_spectra)])
+    
+    # data_real = np.array([data_real[i]/max_spec[i] for i in range(num_spectra)])
+    # data_imag = np.array([data_imag[i]/max_spec[i] for i in range(num_spectra)])
 
 
     assert sum(sum(np.isnan(data_real))) == 0
