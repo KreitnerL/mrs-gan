@@ -6,8 +6,8 @@ from torch.nn.utils import spectral_norm
 import math
 import numpy as np
 
-from models.auxiliary import *
-from models.CBAM import CBAM1d
+from models.auxiliaries.auxiliary import *
+from models.auxiliaries.CBAM import CBAM1d
 
 
 ##############################################################################
@@ -383,7 +383,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False, output_nc=1):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -410,7 +410,7 @@ class SpectraNLayerDiscriminator(nn.Module):
         self.sequence.extend([
             get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
             nn.Flatten(),
-            nn.Linear(int(data_length / (2**(n_layers+1))), 1)
+            nn.Linear(int(data_length / (2**(n_layers+1))), output_nc)
         ])
 
     def forward(self, input):

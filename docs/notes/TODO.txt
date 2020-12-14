@@ -67,7 +67,18 @@ USCF:
 TODO:
 
 
-- Try out New idea
+New Horizon:
+    - create new target dataset
+        - quantities
+        - baselines
+        - support for other
+    - adapt cycleGAN to work to use new dataset
+    - adapt generators to work with new domain
+    - adapt visualizer
+
+
+
+
 
 - Reasons for CycleGAN:
     - CycleGAN as preprocessing step for other methods

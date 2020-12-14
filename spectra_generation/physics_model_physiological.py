@@ -44,10 +44,10 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
                  '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/units.mat']
 
         for path in paths:
-            with open(path, 'rb') as file:
-                dict = convertdict(io.loadmat(file))
-                for key, value in dict.items():
-                    self.register_buffer(str(key), value)
+            # with open(path, 'rb') as file:
+            dict = convertdict(io.loadmat(path))
+            for key, value in dict.items():
+                self.register_buffer(str(key), value)
 
         # Rephasing
         self.register_buffer('l', torch.FloatTensor([2048]).squeeze())

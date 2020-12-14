@@ -14,6 +14,7 @@ class DicomSpectralDataset(BaseDataset):
     """
     def initialize(self, opt):
         self.opt = opt
+        self.roi = slice(self.opt.crop_start,self.opt.crop_end)
         self.root = opt.dataroot
         if opt.real:
             self.channel_index = slice(0,1)
@@ -69,8 +70,8 @@ class DicomSpectralDataset(BaseDataset):
     def __getitem__(self, index):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
-            A = self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
-            B = self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
+            A = self.sampler_A[index % self.A_size,self.roi]
+            B = self.sampler_B[index % self.B_size,self.roi]
             return {
                 'A': self.transform(A),
                 'B': self.transform(B),
@@ -78,7 +79,7 @@ class DicomSpectralDataset(BaseDataset):
                 'B_paths': '{:03d}.foo'.format(index % self.B_size)
             }
         else:
-            data = self.sampler[index % self.size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
+            data = self.sampler[index % self.size,self.channel_index,self.roi]
             return {
                 self.letter: self.transform(data),
                 'A_paths': '{:03d}.foo'.format(index % self.size)

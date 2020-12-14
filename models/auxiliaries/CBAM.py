@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 # from modules.aux.auxiliary import get_adaptive_pooling_layer, get_conv_layer, get_norm_layer
-from models.auxiliary import get_conv, get_adaptive_pooling
+from models.auxiliaries.auxiliary import get_conv, get_adaptive_pooling
 
 
 __all__ = ['citation', 'ChannelGate', 'SpatialGate', 'CBAM1d', 'CBAM2d', 'CBAM3d']

@@ -1,4 +1,4 @@
-from models.EntropyProfileLoss import EntropyProfileLoss
+from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -7,7 +7,7 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks, auxiliary, define
 T = torch.Tensor
-from models.lr_scheduler import get_scheduler_G, get_scheduler_D
+from models.auxiliaries.lr_scheduler import get_scheduler_G, get_scheduler_D
 
 class CycleGANModel(BaseModel):
     """
@@ -21,7 +21,9 @@ class CycleGANModel(BaseModel):
     def __init__(self, opt, num_dimensions=2):
         super().__init__(opt)
         auxiliary.set_num_dimensions(num_dimensions)
+        self.init(opt)
 
+    def init(self, opt):
         nb = opt.batch_size
         size = opt.fineSize
         self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
