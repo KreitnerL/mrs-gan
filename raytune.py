@@ -63,8 +63,10 @@ init_opt = TrainOptions().parse()
 analysis = tune.run(
     training_function,
     config={
-        "dlr": tune.quniform(0.0002, 0.0005, 0.0001),
-        "glr": tune.quniform(0.0002, 0.0005, 0.0001),
+        # "dlr": tune.quniform(0.0002, 0.0005, 0.0001),
+        # "glr": tune.quniform(0.0002, 0.0005, 0.0001),
+        "lambda_A":  tune.choice(list(range(5,26,5))),
+        "lambda_B":  tune.choice(list(range(5,26,5))),
         # "batch_size": tune.choice(list(range(1,100))) 50
 
         # "which_model_netG": tune.choice([3,4,5,6]), 6
@@ -72,8 +74,8 @@ analysis = tune.run(
         # "n_downsampling": tune.choice(list(range(2,5))),
         # "n_layers_D": tune.choice(list(range(3,6)))
     },
-    resources_per_trial={"gpu": 0.3},
-    num_samples=20,
+    resources_per_trial={"gpu": 0.2},
+    num_samples=30,
     scheduler=hyperband,
     search_alg=hyperopt,
     raise_on_failed_trial=False
