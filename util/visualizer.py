@@ -62,8 +62,8 @@ class Visualizer():
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
-        plt.yscale('symlog')
-        plt.ylim((-50,80))
+        # plt.yscale('symlog')
+        # plt.ylim((-50,80))
         x = self.plot_data['X']
         y = np.array(self.plot_data['Y']).transpose()
         for i, loss in enumerate(y):
@@ -97,6 +97,8 @@ class Visualizer():
         x = list(range(step_size, total_iters+1, step_size))
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
+
+        plt.legend(self.opt.labels)
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
         plt.savefig(path, format='png')
@@ -138,8 +140,8 @@ class Visualizer():
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
-        plt.yscale('symlog')
-        plt.ylim((-50,80))
+        # plt.yscale('symlog')
+        # plt.ylim((-50,80))
         x = self.plot_data['X']
         y_all = np.array(self.plot_data['Y']).transpose()
         y = []

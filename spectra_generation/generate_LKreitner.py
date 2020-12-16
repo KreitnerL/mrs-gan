@@ -51,8 +51,8 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
             params[:,n].fill_(1.)
         else:
             # sign = torch.tensor([True if torch.rand([1]) > 0.8 else False for _ in range(params.shape[0])])
-            params[:,n] = ((0.6 - 0.002) * params[:,n] + 0.002) / 0.6
-            # params[:,n] = torch.tensor(list(range(1,10)))/100.0
+            # params[:,n] = ((0.6 - 0.002) * params[:,n] + 0.002) / 0.6
+            params[:,n] = torch.empty_like(params[:,n]).fill_(0.04)
 
 
     # Frequency Shift - zeroed out
@@ -135,15 +135,17 @@ def generate_and_save(model, params, simple, path):
     print('>>> Resampling the complex spectra')
     cs_interp = CubicSpline(xaxis, np.asarray(spectra), axis=-1)
     spectra = cs_interp(new)
+
+
     # Magnitude spectra
-    print('>>> Resampling the magnitude spectra')
-    cs_interp = CubicSpline(xaxis, np.asarray(magnitude), axis=-1)
-    magnitude = cs_interp(new)
+    # print('>>> Resampling the magnitude spectra')
+    # cs_interp = CubicSpline(xaxis, np.asarray(magnitude), axis=-1)
+    # magnitude = cs_interp(new)
 
     # spectra[:,0,:] = np.interp(new, np.asarray(models.ppm), spectra[:,0,:])
     # spectra[:,1,:] = np.interp(new, np.asarray(models.ppm), spectra[:,1,:])
 
-    _save(path, torch.from_numpy(spectra), torch.from_numpy(magnitude), parameters, quantities)
+    _save(path, torch.from_numpy(spectra), None, parameters, quantities)
     # _save(path, spectra, magnitude, parameters)
 
 def _save(path, spectra, magnitude, parameters, quantities=False):
@@ -153,9 +155,9 @@ def _save(path, spectra, magnitude, parameters, quantities=False):
     io.savemat(path + '_spectra.mat',do_compression=True,
            mdict={'spectra':np.asarray(spectra)})
     print(path + '_spectra.mat')
-    io.savemat(path + '_magnitude.mat',do_compression=True,
-           mdict={'mag':np.asarray(magnitude)})
-    print(path + '_magnitude.mat')
+    # io.savemat(path + '_magnitude.mat',do_compression=True,
+    #        mdict={'mag':np.asarray(magnitude)})
+    # print(path + '_magnitude.mat')
     io.savemat(path + '_parameters.mat',do_compression=True,
            mdict={'cho':np.asarray(parameters[:,0]),
                   'cre':np.transpose(np.asarray(parameters[:,1])),
@@ -284,10 +286,14 @@ if __name__=='__main__':
         # num_samples = 9
         basis_spectra_ratio_cho = 3.0912
         basis_spectra_ratio_naa = 1.0221
-        params.append(torch.from_numpy(quantitites['cho']/(basis_spectra_ratio_cho*3.5)))
-        num_samples = params[0].shape[1]
+        # basis_spectra_ratio_cho = 2.5680
+        # basis_spectra_ratio_naa = 1.3839
+        num_samples = 10
+        num_samples = quantitites['cho'].shape[1]
+        params.append(torch.from_numpy(quantitites['cho'][:,:num_samples]/(basis_spectra_ratio_cho*3.5)))
+        
         params.append(torch.ones(num_samples))
-        params.append(torch.from_numpy(quantitites['naa']/(basis_spectra_ratio_naa*3.5)))
-        train(totalEntries=num_samples,path=path,simple=True, pair = False, fixed_params=params)
+        params.append(torch.from_numpy(quantitites['naa'][:,:num_samples]/(basis_spectra_ratio_naa*3.5)))
+        train(totalEntries=num_samples,path=path,simple=False, pair = False, fixed_params=params)
 
 

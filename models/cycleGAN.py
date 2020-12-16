@@ -5,7 +5,8 @@ from collections import OrderedDict
 import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
-from . import networks, auxiliary, define
+from . import networks, define
+import models.auxiliaries.auxiliary as auxiliary
 T = torch.Tensor
 from models.auxiliaries.lr_scheduler import get_scheduler_G, get_scheduler_D
 

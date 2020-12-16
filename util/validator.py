@@ -1,6 +1,7 @@
 from argparse import Namespace
+from models.cycleGAN_WGP_REG import cycleGAN_WGP_REG
 from util.util import compute_error
-from data.dicom_spectral_dataset import DicomSpectralDataset
+from data.spectra_components_dataset import SpectraComponentDataset
 import numpy as np
 import json
 import torch
@@ -16,8 +17,11 @@ class Validator:
     The Validator can validate a given cycleGAN model end to end by running a pretrained random forest on the generated fakes and computing the average relative error. 
     """
     def __init__(self, opt):
-        self.opt = Namespace(**vars(opt))
-        self.opt.phase = 'val'
+        if opt.phase != 'val':
+            self.opt = Namespace(**vars(opt))
+            self.opt.phase = 'val'
+        else:
+            self.opt = opt
         # self.opt.batch_size=1
         print('------------ Creating Validation Set ------------')
         data_loader = CreateDataLoader(self.opt)     # get training options
@@ -25,24 +29,22 @@ class Validator:
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
         print('val spectra = %d' % self.dataset_size)
         print('val batches = %d' % len(self.dataset))
-        if isinstance(self.dataset, DicomSpectralDataset):
-            opt = vars(opt)
-            opt.update({'data_length': self.dataset.get_length()})
-            opt = Namespace(**vars(opt))
+        # if isinstance(self.dataset, DicomSpectralDataset):
+        opt.data_length=self.dataset.dataset.get_length()
 
         label_path = self.opt.dataroot + '/labels.dat'
         with open(label_path, 'r') as file:
             params:dict = json.load(file)
-            self.labels = list(params.keys())
+            opt.labels = list(params.keys())
             self.y_test =  np.transpose(np.array([params[k] for k in params]))
             self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
             self.opt.num_test = int(self.num_test/self.opt.batch_size)
             self.y_test = self.y_test[:self.num_test]
 
-        self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
-        assert self.val_network.pretrained
+        # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
+        # assert self.val_network.pretrained
 
-    def get_validation_score(self, model: CycleGANModel):
+    def get_validation_score(self, model: cycleGAN_WGP_REG):
         """
         Compute the (average) relative error per metabolite for the given model.
 
@@ -64,11 +66,12 @@ class Validator:
             model.set_input(data)  # unpack data from data loader
             model.test()           # run inference
             fake = model.get_fake()
-            fake = torch.reshape(fake, (fake.shape[0] * fake.shape[1], *fake.shape[2:])).detach().cpu().numpy()
+            # fake = torch.reshape(fake, (fake.shape[0] * fake.shape[1], *fake.shape[2:])).detach().cpu().numpy()
             fakes.append(fake)
-        fakes = np.concatenate(np.array(fakes))
+        fakes = torch.cat(fakes)
 
-        predictions = self.val_network.predict(np.squeeze(fakes))
+        # predictions = self.val_network.predict(np.squeeze(fakes))
+        predictions = np.array(fakes)
         err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, self.y_test)
         print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
         return err_rel, avg_err_rel, pearson_coefficient

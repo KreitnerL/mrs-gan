@@ -8,6 +8,7 @@ save_dir/
         val_A.dat
         val_B.dat
 """
+import os
 import os.path
 import numpy as np
 import scipy.io as io
@@ -37,7 +38,7 @@ def load_from_mat(source_dir, var_name):
     for path in A_paths:
         spectra.append(io.loadmat(path)[var_name])
     spectra = np.concatenate(spectra, axis=0)
-    spectra = normalize(spectra)
+    # spectra = normalize(spectra)
     spectra = torch.from_numpy(spectra)
     return spectra
 
@@ -112,11 +113,37 @@ def generate_labels(source_dir, labels, save_dir, val_split, test_split):
     with open(save_dir+'/labels.dat', 'w') as file:
         json.dump(labels_dict, file)
 
-print('Generating dataset A...')
-generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.save_dir)
-print('Generating dataset B...')
-generate_dataset('B', opt.source_path_B, opt.B_mat_var_name, opt.save_dir)
-if len(opt.source_path_source_labels) and opt.val_split>0:
-    print('Generating labels...')
-    generate_labels(opt.source_path_source_labels, labels, opt.save_dir+opt.name, opt.val_split, opt.test_split)
-print('Done! You can find you dataset at', opt.save_dir + opt.name + '/')
+def generate_quantity_dataset(type, source_dir, save_dir, labels, val_split):
+    train_split = 1-val_split
+    params = io.loadmat(source_dir)
+    labels_train = dict()
+    labels_val = dict()
+    for label in labels:
+        p = np.squeeze(params[label])
+        num_train = round(train_split*len(p))
+        num_val = round(val_split*len(p))
+        p_train = p[: num_train]
+        labels_train[label] = p_train.tolist()
+        p_val = p[num_train : num_train+num_val]
+        labels_val[label] = p_val.tolist()
+
+    base, _ = os.path.split(save_dir)
+    os.makedirs(base,exist_ok=True)
+    if val_split<1:
+        with open(save_dir+'train_%s.dat'%type, 'w') as file:
+            json.dump(labels_train, file)
+    if val_split>0:
+        with open(save_dir+'val_%s.dat'%type, 'w') as file:
+            json.dump(labels_val, file)
+
+if __name__ == "__main__":
+    print('Generating dataset A...')
+    generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.save_dir)
+    print('Generating dataset B...')
+    generate_quantity_dataset('B', opt.source_path_B, opt.save_dir + opt.name+'/', labels, 0.1)
+    
+    if len(opt.source_path_source_labels) and opt.val_split>0:
+        print('Generating labels...')
+        generate_labels(opt.source_path_source_labels, labels, opt.save_dir+opt.name, opt.val_split, opt.test_split)
+
+    print('Done! You can find you dataset at', opt.save_dir + opt.name + '/')

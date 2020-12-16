@@ -64,7 +64,7 @@ class BaseOptions():
         self.parser.add_argument('--AtoB', dest='AtoB', action='store_true', help="Validate fakes of domain B")
         self.parser.add_argument('--BtoA', dest='AtoB', action='store_false', help="Validate fakes of domain A")
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
-        self.parser.add_argument('--ppm_range', type=str, default='1.0221,3.0912', help='ppm range for the spectra')
+        self.parser.add_argument('--ppm_range', type=str, default='-0.501875,7.171825', help='ppm range for the spectra')
         self.parser.set_defaults(AtoB=True)
 
         self.initialized = True
