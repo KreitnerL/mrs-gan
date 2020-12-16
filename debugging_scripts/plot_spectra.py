@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # path = '/home/kreitnerl/Datasets/syn_4_real/dataset_spectra.mat'
-path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra.mat'
-# path = '/home/kreitnerl/Datasets/ucsf_test/dataset_spectra.mat'
+# path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra.mat'
+path = '/home/kreitnerl/Datasets/ucsf_test/dataset_spectra.mat'
 var_name = 'spectra'
 
 spectra = io.loadmat(path)
