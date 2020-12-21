@@ -1,3 +1,4 @@
+from models.auxiliaries.physics_model import PhysicsModel
 from util.util import update_options
 from util.validator import Validator
 from options.train_options import TrainOptions
@@ -22,14 +23,14 @@ def training_function(config):
     opt = update_options(init_opt, config)
 
     print('------------ Creating Training Set ------------')
+    physicsModel = PhysicsModel(opt)
     data_loader = CreateDataLoader(opt)     # get training options
     dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
     dataset_size = len(data_loader)         # get the number of samples in the dataset., 
-    opt = update_options(init_opt, {'data_length': dataset.dataset.get_length()})
     print('training spectra = %d' % dataset_size)
     print('training batches = %d' % len(dataset))
 
-    model = create_model(opt)       # create a model given opt.model and other options
+    model = create_model(opt, physicsModel)       # create a model given opt.model and other options
 
     validator = Validator(opt)
 
@@ -55,7 +56,7 @@ def training_function(config):
     report(validator, model)
 
 # Create HyperBand scheduler and maximize score
-hyperband = HyperBandScheduler(metric="score", mode="max", max_t=200)
+hyperband = HyperBandScheduler(metric="score", mode="max", max_t=500)
 # Specify the search space and maximize score
 hyperopt = HyperOptSearch(metric="score", mode="max")
 
@@ -65,8 +66,9 @@ analysis = tune.run(
     config={
         # "dlr": tune.quniform(0.0002, 0.0005, 0.0001),
         # "glr": tune.quniform(0.0002, 0.0005, 0.0001),
-        "lambda_A":  tune.choice(list(range(5,26,5))),
-        "lambda_B":  tune.choice(list(range(5,26,5))),
+        "lambda_A":  tune.choice(list(range(5,15,5))),
+        "lambda_B":  tune.choice(list(range(5,15,5))),
+        "lambda_entropy": tune.choice(list(range(0,10,2)))
         # "batch_size": tune.choice(list(range(1,100))) 50
 
         # "which_model_netG": tune.choice([3,4,5,6]), 6
@@ -75,7 +77,7 @@ analysis = tune.run(
         # "n_layers_D": tune.choice(list(range(3,6)))
     },
     resources_per_trial={"gpu": 0.2},
-    num_samples=30,
+    num_samples=40,
     scheduler=hyperband,
     search_alg=hyperopt,
     raise_on_failed_trial=False

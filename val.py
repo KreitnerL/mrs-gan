@@ -31,5 +31,5 @@ model = create_model(opt, physicsModel)      # create a model given opt.model an
 err_rel, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
 print('average realative error:', avg_err_rel)
 print('pearson coefficient:', pearson_coefficient)
-save_boxplot(err_rel, avg_err_rel, opt.results_dir + opt.name, ['Cho', 'NAA'])
+save_boxplot(err_rel, avg_err_rel, opt.results_dir + opt.name, opt.label_names)
 print('Done. You can find you the generated validaton plot at', opt.results_dir + opt.name)

@@ -1,8 +1,13 @@
 import functools
 import torch.nn as nn
 from torch.nn import init
+import torch
 
 num_dimensions = 2
+
+def relativeMELoss(input, target):
+    return torch.mean(abs(target - input) / abs(target))
+
 
 def set_num_dimensions(num_dim):
     global num_dimensions

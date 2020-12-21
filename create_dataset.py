@@ -2,7 +2,7 @@
 This script creates the dataset hirachy wich will later be used by the dataloader. 
 The resulting folder structure looks like this:
 save_dir/
-    spectra/
+    name/
         train_A.dat
         train_B.dat
         val_A.dat
@@ -18,12 +18,10 @@ from pathlib import Path
 
 from data.image_folder import make_dataset
 from data.data_auxiliary import splitData
-from util.util import mkdir, normalize
+from util.util import mkdir
 
 from options.create_dataset_options import CreateDatasetOptions
 opt = CreateDatasetOptions().parse()
-
-labels = ["cho", "naa"]
 
 def load_from_mat(source_dir, var_name):
     """
@@ -42,34 +40,61 @@ def load_from_mat(source_dir, var_name):
     spectra = torch.from_numpy(spectra)
     return spectra
 
+def set_split_indices(dataset_size, val_split=0.2, test_split=0.1, shuffle_data=False):
+    """
+    Divides the dataset into training, validation and test set.\n
+    Returns the indices of samples for train, val and test set.
+    """
+    if not opt.split:
+        opt.train_indices, opt.val_indices, opt.test_indices = np.array(range(dataset_size)), np.empty(0), np.empty(0)
+        return
 
-def split_dataset(spectra, save_dir, type):
+    if shuffle_data:
+        indices = np.random.permutation(dataset_size)
+    else:
+        indices = np.array(range(dataset_size))
+    split1 = round(dataset_size * (1 - val_split - test_split))
+    split2 = round(dataset_size * (1 - test_split))    # split1 = torch.tensor([int(torch.floor((1 - torch.tensor(val_split, dtype=int) - torch.tensor(test_split)) * dataset_size))])
+
+    if not test_split==0:
+        train_sampler, valid_sampler, test_sampler = indices[:split1], indices[split1:split2], indices[split2:]
+    else:
+        train_sampler, valid_sampler = indices[:split1], indices[split1:split2]
+        test_sampler = np.empty(0)
+
+    
+    print("# training samples: {0}\n# validation samples: {1}\n# test samples: {2}".format(len(train_sampler), len(valid_sampler), len(test_sampler)))
+
+    opt.train_indices = np.sort(train_sampler, axis=0)
+    opt.val_indices = np.sort(valid_sampler, axis=0)
+    opt.test_indices = np.sort(test_sampler, axis=0)
+
+
+def split_dataset(spectra, labels, save_dir, type):
     """
     Splits the dataset into training, validation and test set and saves them as .dat files.
     """
-    print('total number of imported spectra = ', len(spectra))
-    length, d, specLength= spectra.size()
-
-    print('number of spectra: ',length)
-    print('length of spectra: ', specLength)
+    length, d, specLength = spectra.size()
+    print('Total number of samples:', len(spectra))
     print('spectra dimensionality: ',spectra.shape)
-    print('----- Saving and Mapping Dataset ------')
+    mkdir(save_dir)
 
-    path = os.path.join(save_dir, opt.name)
-    mkdir(path)
+    if all(x is None for x in (opt.train_indices, opt.val_indices, opt.test_indices)):
+        set_split_indices(length, opt.val_split, opt.test_split, opt.shuffle_data)
 
-    # Split the data if indicated, save the indices in a CSV file
-    if not opt.split:
-        opt.val_split = opt.test_split = 0
-    else:
-        train_indices, val_indices, test_indices = splitData(length, opt.val_split, opt.test_split, opt.shuffle_data)
-        print("# training samples: {0}\n# validation samples: {1}\n# test samples: {2}".format(train_indices.size(0), val_indices.size(0), test_indices.size(0)))
-        contents = np.array([len(train_indices), len(val_indices), len(test_indices), specLength, d])
-        np.savetxt(os.path.join(path,'sizes_'+type),contents,delimiter=',',fmt='%d')
+    contents = np.array([len(opt.train_indices), len(opt.val_indices), len(opt.test_indices), specLength, d])
+    np.savetxt(os.path.join(save_dir,'sizes_'+type),contents,delimiter=',',fmt='%d')
+    save_dat_file(os.path.join(save_dir, 'train_' + type + '.dat'), opt.train_indices, d, specLength, spectra)
+    save_dat_file(os.path.join(save_dir, 'val_' + type + '.dat'), opt.val_indices, d, specLength, spectra)
+    save_dat_file(os.path.join(save_dir, 'test_' + type + '.dat'), opt.test_indices, d, specLength, spectra)
 
-        save_dat_file(os.path.join(path, 'train_' + type + '.dat'), train_indices, d, specLength, spectra)
-        save_dat_file(os.path.join(path, 'val_' + type + '.dat'), val_indices, d, specLength, spectra)
-        save_dat_file(os.path.join(path, 'test_' + type + '.dat'), test_indices, d, specLength, spectra)
+    if labels and len(opt.train_indices) > 0:
+        with open(save_dir+'/train_labels_A.dat', 'w') as file:
+            json.dump({key: val[opt.train_indices].tolist() for key,val in labels.items()}, file)
+    if labels and len( opt.val_indices) > 0:
+        with open(save_dir+'/val_labels_A.dat', 'w') as file:
+            json.dump({key: val[opt.val_indices].tolist() for key,val in labels.items()}, file)
+            
 
 def save_dat_file(path, indices, d, spec_length, spectra):
     """
@@ -80,7 +105,7 @@ def save_dat_file(path, indices, d, spec_length, spectra):
         fp[:] = spectra[indices]
         del fp
 
-def generate_dataset(type, source_dir, var_name, save_dir):
+def generate_dataset(type, spectra_path, var_name, labels_path, label_names, save_dir):
     """
     This function creates the dataset hirachy wich will later be used by the dataloader. 
     For domain A and domain B, it expects a matlab file containg all spectra in the form of [N x D x L]
@@ -94,56 +119,31 @@ def generate_dataset(type, source_dir, var_name, save_dir):
             val_A.dat
             val_B.dat
     """
-    spectra = load_from_mat(source_dir, var_name)
-    split_dataset(spectra, save_dir, type)
+    spectra = load_from_mat(spectra_path, var_name)
+    if labels_path:
+        labels_dict = io.loadmat(labels_path)
+        labels = {key: np.squeeze(labels_dict[key]) for key in label_names}
+    else:
+        labels = None
+    split_dataset(spectra, labels, save_dir, type)
 
-def generate_labels(source_dir, labels, save_dir, val_split, test_split):
-    """
-    This function generates the labels for the validation of the target domain.
-    """
-    train_split = 1-val_split-test_split
-    params = io.loadmat(source_dir)
-    labels_dict = dict()
-    for label in labels:
-        p = np.squeeze(params[label])
-        num_train = round(train_split*len(p))
-        num_val = round(val_split*len(p))
-        p = p[num_train : num_train+num_val]
-        labels_dict[label] = p.tolist()
-    with open(save_dir+'/labels.dat', 'w') as file:
-        json.dump(labels_dict, file)
-
-def generate_quantity_dataset(type, source_dir, save_dir, labels, val_split):
-    train_split = 1-val_split
+def generate_quantity_dataset(type, source_dir, save_dir, label_names):
     params = io.loadmat(source_dir)
     labels_train = dict()
-    labels_val = dict()
-    for label in labels:
+    for label in label_names:
         p = np.squeeze(params[label])
-        num_train = round(train_split*len(p))
-        num_val = round(val_split*len(p))
-        p_train = p[: num_train]
-        labels_train[label] = p_train.tolist()
-        p_val = p[num_train : num_train+num_val]
-        labels_val[label] = p_val.tolist()
+        labels_train[label] = p.tolist()
 
+    print("# training samples: {0}\n# validation samples: {1}\n# test samples: {2}".format(len(labels_train), 0, 0))
     base, _ = os.path.split(save_dir)
     os.makedirs(base,exist_ok=True)
-    if val_split<1:
-        with open(save_dir+'train_%s.dat'%type, 'w') as file:
-            json.dump(labels_train, file)
-    if val_split>0:
-        with open(save_dir+'val_%s.dat'%type, 'w') as file:
-            json.dump(labels_val, file)
+    with open(save_dir+'train_%s.dat'%type, 'w') as file:
+        json.dump(labels_train, file)
 
 if __name__ == "__main__":
     print('Generating dataset A...')
-    generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.save_dir)
+    generate_dataset('A', opt.source_path_A, opt.A_mat_var_name, opt.source_path_source_labels, opt.label_names, opt.save_dir)
     print('Generating dataset B...')
-    generate_quantity_dataset('B', opt.source_path_B, opt.save_dir + opt.name+'/', labels, 0.1)
-    
-    if len(opt.source_path_source_labels) and opt.val_split>0:
-        print('Generating labels...')
-        generate_labels(opt.source_path_source_labels, labels, opt.save_dir+opt.name, opt.val_split, opt.test_split)
+    generate_quantity_dataset('B', opt.source_path_B, opt.save_dir, opt.label_names)
 
-    print('Done! You can find you dataset at', opt.save_dir + opt.name + '/')
+    print('Done! You can find you dataset at', opt.save_dir)

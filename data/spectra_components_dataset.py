@@ -3,7 +3,7 @@ import json
 import os
 import os.path
 import numpy as np
-from torch import from_numpy
+from torch import from_numpy, empty
 from data.base_dataset import BaseDataset
 
 index = {'train': 0, 'val': 1, 'test': 1}
@@ -14,8 +14,9 @@ class SpectraComponentDataset(BaseDataset):
         return 'SpectraComponentDataset'
 
     def initialize(self, opt):
+        # Setup
         self.opt = opt
-        self.roi = slice(self.opt.crop_start,self.opt.crop_end)
+        self.roi = self.opt.roi
         self.root = opt.dataroot
         if opt.real:
             self.channel_index = slice(0,1)
@@ -29,19 +30,33 @@ class SpectraComponentDataset(BaseDataset):
         else:
             phase = opt.phase
 
+        # Load data
         sizes_A = np.genfromtxt(os.path.join(self.root,'sizes_A') ,delimiter=',').astype(np.int64)
         path_A = str(os.path.join(self.root, phase + '_A.dat'))
+        path_labels_A = str(os.path.join(self.root, phase + '_labels_A.dat'))
         path_B = str(os.path.join(self.root, phase + '_B.dat'))
 
         self.A_size = sizes_A[index[phase]]
         self.length = sizes_A[3]
         self.sampler_A = np.memmap(path_A, dtype='double', mode='r', shape=(self.A_size,sizes_A[4],sizes_A[3]))
+
+        if os.path.isfile(path_labels_A):
+            with open(path_labels_A, 'r') as file:
+                params:dict = json.load(file)
+                self.opt.label_names = list(params.keys())
+                self.sampler_labels_A =  from_numpy(np.transpose(list(params.values())))
+        else:
+            self.sampler_labels_A = None
+            self.empty_tensor = empty(0)
         
-        with open(path_B, 'r') as file:
-            params:dict = json.load(file)
-            self.sampler_B = np.transpose(list(params.values()))
-            self.B_size = len(self.sampler_B)
+        if self.opt.phase != 'val':
+            with open(path_B, 'r') as file:
+                params:dict = json.load(file)
+                self.sampler_B = from_numpy(np.transpose(list(params.values())))
+                self.B_size = len(self.sampler_B)
+
         self.innit_transformations()
+        self.innit_length()
 
     def innit_transformations(self):
         self.transformations = [lambda A: np.asarray(A).astype(float)]
@@ -56,17 +71,21 @@ class SpectraComponentDataset(BaseDataset):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
             A = self.sampler_A[index % self.A_size,self.channel_index,self.roi]
+            label_A = self.sampler_labels_A[index % self.A_size] if self.sampler_labels_A is not None else self.empty_tensor
             B = self.sampler_B[index % self.B_size]
             return {
                 'A': self.transform(A),
-                'B': from_numpy(B),
+                'label_A': label_A,
+                'B': B,
                 'A_paths': '{:03d}.foo'.format(index % self.A_size),
                 'B_paths': '{:03d}.foo'.format(index % self.B_size)
             }
         else:
             A = self.sampler_A[index % self.A_size,self.channel_index,self.roi]
+            label_A = self.sampler_labels_A[index % self.A_size] if self.sampler_labels_A is not None else self.empty_tensor
             return {
                 'A': self.transform(A),
+                'label_A': label_A,
                 'A_paths': '{:03d}.foo'.format(index % self.A_size)
             }
 
@@ -76,14 +95,9 @@ class SpectraComponentDataset(BaseDataset):
         else:
             return self.A_size
 
-    def get_length(self):
-        if self.opt.crop_start != None and self.opt.crop_end != None:
-            l = self.opt.crop_end - self.opt.crop_start
-        else:
-            l = self.length
-        # length must be power of 2
-        assert (l & (l-1) == 0) and l != 0
-        return l
+    def innit_length(self):
+        self.opt.full_data_length = self.length
+        self.opt.data_length = len(range(0, self.length)[self.roi])
 
     def transform(self, data):
         return functools.reduce((lambda x, y: y(x)), self.transformations, data)

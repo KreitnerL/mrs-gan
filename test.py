@@ -32,7 +32,6 @@ dataset = data_loader.load_data()       # create a dataset given opt.dataset_mod
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
 print('test spectra = %d' % dataset_size)
 print('test batches = %d' % len(dataset))
-opt.data_length=dataset.dataset.get_length()
 
 model = create_model(opt)      # create a model given opt.model and other options
 

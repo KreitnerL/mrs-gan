@@ -17,15 +17,13 @@ class CycleGAN_WGP_IFL(CycleGAN_WGP):
         """
         Uses Generators to generate fake and reconstructed spectra
         """
-        if self.opt.phase != 'val' or self.opt.AtoB:
-            self.real_A = self.input_A
-            feat_A = self.encoder_A(self.real_A)
-            self.fake_B = self.decoder_A(self.transformer_A(feat_A))
-            self.rec_A = self.netG_B(self.fake_B)
-            self.identity_A = self.decoder_B(self.transformer_B(feat_A))
+        self.real_A = self.input_A
+        feat_A = self.encoder_A(self.real_A)
+        self.fake_B = self.decoder_A(self.transformer_A(feat_A))
+        self.rec_A = self.netG_B(self.fake_B)
+        self.identity_A = self.decoder_B(self.transformer_B(feat_A))
 
-
-        if self.opt.phase != 'val' or not self.opt.AtoB:
+        if self.opt.phase != 'val':
             self.real_B = self.input_B
             feat_B = self.encoder_B(self.real_B)
             self.fake_A = self.decoder_B(self.transformer_B(feat_B))

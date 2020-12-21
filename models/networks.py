@@ -185,6 +185,47 @@ class Encoder_Transform_Decoder(nn.Module):
     def forward(self, input):
         return self.decoder(self.transformer(self.encoder(input)))
 
+class Extractor(nn.Module):
+    """
+    Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
+    and finally uses a Linear layer to compute a scalar that represents the networks prediction
+    """
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False, output_nc=1):
+        super(Extractor, self).__init__()
+        self.gpu_ids = gpu_ids
+
+        kernel_size=4
+        padding=1
+        stride=2
+
+        self.sequence = nn.ModuleList([])
+        c_in = input_nc
+        c_out = ndf
+        # Scale down tensor of length L to L/(2**n_layers)
+        # Simultaniously upscale Feature dimension C to 2**_n_layers 
+        for _ in range(n_layers):
+            self.sequence.extend([
+                get_conv()(c_in, c_out, kernel_size=kernel_size, stride=stride, padding=padding),
+                norm_layer(c_out),
+                nn.ReLU(True)
+            ])
+            if cbam:
+                self.sequence.extend([CBAM1d(c_out)])
+            c_in = c_out
+            c_out *= 2
+
+        self.sequence.extend([
+            get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.Flatten(),
+            nn.ReLU(True),
+            nn.Linear(int(data_length / (2**(n_layers+1))), output_nc),
+            nn.Sigmoid()
+        ])
+
+    def forward(self, input):
+        for layer in self.sequence:
+            input = layer(input)
+        return input.squeeze()
 
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.

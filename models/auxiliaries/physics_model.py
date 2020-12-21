@@ -10,7 +10,7 @@ class PhysicsModel(nn.Module):
     def __init__(self, opt) -> None:
         super().__init__()
         self.opt = opt
-        self.crop_range = slice(opt.crop_start, opt.crop_end)
+        self.roi = self.opt.roi
         # TODO make optional
         paths = [
             '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/Para_for_spectra_gen.mat',
@@ -38,7 +38,7 @@ class PhysicsModel(nn.Module):
             self.params['fidNaa'].unsqueeze(0),
             self.params['fidCr'].unsqueeze(0)
         ), dim=0).unsqueeze(0).cuda()
-        self.register_buffer('basis_spectra', _export(basis_fids, crop_range=self.crop_range))
+        self.register_buffer('basis_spectra', _export(basis_fids, roi=self.roi))
 
         self.opt.relativator = torch.max(torch.sqrt(self.basis_spectra[:,-2]**2 + self.basis_spectra[:,-1]**2))
 
@@ -68,7 +68,7 @@ class PhysicsModel(nn.Module):
             modulated_basis_spectra = parameters.unsqueeze(-1)*self.basis_spectra
             ideal_spectra = modulated_basis_spectra.sum(1, keepdim=True)
         else:
-            modulated_basis_spectra = torch.repeat_interleave(parameters, 2, 1).unsqueeze(0).unsqueeze(0) * self.basis_spectra
+            modulated_basis_spectra = torch.repeat_interleave(parameters, 2, 1).unsqueeze(-1) * self.basis_spectra
             index_real = [i%2==0 for i in range(modulated_basis_spectra.shape[1])]
             index_imag = [i%2==1 for i in range(modulated_basis_spectra.shape[1])]
             ideal_spectra = torch.cat([
@@ -97,14 +97,14 @@ def _resample_(signal, length=1024, crop_start=865.6, crop_end=1357.12):
     chs_interp = CubicHermiteSplines (xaxis, signal)
     return chs_interp.interp(new)
 
-def _export(fids: T, crop_range=slice(None,None)):
+def _export(fids: T, roi=slice(None,None)):
     """
     Performs crop(resample(crop(corm(fftshift(fft(fids))))))
     Parameters:
     ----------
         - fids (torch.Tensor): Tensor of shape (B,M,C,L) containing the modulated basis FIDs
         - mag (bool): DEPRICATED! Use magnitude of basis spectra. Default=False
-        - crop_range (slice): Final range the spectra should be cropped to. Default = no cropping
+        - roi (slice): Final range the spectra should be cropped to. Default = no cropping
     
     Returns:
     --------
@@ -121,7 +121,7 @@ def _export(fids: T, crop_range=slice(None,None)):
     # spec_norm = specSummed / torch.max(torch.abs(specSummed),dim=-1,keepdim=True).values
     out = spec_norm.reshape(spec_norm.shape[0], 2*spec_norm.shape[1], spec_norm.shape[3])
     
-    return _resample_(out, 1024).cuda()[:,:,crop_range]
+    return _resample_(out, 1024).cuda()[:,:,roi]
 
 def fftshift(x, dim=None):
     assert(torch.is_tensor(x))

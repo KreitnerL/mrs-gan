@@ -36,6 +36,7 @@ def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180, magnitude=True):
         ax.plot(x,y_i.squeeze().detach().cpu().numpy())
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.xlim([x[0], x[-1]])
 
     buf = io.BytesIO()
     fig.savefig(buf, format="png", dpi=dpi)

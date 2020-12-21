@@ -89,7 +89,7 @@ class Visualizer():
         else:
             plt.figure(self.figure2.number)
 
-        plt.xlabel('epoch')
+        plt.xlabel('Iteration')
         plt.ylabel('R-score')
         plt.title(self.name + ' validation score over time')
         plt.ylim([0,1])
@@ -98,7 +98,7 @@ class Visualizer():
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
-        plt.legend(self.opt.labels)
+        plt.legend(self.opt.label_names)
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
         plt.savefig(path, format='png')

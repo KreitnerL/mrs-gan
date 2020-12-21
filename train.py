@@ -19,7 +19,6 @@ dataset_size = len(data_loader)         # get the number of samples in the datas
 print('training spectra = %d' % dataset_size)
 print('training batches = %d' % len(dataset))
 # if isinstance(dataset.dataset, DicomSpectralDataset):
-opt.data_length = dataset.dataset.get_length()
 
 model = create_model(opt, pysicsModel)       # create a model given opt.model and other options
 visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
@@ -72,6 +71,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             save_suffix = 'iter_%d' % total_iters if opt.save_by_iter else 'latest'
             model.save(save_suffix)
 
+        model.set_input(data)
         iter_data_time = time.time()
 
     visualizer.save_smooth_loss()

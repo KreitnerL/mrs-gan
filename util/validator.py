@@ -1,13 +1,10 @@
 from argparse import Namespace
 from models.cycleGAN_WGP_REG import cycleGAN_WGP_REG
 from util.util import compute_error
-from data.spectra_components_dataset import SpectraComponentDataset
 import numpy as np
-import json
 import torch
 import time
 
-from models.cycleGAN import CycleGANModel
 from data.data_loader import CreateDataLoader
 from validation_networks.MLP.MLP import MLP
 
@@ -29,17 +26,9 @@ class Validator:
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
         print('val spectra = %d' % self.dataset_size)
         print('val batches = %d' % len(self.dataset))
-        # if isinstance(self.dataset, DicomSpectralDataset):
-        opt.data_length=self.dataset.dataset.get_length()
 
-        label_path = self.opt.dataroot + '/labels.dat'
-        with open(label_path, 'r') as file:
-            params:dict = json.load(file)
-            opt.labels = list(params.keys())
-            self.y_test =  np.transpose(np.array([params[k] for k in params]))
-            self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
-            self.opt.num_test = int(self.num_test/self.opt.batch_size)
-            self.y_test = self.y_test[:self.num_test]
+        self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
+        self.opt.num_test = int(self.num_test/self.opt.batch_size)
 
         # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
         # assert self.val_network.pretrained
@@ -60,18 +49,22 @@ class Validator:
         print('Validating', self.num_test, 'samples')
         start = time.time()
         fakes = []
+        labels = []
         for i, data in enumerate(self.dataset):
             if i>=self.opt.num_test:
                 break
             model.set_input(data)  # unpack data from data loader
+            labels.append(data['label_A'])
             model.test()           # run inference
             fake = model.get_fake()
             # fake = torch.reshape(fake, (fake.shape[0] * fake.shape[1], *fake.shape[2:])).detach().cpu().numpy()
             fakes.append(fake)
         fakes = torch.cat(fakes)
+        labels = torch.cat(labels)
 
         # predictions = self.val_network.predict(np.squeeze(fakes))
         predictions = np.array(fakes)
-        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, self.y_test)
+        labels = np.array(labels)
+        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, np.array(labels))
         print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
         return err_rel, avg_err_rel, pearson_coefficient

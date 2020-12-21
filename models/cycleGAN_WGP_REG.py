@@ -29,8 +29,7 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
 
     def init(self, opt):
         nb = opt.batch_size
-        size = opt.crop_end - opt.crop_start
-        self.input_A: T = self.Tensor(nb, opt.input_nc, size)
+        self.input_A: T = self.Tensor(nb, opt.input_nc, opt.data_length)
         self.input_B: T = self.Tensor(nb, self.physicsModel.get_num_out_channels(), 1)
 
         
@@ -108,13 +107,12 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
         """
         Uses Generators to generate fake and reconstructed spectra
         """
-        if self.opt.phase != 'val' or self.opt.AtoB:
-            self.real_A = self.input_A
-            self.fake_B = self.netG_A.forward(self.real_A)
-            ideal_spectra = self.physicsModel.forward(self.fake_B)
-            self.rec_A = self.netG_B.forward(ideal_spectra)
+        self.real_A = self.input_A
+        self.fake_B = self.netG_A.forward(self.real_A)
+        ideal_spectra = self.physicsModel.forward(self.fake_B)
+        self.rec_A = self.netG_B.forward(ideal_spectra)
 
-        if self.opt.phase != 'val' or not self.opt.AtoB:
+        if self.opt.phase != 'val':
             self.real_B = self.physicsModel.quantity_to_param(self.input_B)
             ideal_spectra = self.physicsModel.forward(self.real_B)
             self.fake_A = self.netG_B.forward(ideal_spectra)
@@ -173,12 +171,12 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
     def get_current_visuals(self):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
         if hasattr(self, 'real_A'):
-            x = np.linspace(*self.opt.ppm_range, self.opt.data_length)
+            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
             real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
             fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[0:1].data, 'PPM')
             rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')
         if hasattr(self, 'real_B'):
-            x = np.linspace(*self.opt.ppm_range, self.opt.data_length)
+            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
             real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[0:1].data, 'PPM')
             fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM')
             rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[0:1].data, 'PPM')
@@ -187,7 +185,4 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
                             ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
 
     def get_fake(self):
-        if self.opt.AtoB:
-            return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu())
-        else:
-            return self.fake_A
+        return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu())

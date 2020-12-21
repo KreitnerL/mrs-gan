@@ -61,11 +61,8 @@ class BaseOptions():
         self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
-        self.parser.add_argument('--AtoB', dest='AtoB', action='store_true', help="Validate fakes of domain B")
-        self.parser.add_argument('--BtoA', dest='AtoB', action='store_false', help="Validate fakes of domain A")
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
-        self.parser.add_argument('--ppm_range', type=str, default='-0.501875,7.171825', help='ppm range for the spectra')
-        self.parser.set_defaults(AtoB=True)
+        self.parser.add_argument('--ppm_range', type=str, default='7.171825,-0.501875', help='ppm range for the spectra')
 
         self.initialized = True
 
@@ -93,6 +90,7 @@ class BaseOptions():
                 self.opt.gpu_ids.append(id)
 
         self.opt.ppm_range = list(map(float, self.opt.ppm_range.split(',')))
+        self.opt.roi = slice(self.opt.crop_start, self.opt.crop_end)
         
         torch.cuda.set_device(self.opt.gpu_ids[0])
 

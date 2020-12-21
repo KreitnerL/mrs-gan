@@ -113,7 +113,7 @@ def define_extractor(opt, input_nc, ndf, n_layers_D=3, norm='instance', gpu_ids=
 
     if use_gpu:
         netExtractor.cuda()
-    init_weights(netExtractor, init_type)
+    init_weights(netExtractor, "kaiming", activation='relu')
 
     if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
         return nn.DataParallel(netExtractor, device_ids=gpu_ids)

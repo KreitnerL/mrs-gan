@@ -25,7 +25,7 @@ class CycleGAN_spectra(CycleGANModel):
     def get_current_visuals(self):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
         if hasattr(self, 'real_A'):
-            x = np.linspace(*self.opt.ppm_range, self.real_A.size()[-1])
+            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
             real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
             fake_B = util.get_img_from_fig(x, self.fake_B[0:1].data, 'PPM')
             rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')

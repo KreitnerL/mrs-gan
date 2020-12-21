@@ -14,7 +14,7 @@ class DicomSpectralDataset(BaseDataset):
     """
     def initialize(self, opt):
         self.opt = opt
-        self.roi = slice(self.opt.crop_start,self.opt.crop_end)
+        self.roi = self.opt.roi
         self.root = opt.dataroot
         if opt.real:
             self.channel_index = slice(0,1)
@@ -44,9 +44,10 @@ class DicomSpectralDataset(BaseDataset):
             self.opt.phase = 'test'
 
         self.innit_transformations()
+        self.innit_length()
 
     def init_val(self, opt):
-        self.letter = 'A' if opt.AtoB else 'B'
+        self.letter = 'A'
         self.dir = os.path.join(opt.dataroot, opt.phase + self.letter)
         sizes = np.genfromtxt(os.path.join(self.root,'sizes_' + self.letter) ,delimiter=',').astype(np.int64)
         self.length = sizes[3]
@@ -85,15 +86,10 @@ class DicomSpectralDataset(BaseDataset):
             return max(self.A_size, self.B_size) # Determines the length of the dataloader
         else:
             return self.size
-    
-    def get_length(self):
-        if self.opt.crop_start != None and self.opt.crop_end != None:
-            l = self.opt.crop_end - self.opt.crop_start
-        else:
-            l = self.length
-        # length must be power of 2
-        assert (l & (l-1) == 0) and l != 0
-        return l
+
+    def innit_length(self):
+        self.opt.full_data_length = self.length
+        self.opt.data_length = len(range(0, self.length)[self.roi])
 
     def name(self):
         return 'DicomSpectralDataset'
