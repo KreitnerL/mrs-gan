@@ -77,6 +77,12 @@ class PhysicsModel(nn.Module):
             ], dim=1)
         return ideal_spectra/self.opt.relativator
 
+    def normalize(self, x: T):
+        shape = x.shape
+        x = x.view(shape[0],-1)
+        x = x/abs(x).max(1, keepdim=True)[0]
+        return x.view(*shape)
+
     def get_num_out_channels(self):
         return 2
 
@@ -111,7 +117,7 @@ def _export(fids: T, roi=slice(None,None)):
         - Tensor of shape (Bx2MxL) containing the basis spectra for each metabolite for each sample
     """
     # Recover Spectrum
-    specSummed = fftshift(torch.fft(fids.transpose(3,2),2).transpose(3,2),-1)
+    specSummed = fftshift(torch.fft(fids.transpose(3,2),1).transpose(3,2),-1)
 
     # Normalize Spectra by dividing by the norm of the area under the 3 major peaks
     # channel_max = torch.max(torch.abs(specSummed),dim=-1, keepdim=True).values
