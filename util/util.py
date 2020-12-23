@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 import re
 from scipy.stats import pearsonr
+from sklearn.metrics import r2_score
 
 fig = ax = None
 
@@ -250,18 +251,23 @@ def compute_error(predictions: list, y):
         
         Returns
         -------
-        - err_rel: List of relative errors. M x N2
-        - avg_err_rel: Average relative error per metabolite. M x 1
+            - The Mean Absolute Error (L1) per metabolite. (M) with M=number of metabolites, N=number of test samples
+            - The relative error per metabolite per fake. (MxN) with M=number of metabolites, N=number of test samples
+            - The Average Relative Error per metabolite. (M) with M=number of metabolites
+            - The Coefficient of Determination (R^2) pre metabolite. (M) with M=number of metabolites
         """
+        avg_abs_err = []
         err_rel = []
         avg_err_rel = []
-        pearson_coefficient = []
+        r2 = []
         for metabolite in range(len(y[0])):
-            err_rel.append((abs(predictions[:,metabolite] - y[:,metabolite])) / (abs(y[:,metabolite])))
-            avg_err_rel.append(np.mean(err_rel[metabolite]))
-            pearson_coefficient.append(abs(pearsonr(predictions[:,metabolite], y[:,metabolite])[0]))
+            abs_error = (abs(predictions[:,metabolite] - y[:,metabolite]))
+            avg_abs_err.append(np.mean(abs_error))
+            err_rel.append(abs_error / (abs(y[:,metabolite])))
+            avg_err_rel.append(np.mean(abs_error[metabolite]))
+            r2.append(r2_score(predictions[:,metabolite], y[:,metabolite]))
         
-        return err_rel, avg_err_rel, pearson_coefficient
+        return avg_abs_err, err_rel, avg_err_rel, r2
 
 
 def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):

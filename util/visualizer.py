@@ -29,6 +29,7 @@ class Visualizer():
             # create a logging file to store training losses
             self.loss_log = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
             self.validation_log = os.path.join(opt.checkpoints_dir, opt.name, 'validation.txt')
+            self.training_log = os.path.join(opt.checkpoints_dir, opt.name, 'training.txt')
             if opt.continue_train:
                 if os.path.isfile(self.loss_log):
                     self.plot_data = load_loss_from_file(self.loss_log)
@@ -38,10 +39,14 @@ class Visualizer():
                 if os.path.isfile(self.validation_log):
                     self.validation_score = load_validation_from_file(self.validation_log)
                     print('Loaded validation scores from', self.validation_log)
+                if os.path.isfile(self.training_log):
+                    self.traing_score = load_validation_from_file(self.training_log)
+                    print('Loaded training scores from', self.training_log)
             elif os.path.isfile(self.loss_log):
                 # Erase old content
                 open(self.loss_log, 'w').close()
                 open(self.validation_log, 'w').close()
+                open(self.training_log, 'w').close()
 
             with open(self.loss_log, "a") as log_file:
                 now = time.strftime("%c")
@@ -90,17 +95,46 @@ class Visualizer():
             plt.figure(self.figure2.number)
 
         plt.xlabel('Iteration')
-        plt.ylabel('R-score')
-        plt.title(self.name + ' validation score over time')
+        plt.ylabel('Mean Absolute Error ')
+        plt.title(self.name + ' validation error over time')
         plt.ylim([0,1])
         step_size = int(total_iters/len(self.validation_score))
         x = list(range(step_size, total_iters+1, step_size))
+        plt.plot(x, [0.15/3.5]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
-        plt.legend(self.opt.label_names)
+        plt.legend(('acceptance threshold', *self.opt.label_names))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
+        plt.savefig(path, format='png')
+        plt.cla()
+
+    def plot_current_training_score(self, score, total_iters):
+        with open(self.training_log, 'a') as f:
+            f.write(', '.join(map(str, score))+'\n')
+
+        if not hasattr(self, 'training_score'):
+            self.training_score = []
+        self.training_score.append(score)
+        if not hasattr(self, 'figure2'):
+            self.figure2 = plt.figure()
+        else:
+            plt.figure(self.figure2.number)
+
+        plt.xlabel('Iteration')
+        plt.ylabel('Mean Absolute Error ')
+        plt.title(self.name + ' training error over time')
+        plt.ylim([0,1])
+        step_size = int(total_iters/len(self.training_score))
+        x = list(range(step_size, total_iters+1, step_size))
+        plt.plot(x, [0.15/3.5]*len(x), 'r--')
+        for i in range(len(score)):
+            plt.plot(x, np.array(self.training_score)[:,i])
+
+        plt.legend(('acceptance threshold', *self.opt.label_names))
+
+        path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'training_score.png')
         plt.savefig(path, format='png')
         plt.cla()
 

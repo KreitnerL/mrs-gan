@@ -20,9 +20,9 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
     print('>>> Metabolite Quantities')
     # params[:,1].fill_(1)
     # cho cre naa glx ins mac lip: t2_min 0.05-->0.0 max:0.6
-    params[:,0] = ((3.5 - 0.01) * params[:,0] + 0.01) / 3.5 # / (0.9 - 0.1))
+    params[:,0] = ((3.5 - 0.01) * params[:,0] + 0.01) / 3.6 # / (0.9 - 0.1))
     params[:,1] = 1.0
-    params[:,2] = ((3.5 - 0.01) * params[:,2] + 0.01) / 3.5# / (3.8 - 0.05))
+    params[:,2] = ((3.5 - 0.01) * params[:,2] + 0.01) / 3.6# / (3.8 - 0.05))
     params[:,3] = ((5.1 - 0.05) * params[:,3] + 0.05) / 5.1# / (5.1 - 0.05))
     params[:,4] = ((2.0 - 0.01) * params[:,4] + 0.01) / 2# / (2.0 - 0.01))
     params[:,5] = ((4 - 1) * params[:,5] + 1) / 4# / (4 - 1))
@@ -283,17 +283,14 @@ if __name__=='__main__':
     elif args.phase=='pair':
         quantitites = io.loadmat(args.param_path)
         params = []
-        # num_samples = 9
-        basis_spectra_ratio_cho = 3.0912
-        basis_spectra_ratio_naa = 1.0221
-        # basis_spectra_ratio_cho = 2.5680
-        # basis_spectra_ratio_naa = 1.3839
-        num_samples = 10
+        # Ratio's needed to comapare synthetic with ucsf spectra
+        # basis_spectra_ratio_cho = 3.0912
+        # basis_spectra_ratio_naa = 1.0221
         num_samples = quantitites['cho'].shape[1]
-        params.append(torch.from_numpy(quantitites['cho'][:,:num_samples]/(basis_spectra_ratio_cho*3.5)))
+        params.append(torch.from_numpy(quantitites['cho'][:,:num_samples]/(3.6)))
         
         params.append(torch.ones(num_samples))
-        params.append(torch.from_numpy(quantitites['naa'][:,:num_samples]/(basis_spectra_ratio_naa*3.5)))
+        params.append(torch.from_numpy(quantitites['naa'][:,:num_samples]/(3.6)))
         train(totalEntries=num_samples,path=path,simple=False, pair = False, fixed_params=params)
 
 

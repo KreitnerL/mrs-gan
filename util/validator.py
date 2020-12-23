@@ -1,4 +1,6 @@
 from argparse import Namespace
+
+from torch.utils.data.dataloader import DataLoader
 from models.cycleGAN_WGP_REG import cycleGAN_WGP_REG
 from util.util import compute_error
 import numpy as np
@@ -33,24 +35,29 @@ class Validator:
         # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
         # assert self.val_network.pretrained
 
-    def get_validation_score(self, model: cycleGAN_WGP_REG):
+    def get_validation_score(self, model: cycleGAN_WGP_REG, dataset: DataLoader):
         """
-        Compute the (average) relative error per metabolite for the given model.
+        Computes various validation metrics for the given model.
 
         Parameters
         ----------
-            - model: The current CycleGAN model
+            - model (CycleGAN): The current CycleGAN model
+            - dataset (DataLoader): The dataset the validation samples should be taken from. If none is given, the configured validation set will be used. Default=None
 
         Returns
         -------
-            - The relative error per metabolite per fake. (MxN) with M=number of metabolites, N=number of fakes
-            - The average relative error per metabolite. (M) with M=number of metabolites
+            - The Mean Absolute Error (L1) per metabolite. (M) with M=number of metabolites, N=number of test samples
+            - The relative error per metabolite per fake. (MxN) with M=number of metabolites, N=number of test samples
+            - The Average Relative Error per metabolite. (M) with M=number of metabolites
+            - The Coefficient of Determination (R^2) pre metabolite. (M) with M=number of metabolites
         """
-        print('Validating', self.num_test, 'samples')
+        # print('Validating', self.num_test, 'samples')
         start = time.time()
         fakes = []
         labels = []
-        for i, data in enumerate(self.dataset):
+        if dataset is None:
+            dataset = self.dataset
+        for i, data in enumerate(dataset):
             if i>=self.opt.num_test:
                 break
             model.set_input(data)  # unpack data from data loader
@@ -63,8 +70,8 @@ class Validator:
         labels = torch.cat(labels)
 
         # predictions = self.val_network.predict(np.squeeze(fakes))
-        predictions = np.array(fakes)
-        labels = np.array(labels)
-        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, np.array(labels))
-        print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
-        return err_rel, avg_err_rel, pearson_coefficient
+        predictions = np.array(fakes)/3.5
+        labels = np.array(labels)/3.5
+        avg_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, labels)
+        # print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
+        return avg_abs_err, err_rel, avg_err_rel, r2
