@@ -65,8 +65,10 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
             # if opt.val_path:
-            _, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
-            visualizer.plot_current_validation_score(pearson_coefficient, total_iters)
+            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
+            visualizer.plot_current_validation_score(avg_abs_err, total_iters)
+            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
+            visualizer.plot_current_training_score(avg_abs_err, total_iters)
             print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
             save_suffix = 'iter_%d' % total_iters if opt.save_by_iter else 'latest'
             model.save(save_suffix)
@@ -88,6 +90,8 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
           (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
 
 # if opt.val_path:
-_, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
-visualizer.plot_current_validation_score(pearson_coefficient, total_iters)
+avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
+visualizer.plot_current_validation_score(avg_abs_err, total_iters)
+avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
+visualizer.plot_current_training_score(avg_abs_err, total_iters)
 model.save('latest')

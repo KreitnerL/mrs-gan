@@ -28,8 +28,8 @@ validator = Validator(opt)
 physicsModel = PhysicsModel(opt)
 model = create_model(opt, physicsModel)      # create a model given opt.model and other options
 
-err_rel, avg_err_rel, pearson_coefficient = validator.get_validation_score(model)
+avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
 print('average realative error:', avg_err_rel)
-print('pearson coefficient:', pearson_coefficient)
+print('pearson coefficient:', r2)
 save_boxplot(err_rel, avg_err_rel, opt.results_dir + opt.name, opt.label_names)
 print('Done. You can find you the generated validaton plot at', opt.results_dir + opt.name)

@@ -20,11 +20,8 @@ def is_data_file(filename, extensions):
 
 
 def make_dataset(dir, file_type=None, file_ext=None):
-    images = []
-    if os.path.exists(dir):
-        assert os.path.isdir(dir), '{} is not a valid directory'.format(dir)
-    else:
-        util.mkdir(dir)
+    paths = []
+    assert os.path.exists(dir) and os.path.isdir(dir), '{} is not a valid directory'.format(dir)
     if file_ext is None:
         file_ext = get_file_extensions(file_type)
     else:
@@ -34,6 +31,6 @@ def make_dataset(dir, file_type=None, file_ext=None):
             for ext in file_ext:
                 if fname.endswith(ext):
                     path = os.path.join(root, fname)
-                    images.append(path)
+                    paths.append(path)
 
-    return images
+    return paths
