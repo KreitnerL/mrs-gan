@@ -1,5 +1,7 @@
 from collections import OrderedDict
 import itertools
+
+from models.auxiliaries.auxiliary import relativeMELoss
 from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
 from models.auxiliaries.physics_model import PhysicsModel
 
@@ -33,8 +35,8 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
         self.input_B: T = self.Tensor(nb, self.physicsModel.get_num_out_channels(), 1)
 
         
-        self.netG_A = define.define_extractor(opt, opt.input_nc, opt.ndf, 3, opt.norm, self.gpu_ids, init_type=opt.init_type,
-                                            cbam=opt.cbamD, output_nc=self.physicsModel.get_num_out_channels())
+        self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=True)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
                                             opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
         
@@ -42,6 +44,7 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
             self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
+        self.networks = [self.netG_A, self.netD_B, self.netD_B]
         
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
@@ -65,8 +68,7 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
-            self.criterionIdt = torch.nn.MSELoss()
-            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
+            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4,5))
             # initialize optimizers
             if not opt.TTUR:
                 self.opt.glr = opt.lr
@@ -78,12 +80,6 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
             self.old_dlr = opt.lr
             
             self.init_optimizers(opt)
-
-            # Set loss weights
-            self.lambda_idt = self.opt.lambda_identity
-            self.lambda_A = self.opt.lambda_A
-            self.lambda_B = self.opt.lambda_B
-            self.lambda_entropy = self.opt.lambda_entropy
 
     def init_optimizers(self, opt):
         """
@@ -125,12 +121,13 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
         # D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
         # Forward cycle loss
-        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
+        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_A
         # Backward cycle loss
-        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
+        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_B
         # Entropy loss
-        if self.lambda_entropy != 0:
-            self.loss_entropy_A: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_A, self.real_A)
+        if self.opt.lambda_entropy != 0:
+            entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
+            self.loss_entropy_A: T = self.opt.lambda_entropy * (entropy_loss + content_loss)
         else:
             self.loss_entropy_A = 0
 
@@ -159,6 +156,25 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
         self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
         self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
 
+    def create_checkpoint(self, path, d=None):
+        states = list(map(lambda x: x.cpu().state_dict(), self.networks))
+        checkpoint = {
+            "networks": states
+        }
+        if d is not None:
+            checkpoint.update(d)
+        torch.save(checkpoint, path)
+        for x in self.networks:
+            x.cuda()
+
+    def load_checkpoint(self, path):
+        checkpoint = torch.load(path)
+        states = checkpoint.pop('networks')
+        for i in range(len(states)):
+            self.networks[i].load_state_dict(states[i])
+        print('Loaded checkpoint successfully')
+        return checkpoint
+
     def get_current_losses(self):
         D_B = self.loss_D_B.data
         G_B = self.loss_G_B.data
@@ -170,16 +186,20 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
 
     def get_current_visuals(self):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
-        if hasattr(self, 'real_A'):
-            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-            real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM')
-            fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[0:1].data, 'PPM')
-            rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM')
+
+        if self.label_A.numel():
+            self.real_B = self.label_A
+            self.forward()
+
+        x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
+        real_A = util.get_img_from_fig(x, self.real_A[0:1].data, 'PPM', magnitude=self.opt.mag)
+        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[0:1].data, 'PPM', magnitude=self.opt.mag)
+        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].data, 'PPM', magnitude=self.opt.mag)
+
         if hasattr(self, 'real_B'):
-            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[0:1].data, 'PPM')
-            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM')
-            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[0:1].data, 'PPM')
+            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[0:1].data, 'PPM', magnitude=self.opt.mag)
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].data, 'PPM', magnitude=self.opt.mag)
+            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[0:1].data, 'PPM', magnitude=self.opt.mag)
 
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                             ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])

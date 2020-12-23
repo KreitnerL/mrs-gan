@@ -70,23 +70,24 @@ class BaselineCreator:
             if not model.pretrained:
                 model.train(train_set.spectra_train, train_set.param_train)
         elif model_type=='MLP':
-            model = MLP(self.save_dir+train, lambda pred, y: compute_error(pred, y)[2], gpu=gpu, in_out= (len(train_set.spectra_train[0]), len(self.labels)), batch_size=200)
+            model = MLP(self.save_dir+train, lambda pred, y: compute_error(pred, y)[-1], gpu=gpu, in_out= (len(train_set.spectra_train[0]), len(self.labels)), batch_size=200)
             if not model.pretrained:
                 model.train(train_set.spectra_train, train_set.param_train, test_set.spectra_test, test_set.param_test)
         else:
             raise NotImplementedError()
 
         predictions = model.predict(test_set.spectra_test)
-        err_rel, avg_err_rel, pearson_coefficient = compute_error(predictions, test_set.param_test)
+        mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_test)
         for metabolite in range(len(avg_err_rel)):
             print('Average Relative Error {0}: {1}'.format(self.labels[metabolite], avg_err_rel[metabolite]))
-            print('Pearson Coefficient: {0}, {1}'.format(self.labels[metabolite], pearson_coefficient[metabolite]))
+            print('Coefficient of Determination: {0}, {1}'.format(self.labels[metabolite], r2[metabolite]))
+            print('Mean Absolute Error : {0}, {1}'.format(self.labels[metabolite],mean_abs_err[metabolite]))
         save_boxplot(err_rel, avg_err_rel,  self.save_dir + train + '2' + test + '_' + model_type, self.labels)
 
 
 paths = {
-    "I": ('/home/kreitnerl/Datasets/spectra_4_pair/dataset_ideal_spectra.mat', '/home/kreitnerl/Datasets/spectra_4_pair/dataset_ideal_quantities.mat', 'spectra'),
-    "R": ('/home/kreitnerl/Datasets/spectra_4_pair/dataset_spectra.mat', '/home/kreitnerl/Datasets/spectra_4_pair/dataset_quantities.mat', 'spectra'),
+    "I": ('/home/kreitnerl/Datasets/syn_4_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_4_ideal/dataset_quantities.mat', 'spectra'),
+    "R": ('/home/kreitnerl/Datasets/ucsf_syn/dataset_spectra.mat', '/home/kreitnerl/Datasets/ucsf_test/dataset_quantities.mat', 'spectra'),
     "UCSF": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/spectra.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI2/quantities.mat', 'spectra'),
     "LCM": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra')
 }
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=True, cropping=slice(300, 812), val_split=0.05)
     model = 'MLP'
 
-    # b.create_baseline('I', 'I', model)
+    b.create_baseline('I', 'I', model)
     b.create_baseline('I', 'R', model)
     # b.create_baseline('R', 'R', model)
 
