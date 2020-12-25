@@ -35,7 +35,7 @@ class Validator:
         # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
         # assert self.val_network.pretrained
 
-    def get_validation_score(self, model: cycleGAN_WGP_REG, dataset: DataLoader):
+    def get_validation_score(self, model: cycleGAN_WGP_REG, dataset: DataLoader = None):
         """
         Computes various validation metrics for the given model.
 
@@ -70,8 +70,8 @@ class Validator:
         labels = torch.cat(labels)
 
         # predictions = self.val_network.predict(np.squeeze(fakes))
-        predictions = np.array(fakes)/3.5
-        labels = np.array(labels)/3.5
+        predictions = np.array(fakes)
+        labels = np.array(labels)
         avg_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, labels)
         # print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
         return avg_abs_err, err_rel, avg_err_rel, r2

@@ -36,7 +36,7 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
 
         
         self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
-                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=True)
+                                            opt.norm, self.gpu_ids, cbam=True)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
                                             opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
         

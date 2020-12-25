@@ -26,6 +26,6 @@ for i, path in enumerate(paths):
     plt.figure()
     for j in range(len(schedule)):
         plt.plot(schedule[j])
-    plt.legend(['lambda_entropy', 'lambda_B', 'lambda_A'])
+    plt.legend(['lambda_A', 'lambda_B', 'lambda_entropy'])
     plt.savefig('PBT/PBT_schedule_%d.png'%i, format='png')
     print('saved at PBT/PBT_schedule_%d.png'%i)

@@ -11,28 +11,24 @@ from ray.tune.trial import ExportFormat
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 os.environ["RAY_MEMORY_MONITOR_ERROR_THRESHOLD"] = "1"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
 # export RAY_MEMORY_MONITOR_ERROR_THRESHOLD=1
 # export CUDA_VISIBLE_DEVICES=1
 # tensorboard --logdir /home/kreitnerl/ray_results
 
-# def objective(losses: dict):
-#     return sum([v.detach().cpu().numpy() for v in losses.values()])
 def report(validator: Validator, model):
     avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
-    tune.report(score=np.mean(avg_abs_err))
+    print(avg_err_rel)
+    tune.report(score=np.mean(avg_err_rel))
 
 def training_function(config, checkpoint_dir=None):
     opt = update_options(init_opt, config)
 
-    print('------------ Creating Training Set ------------')
     physicsModel = PhysicsModel(opt)
     data_loader = CreateDataLoader(opt)     # get training options
     dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
-    dataset_size = len(data_loader)         # get the number of samples in the dataset., 
-    print('training spectra = %d' % dataset_size)
-    print('training batches = %d' % len(dataset))
 
     model = create_model(opt, physicsModel)       # create a model given opt.model and other options
     if checkpoint_dir is not None:
@@ -46,9 +42,8 @@ def training_function(config, checkpoint_dir=None):
 
     validator = Validator(opt)
 
-    print('------------- Beginning Training -------------')
     iter_to_next_display = opt.display_freq
-    iter_to_next_save = 20000
+    iter_to_next_save = 25000
     while True:
         # Loads batch_size samples from the dataset
         for i, data in enumerate(dataset):
@@ -66,13 +61,11 @@ def training_function(config, checkpoint_dir=None):
                         'score': score
                     }
                     model.create_checkpoint(path, d)
-                iter_to_next_save=50000
+                iter_to_next_save=25000
             
             iter_to_next_display-= opt.batch_size
             if iter_to_next_display<=0:
-                score = np.mean(validator.get_validation_score(model)[0])
-                tune.report(score=score)
-                print('score:', score)
+                report(validator, model)
                 step+=1
                 iter_to_next_display += opt.display_freq
             
@@ -82,7 +75,7 @@ class CustomStopper(tune.Stopper):
             self.should_stop = False
 
         def __call__(self, trial_id, result):
-            max_iter = 800
+            max_iter = 500
             if not self.should_stop and result["score"] < 0.05:
                 self.should_stop = True
             return self.should_stop or result["training_iteration"] >= max_iter
@@ -91,14 +84,16 @@ class CustomStopper(tune.Stopper):
             return self.should_stop
 
 search_space = {
-            "lambda_A":  tune.choice(list(range(5,15,1))),
-            "lambda_B":  tune.choice(list(range(1,5,1))),
-            "lambda_entropy": tune.choice(list(range(1,10,1)))
+            "lambda_A":  tune.choice(list(range(8,15,1))),
+            # "lambda_B":  tune.quniform(1,5,0.5), 2
+            "lambda_entropy": tune.quniform(1,5,0.2),
+            "dlr": tune.quniform(0.0001, 0.0003, 0.00002),
+            "glr": tune.quniform(0.0001, 0.0003, 0.00002)
         }
 
 PBT = PopulationBasedTraining (
         time_attr="training_iteration",
-        perturbation_interval=20,
+        perturbation_interval=10,
         hyperparam_mutations=search_space
     )
 
@@ -115,13 +110,13 @@ analysis = tune.run(
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
     checkpoint_score_attr="score",
-    resources_per_trial={"gpu": 0.2},
-    keep_checkpoints_num=10,
-    num_samples=10,
+    resources_per_trial={"gpu": 0.125},
+    keep_checkpoints_num=16,
+    num_samples=16,
     config=search_space,
     raise_on_failed_trial=False
 )
-print("best config: ", analysis.get_best_config(metric="score", mode="min", scope="last-5-avg"))
+print("best config: ", analysis.get_best_config(metric="score", mode="min", scope="last"))
 
 # Plot by wall-clock time
 dfs = analysis.fetch_trial_dataframes()
@@ -129,8 +124,8 @@ dfs = analysis.fetch_trial_dataframes()
 ax = None
 for d in dfs.values():
     ax = d.plot("training_iteration", "score", ax=ax, legend=False)
-plt.xlabel("iterations")
-plt.ylabel("Test Accuracy")
+plt.xlabel("Steps")
+plt.ylabel("Relative Absolute Error")
 plt.savefig('raytune.png', format='png')
 
 

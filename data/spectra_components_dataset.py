@@ -62,8 +62,8 @@ class SpectraComponentDataset(BaseDataset):
         self.transformations = [lambda A: np.asarray(A).astype(float)]
         if self.opt.mag:
             self.transformations.append(lambda A: np.expand_dims(np.sqrt(A[0,:]**2 + A[1,:]**2), 0))
-        # self.transformations.append(lambda A: A/np.amax(abs(A)))
-        self.transformations.append(lambda A: A/self.opt.relativator.detach().cpu().numpy())
+        self.transformations.append(lambda A: A/np.amax(abs(A)))
+        # self.transformations.append(lambda A: A/self.opt.relativator.detach().cpu().numpy())
         self.transformations.append(from_numpy)
 
 

@@ -49,10 +49,10 @@ class PhysicsModel(nn.Module):
             spectrum_imag = self.basis_spectra[:,index_imag,:]
             self.basis_spectra = torch.sqrt(spectrum_real**2 + spectrum_imag**2)
 
-        self.register_buffer('magic_number', torch.tensor([
-            3.0912,
-            1.0221
-        ]).unsqueeze(0))
+        # self.register_buffer('magic_number', torch.tensor([
+        #     3.0912,
+        #     1.0221
+        # ]).unsqueeze(0))
 
     def forward(self, parameters: T):
         """
@@ -75,7 +75,7 @@ class PhysicsModel(nn.Module):
                 modulated_basis_spectra[:,index_real,:].sum(1, keepdim=True), 
                 modulated_basis_spectra[:,index_imag,:].sum(1, keepdim=True)
             ], dim=1)
-        return ideal_spectra/self.opt.relativator
+        return self.normalize(ideal_spectra)
 
     def normalize(self, x: T):
         shape = x.shape
@@ -109,7 +109,6 @@ def _export(fids: T, roi=slice(None,None)):
     Parameters:
     ----------
         - fids (torch.Tensor): Tensor of shape (B,M,C,L) containing the modulated basis FIDs
-        - mag (bool): DEPRICATED! Use magnitude of basis spectra. Default=False
         - roi (slice): Final range the spectra should be cropped to. Default = no cropping
     
     Returns:

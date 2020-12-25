@@ -62,6 +62,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             
         if total_iters % opt.plot_freq == 0:
             visualizer.plot_current_losses()
+            visualizer.save_smooth_loss()
 
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
             # if opt.val_path:
@@ -76,7 +77,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         model.set_input(data)
         iter_data_time = time.time()
 
-    visualizer.save_smooth_loss()
     visdom.display_current_results(model.get_current_visuals(), epoch, True)
 
     model.update_learning_rate()    # update learning rates in the end of every epoch.
