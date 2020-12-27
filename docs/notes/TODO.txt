@@ -89,12 +89,13 @@ Refactor Dataloader to allow for labels
 #########
 
 - Always use magic ratio for basis spectra
+- Unify cycleGAN models
+- simplify code
 
 TODO:
 - Create accurate synthetic version of UCSF
 - Make normal CycleGAN work again
 - Smooth edges of UCSF spectra
-- Unify cycleGAN models
 - Use attention for G and D
 - Use SN
 

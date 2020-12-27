@@ -1,7 +1,7 @@
 from models.cycleGAN import CycleGAN
 import torch
 
-class W_CycleGAN(CycleGAN):
+class CycleGAN_W(CycleGAN):
     """
     This class implements a CycleGAN model for learning 1d signal translation without paired data,
     using the wasserstein loss function with gradient penalty.
@@ -16,7 +16,7 @@ class W_CycleGAN(CycleGAN):
         opt.clip_value = 0.01
         opt.beta1 = 0
         opt.beta2 = 0.9
-        if self.opt.weight_norm == 'sn':
+        if opt.weight_norm == 'sn':
             opt.which_model_netD = 'spectra_sn'
         super().__init__(opt)
         

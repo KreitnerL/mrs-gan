@@ -5,7 +5,7 @@ from models.auxiliaries.auxiliary import relativeMELoss
 from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
 from models.auxiliaries.physics_model import PhysicsModel
 
-from models.w_cycleGAN import W_CycleGAN
+from models.cycleGAN_W import CycleGAN_W
 from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
 from util.image_pool import ImagePool
 import torch
@@ -15,7 +15,7 @@ import util.util as util
 from . import networks, define
 T = torch.Tensor
 
-class cycleGAN_WGP_REG(W_CycleGAN):
+class cycleGAN_WGP_REG(CycleGAN_W):
     """
     This class implements the novel cyleGAN for unsupervised spectral quantification tasks
     """
