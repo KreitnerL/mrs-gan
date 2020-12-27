@@ -26,8 +26,9 @@ class Validator:
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
-        print('val spectra = %d' % self.dataset_size)
-        print('val batches = %d' % len(self.dataset))
+        if not opt.quiet:
+            print('val spectra = %d' % self.dataset_size)
+            print('val batches = %d' % len(self.dataset))
 
         self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
         self.opt.num_test = int(self.num_test/self.opt.batch_size)

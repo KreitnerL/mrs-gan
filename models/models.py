@@ -15,5 +15,6 @@ def create_model(opt, physicsModel=None):
         model = CycleGAN_WSN(opt)
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)
-    print("model [%s] was created" % (model.name()))
+    if not opt.quiet:
+        print("model [%s] was created" % (model.name()))
     return model

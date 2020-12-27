@@ -11,14 +11,15 @@ from util.visualizer import Visualizer
 from util.visdom import Visdom
 
 opt = TrainOptions().parse()
-
-print('------------ Creating Training Set ------------')
+if not opt.quiet:
+    print('------------ Creating Training Set ------------')
 pysicsModel = PhysicsModel(opt)
 data_loader = CreateDataLoader(opt)     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
-print('training spectra = %d' % dataset_size)
-print('training batches = %d' % len(dataset))
+if not opt.quiet:
+    print('training spectra = %d' % dataset_size)
+    print('training batches = %d' % len(dataset))
 
 model = create_model(opt, pysicsModel)       # create a model given opt.model and other options
 latest_path = os.path.join(model.save_dir, 'latest')
@@ -32,7 +33,8 @@ t_data = 0
 
 validator = Validator(opt)
 
-print('------------- Beginning Training -------------')
+if not opt.quiet:
+    print('------------- Beginning Training -------------')
 for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
     print('>>>>> Epoch: ', epoch)
     epoch_start_time = time.time()  # timer for entire epoch

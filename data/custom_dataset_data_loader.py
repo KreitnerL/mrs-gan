@@ -30,7 +30,8 @@ class CustomDatasetDataLoader(BaseDataLoader):
             raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 
         dataset.initialize(opt)
-        print("dataset [%s] was created" % (dataset.name()))
+        if not opt.quiet:
+            print("dataset [%s] was created" % (dataset.name()))
         return dataset
 
     def load_data(self):
