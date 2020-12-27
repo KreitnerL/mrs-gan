@@ -4,13 +4,17 @@ import torch.nn as nn
 from collections import OrderedDict
 import itertools
 from util.image_pool import ImagePool
-from .base_model import BaseModel
 from . import networks, define
 import models.auxiliaries.auxiliary as auxiliary
-T = torch.Tensor
+import numpy as np
+from collections import OrderedDict
+import util.util as util
 from models.auxiliaries.lr_scheduler import get_scheduler_G, get_scheduler_D
+import os
 
-class CycleGANModel(BaseModel):
+T = torch.Tensor
+
+class CycleGAN():
     """
     This class implements a CycleGAN model for learning domain to domain translation without paired data.
     CycleGAN paper: https://arxiv.org/pdf/1703.10593.pdf
@@ -19,10 +23,25 @@ class CycleGANModel(BaseModel):
     def name(self):
         return 'CycleGAN'
 
-    def __init__(self, opt, num_dimensions=2):
-        super().__init__(opt)
+    def __init__(self, opt, num_dimensions=1):
         auxiliary.set_num_dimensions(num_dimensions)
+        self.opt = opt
+        self.gpu_ids = opt.gpu_ids
+        self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
+        self.save_dir = os.path.join(opt.checkpoints_dir, opt.name)
+        self.optimizers = dict()
+        self.schedulers = []
         self.init(opt)
+        self.init_optimizers(opt)
+        if opt.isTrain:
+            self.old_glr = opt.lr
+            self.old_dlr = opt.lr
+        if not self.opt.quiet:
+            print('---------- Networks initialized -------------')
+            for network in self.networks:
+                define.print_network(network)
+            print('-----------------------------------------------')
+        self.save_network_architecture([self.netG_A, self.netG_B, self.netD_B])
 
     def init(self, opt):
         nb = opt.batch_size
@@ -30,63 +49,31 @@ class CycleGANModel(BaseModel):
         self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
         self.input_B: T = self.Tensor(nb, opt.output_nc, size, size)
 
-        # load/define networks
-        # The naming conversion is different from those used in the paper
-        # Code (paper): G_A (G), G_B (F), D_A (D_Y), D_B (D_X)
-
         # Generators
         self.netG_A = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
                                             opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
                                             opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
 
+        self.networks = [self.netG_A, self.netG_B]
         # Discriminators
-        if self.isTrain:
+        if opt.isTrain:
             self.netD_A = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
             self.netD_B = define.define_D(opt, opt.input_nc,
                                             opt.ndf, opt.which_model_netD, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
+            self.networks.extend([self.netD_A, self.netD_B])
 
-        if not self.opt.quiet:
-            print('---------- Networks initialized -------------')
-            define.print_network(self.netG_A)
-            define.print_network(self.netG_B)
-            if self.isTrain:
-                define.print_network(self.netD_A)
-                define.print_network(self.netD_B)
-                self.save_network_architecture([self.netG_A, self.netG_B, self.netD_A, self.netD_B])
-            print('-----------------------------------------------')
-
-        # Load checkpoint
-        if not self.isTrain or opt.continue_train:
-            self.load_network(self.netG_A, 'G_A', opt.network_stage)
-            self.load_network(self.netG_B, 'G_B', opt.network_stage)
-            if self.isTrain:
-                self.load_network(self.netD_A, 'D_A', opt.network_stage)
-                self.load_network(self.netD_B, 'D_B', opt.network_stage)
-            print('Loaded checkpoint', opt.network_stage)
-
-        if self.isTrain:
+        if opt.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
-            self.criterionCycle = torch.nn.MSELoss()
-            self.criterionIdt = torch.nn.MSELoss()
+            self.criterionCycle = torch.nn.L1Loss()
+            self.criterionIdt = torch.nn.L1Loss()
             self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
-            # initialize optimizers
-            if not opt.TTUR:
-                self.opt.glr = opt.lr
-                self.opt.dlr = opt.lr
-                self.opt.n_epochs_gen_decay = opt.n_epochs_decay
-                self.opt.n_epochs_dis_decay = opt.n_epochs_decay
-            
-            self.old_glr = opt.lr
-            self.old_dlr = opt.lr
-            
-            self.init_optimizers(opt)
 
             # Set loss weights
             self.lambda_idt = self.opt.lambda_identity
@@ -109,6 +96,22 @@ class CycleGANModel(BaseModel):
             get_scheduler_G(self.optimizer_G, opt),
             get_scheduler_D(self.optimizer_D, opt)
         ]
+
+    def update_learning_rate(self):
+        """Update learning rates for all the networks; called at the end of every epoch"""
+        old_lr = {}
+        for name, optimizer in self.optimizers.items():
+            old_lr[name] = optimizer.param_groups[0]['lr']
+
+        for scheduler in self.schedulers:
+            if self.opt.lr_policy == 'plateau':
+                scheduler.step(0)
+            else:
+                scheduler.step()
+
+        for name, optimizer in self.optimizers.items():
+            print(name, ': learning rate %.7f -> %.7f' % (old_lr[name], optimizer.param_groups[0]['lr']))
+
 
     def set_input(self, input):
         """
@@ -235,16 +238,16 @@ class CycleGANModel(BaseModel):
             self.optimizer_D.step()
 
     def get_current_losses(self):
-        D_A = self.loss_D_A.data
-        G_A = self.loss_G_A.data
-        Cyc_A = self.loss_cycle_A.data
-        D_B = self.loss_D_B.data
-        G_B = self.loss_G_B.data
-        Cyc_B = self.loss_cycle_B.data
+        D_A = self.loss_D_A.detach()
+        G_A = self.loss_G_A.detach()
+        Cyc_A = self.loss_cycle_A.detach()
+        D_B = self.loss_D_B.detach()
+        G_B = self.loss_G_B.detach()
+        Cyc_B = self.loss_cycle_B.detach()
         G = self.loss_G
         if self.opt.lambda_identity > 0.0:
-            idt_A = self.loss_idt_A.data
-            idt_B = self.loss_idt_B.data
+            idt_A = self.loss_idt_A.detach()
+            idt_B = self.loss_idt_B.detach()
             return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G), ('G_A', G_A), ('G_B', G_B), 
                                 ('Cyc_B', Cyc_B), ('Cyc_A', Cyc_A), ('idt_A', idt_A), ('idt_B', idt_B)])
         else:
@@ -252,14 +255,51 @@ class CycleGANModel(BaseModel):
                                 ('G_A', G_A), ('G_B', G_B), ('Cyc_A', Cyc_A), ('Cyc_B', Cyc_B), ])
 
     def get_current_visuals(self):
-        raise NotImplementedError()
+        real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
+        if hasattr(self, 'real_A'):
+            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
+            real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM')
+            fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM')
+            rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM')
+        if hasattr(self, 'real_B'):
+            x = list(range(self.real_B.size()[-1]))
+            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM')
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM')
+            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM')
 
-    def save(self, label):
-        """ Create a checkpoint of the current state of the model """
-        self.save_network(self.netG_A, 'G_A', label, self.gpu_ids)
-        self.save_network(self.netD_A, 'D_A', label, self.gpu_ids)
-        self.save_network(self.netG_B, 'G_B', label, self.gpu_ids)
-        self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
+        return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
+                            ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+
+    def create_checkpoint(self, path, d=None):
+        states = list(map(lambda x: x.cpu().state_dict(), self.networks))
+        checkpoint = {
+            "networks": states
+        }
+        if d is not None:
+            checkpoint.update(d)
+        torch.save(checkpoint, path)
+        for x in self.networks:
+            x.cuda()
+
+    def load_checkpoint(self, path):
+        checkpoint = torch.load(path)
+        states = checkpoint.pop('networks')
+        for i in range(len(states)):
+            self.networks[i].load_state_dict(states[i])
+        print('Loaded checkpoint successfully')
+        return checkpoint
+
+    def save_network_architecture(self, networks):
+        save_filename = 'architecture.txt'
+        save_path = os.path.join(self.save_dir, save_filename)
+
+        architecture = ''
+        for n in networks:
+            architecture += str(n) + '\n'
+        with open(save_path, 'w') as f:
+            f.write(architecture)
+            f.flush()
+            f.close()
 
     def get_fake(self):
         return self.fake_B

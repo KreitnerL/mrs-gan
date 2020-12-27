@@ -22,11 +22,12 @@ opt = merge_options(default_options, train_options, opt)
 
 # hard-code some parameters for test
 opt.phase = 'val'
-opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 
 validator = Validator(opt)
 physicsModel = PhysicsModel(opt)
 model = create_model(opt, physicsModel)      # create a model given opt.model and other options
+latest_path = os.path.join(model.save_dir, 'latest')
+model.load_checkpoint(latest_path)
 
 avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
 print('average realative error:', avg_err_rel)

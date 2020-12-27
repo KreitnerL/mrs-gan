@@ -1,7 +1,7 @@
-from models.cycleGAN_spectra import CycleGAN_spectra
+from models.cycleGAN import CycleGAN
 import torch
 
-class CycleGAN_WGP(CycleGAN_spectra):
+class CycleGAN_WGP(CycleGAN):
     """
     This class implements a CycleGAN model for learning 1d signal translation without paired data,
     using the wasserstein loss function with gradient penalty.

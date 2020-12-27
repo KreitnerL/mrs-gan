@@ -1,6 +1,7 @@
-from models.cycleGAN_spectra import CycleGAN_spectra
+from models.cycleGAN import CycleGAN
 
-class CycleGAN_WSN(CycleGAN_spectra):
+
+class CycleGAN_WSN(CycleGAN):
     """
     This class implements a CycleGAN model for learning 1d signal translation without paired data,
     using the wasserstein loss function with spectral normalization.

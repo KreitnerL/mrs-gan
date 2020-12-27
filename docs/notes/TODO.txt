@@ -98,13 +98,6 @@ TODO:
 - Use attention for G and D
 - Use SN
 
-- Reasons for New Horizon:
-    - CycleGAN architecture as method for unsupervised training
-    - Train 
-- Reasons for CycleGAN:
-    - CycleGAN as preprocessing step for other methods
-    - We can compare different methods on the same domain
-
 
 docs:
 - Update READMEs

@@ -197,8 +197,6 @@ def load_loss_from_file(path):
     for line in lines:
         if line.startswith('='):
             continue
-        # if int(re.search(r'\d+', line).group()) >= opt.epoch_count:
-        #     break
         line =  re.sub('\(.*\)', '', line)
         y_i = []
         for t in line.split():
