@@ -152,7 +152,7 @@ class Visualizer():
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(iter)
-        self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
+        self.plot_data['Y'].append([losses[k].detach().cpu().numpy() for k in self.plot_data['legend']])
 
         message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
         for k, v in losses.items():

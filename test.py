@@ -34,6 +34,8 @@ print('test spectra = %d' % dataset_size)
 print('test batches = %d' % len(dataset))
 
 model = create_model(opt)      # create a model given opt.model and other options
+latest_path = os.path.join(model.save_dir, 'latest')
+model.load_checkpoint(latest_path)
 
 
 visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
