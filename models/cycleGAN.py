@@ -51,9 +51,9 @@ class CycleGAN():
 
         # Generators
         self.netG_A = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
-                                            opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG, 
-                                            opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
 
         self.networks = [self.netG_A, self.netG_B]
         # Discriminators

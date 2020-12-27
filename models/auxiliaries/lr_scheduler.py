@@ -7,20 +7,18 @@ def setup_for_no_TTUR(opt):
     if not opt.TTUR:
         opt.glr = opt.lr
         opt.dlr = opt.lr
-        opt.n_epochs_gen = opt.n_epochs
-        opt.n_epochs_dis = opt.n_epochs
         opt.n_epochs_gen_decay = opt.n_epochs_decay
         opt.n_epochs_dis_decay = opt.n_epochs_decay
 
 def get_scheduler_G(optimizer, opt):
     if not initialized:
         setup_for_no_TTUR(opt)
-    return get_scheduler(optimizer, opt, opt.n_epochs_gen, opt.n_epochs_gen_decay)
+    return get_scheduler(optimizer, opt, opt.n_epochs, opt.n_epochs_gen_decay)
 
 def get_scheduler_D(optimizer, opt):
     if not initialized:
         setup_for_no_TTUR(opt)
-    return get_scheduler(optimizer, opt, opt.n_epochs_dis, opt.n_epochs_dis_decay)
+    return get_scheduler(optimizer, opt, opt.n_epochs, opt.n_epochs_dis_decay)
 
 
 def get_scheduler(optimizer, opt, n_epochs, n_epochs_decay):

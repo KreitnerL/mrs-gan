@@ -15,7 +15,7 @@ import util.util as util
 from . import networks, define
 T = torch.Tensor
 
-class cycleGAN_WGP_REG(CycleGAN_W):
+class cycleGAN_W_REG(CycleGAN_W):
     """
     This class implements the novel cyleGAN for unsupervised spectral quantification tasks
     """
@@ -38,7 +38,7 @@ class cycleGAN_WGP_REG(CycleGAN_W):
         self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
                                             opt.norm, self.gpu_ids, cbam=True)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
-                                            opt.norm, not opt.no_dropout, self.gpu_ids, init_type=opt.init_type)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
         
         if opt.isTrain:
             self.netD_B = define.define_D(opt, opt.input_nc,

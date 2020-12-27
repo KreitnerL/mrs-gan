@@ -155,7 +155,7 @@ class Decoder(nn.Module):
         return self.model(input)
 
 class Transformer(nn.Module):
-    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, padding_type='zero', cbam=False):
+    def __init__(self, input_nc: int, norm_layer=get_norm_layer('batch'), n_blocks=4, padding_type='zero', cbam=False):
         """
         Create a Transformer network that applies style transform on a sparse feature representation.
         Parameters:
@@ -163,7 +163,6 @@ class Transformer(nn.Module):
             - input_nc (int) -- the number of channels in input images
             - ngf (int)      -- the number of filters in the last conv layer
             - norm_layer     -- normalization layer
-            - use_dropout (bool)  -- if use dropout layers
             - n_blocks (int)      -- the number of ResNet blocks
             - padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
         """
@@ -172,27 +171,13 @@ class Transformer(nn.Module):
         if cbam:
             model.append(CBAM1d(input_nc))
         for i in range(n_blocks):
-            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+            model += [ResnetBlock(input_nc, padding_type=padding_type, norm_layer=norm_layer, use_dropout=False)]
         if cbam:
             model.append(CBAM1d(input_nc))
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
         return self.model(input)
-
-class Encoder_Transform_Decoder(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_downsampling=2, n_blocks=4, padding_type='zero', cbam=False):
-        super().__init__()
-        self.encoder = Encoder(input_nc=input_nc, ngf=ngf, norm_layer=norm_layer, n_downsampling=n_downsampling, cbam=cbam)
-        transformer_nc = (2**n_downsampling) * ngf
-        self.transformer = Transformer(input_nc=transformer_nc, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=n_blocks, padding_type=padding_type, cbam=cbam)
-        self.decoder = Decoder(output_nc=output_nc, ngf=ngf, norm_layer=norm_layer, n_upsampling=n_downsampling, cbam=cbam)
-
-    def get_components(self):
-        return self.encoder, self.transformer, self.decoder
-
-    def forward(self, input):
-        return self.decoder(self.transformer(self.encoder(input)))
 
 class ExtractorConv(nn.Module):
     """

@@ -26,8 +26,7 @@ class BaseOptions():
         self.parser.add_argument('--standardize', action='store_true', default=False, help='Standardize the input data')
         self.parser.add_argument('--norm_range', type=list, default=[-1, 1], help='Range in which the input data should be normalized')
         self.parser.add_argument('--pad_data', type=int, default=0, help='Pad data when loading. Most ResNet architectures require padding MRS data by 21')
-        self.parser.add_argument('--crop_start', type=int, default=None, help="Start index for cropping")
-        self.parser.add_argument('--crop_end', type=int, default=None, help="End index for cropping")
+        self.parser.add_argument('--roi', type=str, default='0,-1', help="Region of interest for spectra")
 
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
         self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
@@ -35,31 +34,30 @@ class BaseOptions():
         self.parser.add_argument('--network_stage', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
-        self.parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
+        self.parser.add_argument('--batch_size', type=int, default=50, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
-        self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
-        self.parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
+        self.parser.add_argument('--input_nc', type=int, default=2, help='# of input image channels')
+        self.parser.add_argument('--output_nc', type=int, default=2, help='# of output image channels')
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')#
         self.parser.add_argument('--nef', type=int, default=100, help='# of extrator filters in first conv layer')
-        self.parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
-        self.parser.add_argument('--which_model_netG', type=int, default=9, help='selects model to use for netG')
+        self.parser.add_argument('--which_model_netD', type=str, default='spectra', help='selects model to use for netD')
+        self.parser.add_argument('--which_model_netG', type=int, default=6, help='number of resnet block for the generator')
         self.parser.add_argument('--which_model_feat', type=str, default='resnet34', help='selects model to use for feature network')
         self.parser.add_argument('--n_layers_D', type=int, default=3, help='number of layers for the discriminator')
         self.parser.add_argument('--n_layers_E', type=int, default=3, help='number of layers for the extractor')
         self.parser.add_argument('--cbamG', action='store_true', help='Use the convolutional block attention module for the Generator')
         self.parser.add_argument('--cbamD', action='store_true', help='Use the convolutional block attention module for the Discriminator')
-        self.parser.add_argument('--n_downsampling', type=int, default=2, help='Number of down-/upsampling steps in the Generator')
+        self.parser.add_argument('--n_downsampling', type=int, default=3, help='Number of down-/upsampling steps in the Generator')
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
-        self.parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded.  [unaligned | LabeledMatSpectralDataset]')
-        self.parser.add_argument('--model', type=str, default='cycleGAN_PFL', help='chooses which model to use. [cycleGAN_PFL, cycleGAN_spectra]')
+        self.parser.add_argument('--dataset_mode', type=str, default='spectra_component_dataset', help='chooses how datasets are loaded.  [dicom_spectral_dataset, spectra_component_dataset]')
+        self.parser.add_argument('--model', type=str, default='cycleGAN_W_REG', help='chooses which model to use. [cycleGAN, cycleGAN_W, cycleGAN_W_REG]')
         self.parser.add_argument('--nThreads', default=0, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
-        self.parser.add_argument('--no_dropout', action='store_true', default=False, help='no dropout for the generator')
         self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
@@ -82,6 +80,24 @@ class BaseOptions():
         if not self.initialized:
             self.initialize()
         self.opt = self.parser.parse_args()
+
+        args = vars(self.opt)
+        # save to the disk
+        if self.isTrain:
+            expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
+            util.mkdirs(expr_dir)
+            file_name = os.path.join(expr_dir, 'opt.txt')
+            with open(file_name, 'wt') as opt_file:
+                opt_file.write('------------ Options -------------\n')
+                for k, v in sorted(args.items()):
+                    opt_file.write('%s: %s\n' % (str(k), str(v)))
+                opt_file.write('-------------- End ----------------\n')
+        if not self.opt.quiet:
+            print('------------ Options -------------')
+            for k, v in sorted(args.items()):
+                print('%s: %s' % (str(k), str(v)))
+            print('-------------- End ----------------')
+
         self.opt.isTrain = self.isTrain   # train or test
 
         str_ids = self.opt.gpu_ids.split(',')
@@ -92,26 +108,8 @@ class BaseOptions():
                 self.opt.gpu_ids.append(id)
 
         self.opt.ppm_range = list(map(float, self.opt.ppm_range.split(',')))
-        self.opt.roi = slice(self.opt.crop_start, self.opt.crop_end)
+        self.opt.roi = slice(*list(map(int, self.opt.roi.split(','))))
         
         torch.cuda.set_device(self.opt.gpu_ids[0])
 
-        args = vars(self.opt)
-
-        if not self.opt.quiet:
-            print('------------ Options -------------')
-            for k, v in sorted(args.items()):
-                print('%s: %s' % (str(k), str(v)))
-            print('-------------- End ----------------')
-
-        # save to the disk
-        if self.opt.isTrain:
-            expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
-            util.mkdirs(expr_dir)
-            file_name = os.path.join(expr_dir, 'opt.txt')
-            with open(file_name, 'wt') as opt_file:
-                opt_file.write('------------ Options -------------\n')
-                for k, v in sorted(args.items()):
-                    opt_file.write('%s: %s\n' % (str(k), str(v)))
-                opt_file.write('-------------- End ----------------\n')
         return self.opt

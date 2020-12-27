@@ -27,7 +27,6 @@ All available options are listed below:
 - `--norm`: instance normalization or batch normalization [instance | batch]. type=str, default='instance'
 - `--shuffle`: if false, takes images in order to make batches, otherwise takes them randomly, default=True, action='store_true'
 - `--identity`: use identity mapping. Setting identity other than 1 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set optidentity = 0.1'. type=float, default=0.0
-- `--no_dropout`: no dropout for the generator'. action='store_true`, type=bool, default=False
 - `--max_dataset_size`: Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded. type=int, default=float("inf")
 - `--resize_or_crop`:  scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]. type=str, default='resize_and_crop'
 - `--no_flip`, if specified, do not flip the images for data augmentation. action='store_true`, type=bool, default=False

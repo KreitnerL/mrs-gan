@@ -17,7 +17,7 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--display_port', type=int, default=8097, help='visdom port of the web display')
         self.parser.add_argument('--update_html_freq', type=int, default=1000, help='frequency of saving training results to html')
         self.parser.add_argument('--print_freq', type=int, default=100, help='frequency of showing training results on console')
-        self.parser.add_argument('--plot_freq', type=int, default=1000, help="number of iterations between plotting")
+        self.parser.add_argument('--plot_freq', type=int, default=10000, help="number of iterations between plotting")
         self.parser.add_argument('--no_html', action='store_true', help='do not save intermediate training results to [opt.checkpoints_dir]/[opt.name]/web/')
         self.parser.add_argument('--val_path', type=str, default=None, help='File path to the pretrained random forest dump.')
         self.parser.add_argument('--num_test', type=int, default=float("inf"), help='how many test images to run')
@@ -42,10 +42,8 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--pool_size', type=int, default=50, help='the size of image buffer that stores previously generated images')
         
         self.parser.add_argument('--TTUR', action='store_true', help='Enable the Two Time-scale Update Rule for stabilizing training and reducing the chance of mode collapse')
-        self.parser.add_argument('--n_epochs_gen', type=int, default=100, help='# of iter at starting generator learning rate')
-        self.parser.add_argument('--n_epochs_gen_decay', type=int, default=100, help='# of iter to linearly decay generator learning rate to zero')
-        self.parser.add_argument('--n_epochs_dis', type=int, default=100, help='# of iter at starting discriminator learning rate')
-        self.parser.add_argument('--n_epochs_dis_decay', type=int, default=100, help='# of iter to linearly decay discriminator learning rate to zero')
+        self.parser.add_argument('--n_epochs_gen_decay', type=int, default=5, help='# of iter to linearly decay generator learning rate to zero')
+        self.parser.add_argument('--n_epochs_dis_decay', type=int, default=5, help='# of iter to linearly decay discriminator learning rate to zero')
         self.parser.add_argument('--glr', type=float, default=0.0002, help='initial generator learning rate for adam')
         self.parser.add_argument('--dlr', type=float, default=0.0002, help='initial discriminator learning rate for adam')
 

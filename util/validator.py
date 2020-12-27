@@ -1,7 +1,7 @@
 from argparse import Namespace
+from models.cycleGAN import CycleGAN
 
 from torch.utils.data.dataloader import DataLoader
-from models.cycleGAN_WGP_REG import cycleGAN_WGP_REG
 from util.util import compute_error
 import numpy as np
 import torch
@@ -36,7 +36,7 @@ class Validator:
         # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
         # assert self.val_network.pretrained
 
-    def get_validation_score(self, model: cycleGAN_WGP_REG, dataset: DataLoader = None):
+    def get_validation_score(self, model: CycleGAN, dataset: DataLoader = None):
         """
         Computes various validation metrics for the given model.
 
