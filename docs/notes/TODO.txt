@@ -76,14 +76,23 @@ New Horizon:
     - create noisy syn dataset
     - sum of basis spectra as input
     - entropy loss
+    - zero centering  
+    - Use Attention
+    - Use MLP for Extraction
+
+Refactor Dataloader to allow for labels
+
+#########
+- Upscale Entropy Loss
+- Content sliding kernel loss 
+- PBT
+#########
+
 
 TODO:
-
-New Horizon:
-    - figure out why relative error is high
-
-
-
+- Create accurate synthetic version of UCSF
+- Make normal CycleGAN work again
+- Smooth edges of UCSF spectra
 
 - Reasons for New Horizon:
     - CycleGAN architecture as method for unsupervised training

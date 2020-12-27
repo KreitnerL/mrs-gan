@@ -14,18 +14,18 @@ def make_dataset(dir, file_ext=[]):
                     paths.append(path)
     return paths
 
-paths = sorted(make_dataset('/home/kreitnerl/ray_results/pbt_WGP_REG/', ['result.json']))
+paths = sorted(make_dataset('/home/kreitnerl/ray_results_25-12-20/pbt_WGP_REG/', ['result.json']))
 for i, path in enumerate(paths):
     configs=[]
     with open(path, 'r') as f:
         for line in f:
             step = json.loads(line.rstrip())['config']
-            configs.append([step['lambda_A'], step['lambda_B'], step['lambda_entropy']])
+            configs.append([step['lambda_A'], step['lambda_entropy'], step['dlr'], step['glr']])
     schedule = np.transpose(configs)
 
     plt.figure()
     for j in range(len(schedule)):
         plt.plot(schedule[j])
-    plt.legend(['lambda_A', 'lambda_B', 'lambda_entropy'])
+    plt.legend(['lambda_A', 'lambda_entropy', 'dlr', 'glr'])
     plt.savefig('PBT/PBT_schedule_%d.png'%i, format='png')
     print('saved at PBT/PBT_schedule_%d.png'%i)

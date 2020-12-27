@@ -75,7 +75,7 @@ class CustomStopper(tune.Stopper):
             self.should_stop = False
 
         def __call__(self, trial_id, result):
-            max_iter = 500
+            max_iter = 350
             if not self.should_stop and result["score"] < 0.05:
                 self.should_stop = True
             return self.should_stop or result["training_iteration"] >= max_iter
@@ -116,7 +116,7 @@ analysis = tune.run(
     config=search_space,
     raise_on_failed_trial=False
 )
-print("best config: ", analysis.get_best_config(metric="score", mode="min", scope="last"))
+print("best config: ", analysis.get_best_config(metric="score", mode="min"))
 
 # Plot by wall-clock time
 dfs = analysis.fetch_trial_dataframes()

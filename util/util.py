@@ -8,7 +8,6 @@ import cv2
 import matplotlib.pyplot as plt
 import sys
 import re
-from scipy.stats import pearsonr
 from sklearn.metrics import r2_score
 
 fig = ax = None
@@ -264,13 +263,13 @@ def compute_error(predictions: list, y):
             abs_error = (abs(predictions[:,metabolite] - y[:,metabolite]))
             avg_abs_err.append(np.mean(abs_error))
             err_rel.append(abs_error / (abs(y[:,metabolite])))
-            avg_err_rel.append(np.mean(abs_error[metabolite]))
+            avg_err_rel.append(np.mean(err_rel[metabolite]))
             r2.append(r2_score(predictions[:,metabolite], y[:,metabolite]))
         
         return avg_abs_err, err_rel, avg_err_rel, r2
 
 
-def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):
+def save_boxplot(err_rel, path: str, labels: list, max_y = None):
     """
     Save a boxplot from the given relative errors.
 
@@ -283,11 +282,11 @@ def save_boxplot(err_rel, avg_err_rel, path: str, labels: list):
     if fig is None:
         fig = plt.figure()
     plt.figure(fig.number)
-    max_y = 0.15 if max(np.array(avg_err_rel)) < 0.1 else 1.0
     plt.boxplot(err_rel, notch = True, labels=labels, showmeans=True, meanline=True)
     plt.ylabel('Relative Error')
     plt.title('Error per predicted metabolite')
-    plt.ylim([0,max_y])
+    if max_y:
+        plt.ylim([0,max_y])
     path = path+'_rel_err_boxplot.png'
     plt.savefig(path, format='png')
     plt.cla()
