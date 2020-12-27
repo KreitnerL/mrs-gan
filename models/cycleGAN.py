@@ -86,9 +86,9 @@ class CycleGAN():
         Initialize optimizers and learning rate schedulers
         """
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                            lr=opt.glr, betas=(opt.beta1, 0.9))
+                                            lr=opt.glr, betas=(opt.beta1, opt.beta2))
         self.optimizer_D = torch.optim.Adam(itertools.chain(self.netD_A.parameters(), self.netD_B.parameters()), 
-                                        lr=opt.dlr, betas=(opt.beta2, 0.9))
+                                        lr=opt.dlr, betas=(opt.beta1, opt.beta2))
 
         self.optimizers['Generator'] = self.optimizer_G
         self.optimizers['Discriminator'] = self.optimizer_D

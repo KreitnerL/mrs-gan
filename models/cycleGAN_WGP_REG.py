@@ -5,7 +5,7 @@ from models.auxiliaries.auxiliary import relativeMELoss
 from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
 from models.auxiliaries.physics_model import PhysicsModel
 
-from models.cycleGAN_WGP import CycleGAN_WGP
+from models.w_cycleGAN import W_CycleGAN
 from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
 from util.image_pool import ImagePool
 import torch
@@ -15,7 +15,7 @@ import util.util as util
 from . import networks, define
 T = torch.Tensor
 
-class cycleGAN_WGP_REG(CycleGAN_WGP):
+class cycleGAN_WGP_REG(W_CycleGAN):
     """
     This class implements the novel cyleGAN for unsupervised spectral quantification tasks
     """
@@ -58,8 +58,8 @@ class cycleGAN_WGP_REG(CycleGAN_WGP):
         Initialize optimizers and learning rate schedulers
         """
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                            lr=opt.glr, betas=(opt.beta1, 0.9))
-        self.optimizer_D = torch.optim.Adam(self.netD_B.parameters(), lr=opt.dlr, betas=(opt.beta2, 0.9))
+                                            lr=opt.glr, betas=(0, 0.9))
+        self.optimizer_D = torch.optim.Adam(self.netD_B.parameters(), lr=opt.dlr, betas=(0, 0.9))
 
         self.optimizers['Generator'] = self.optimizer_G
         self.optimizers['Discriminator'] = self.optimizer_D
