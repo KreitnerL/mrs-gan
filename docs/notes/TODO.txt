@@ -88,11 +88,15 @@ Refactor Dataloader to allow for labels
 - PBT
 #########
 
+- Always use magic ratio for basis spectra
 
 TODO:
 - Create accurate synthetic version of UCSF
 - Make normal CycleGAN work again
 - Smooth edges of UCSF spectra
+- Unify cycleGAN models
+- Use attention for G and D
+- Use SN
 
 - Reasons for New Horizon:
     - CycleGAN architecture as method for unsupervised training

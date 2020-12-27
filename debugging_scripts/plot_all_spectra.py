@@ -7,11 +7,11 @@ path = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra.mat'
 # path = '/home/kreitnerl/Datasets/syn_ucsf_corrected2/dataset_spectra.mat'
 var_name = 'spectra'
 ppm_range = [7.171825,-0.501875]
-crop_range=slice(200,712)
+crop_range=slice(210,722)
 x = np.linspace(*ppm_range, 1024)[slice(300,812)]
 
 spectra = io.loadmat(path)[var_name]
-spectra[:,:,630:]=0
+spectra[:,:,624:]=0
 spectra = spectra[:,:,crop_range]
 spectra = spectra/np.amax(abs(spectra))
 plt.figure()

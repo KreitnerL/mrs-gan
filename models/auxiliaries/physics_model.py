@@ -34,8 +34,8 @@ class PhysicsModel(nn.Module):
 
         # Tensor of shape (1,M,2,L)
         basis_fids = torch.cat((
-            self.params['fidCh'].unsqueeze(0),
-            self.params['fidNaa'].unsqueeze(0),
+            self.params['fidCh'].unsqueeze(0) / 3.0912,
+            self.params['fidNaa'].unsqueeze(0) / 1.0221,
             self.params['fidCr'].unsqueeze(0)
         ), dim=0).unsqueeze(0).cuda()
         self.register_buffer('basis_spectra', _export(basis_fids, roi=self.roi))
@@ -48,11 +48,6 @@ class PhysicsModel(nn.Module):
             spectrum_real = self.basis_spectra[:,index_real,:]
             spectrum_imag = self.basis_spectra[:,index_imag,:]
             self.basis_spectra = torch.sqrt(spectrum_real**2 + spectrum_imag**2)
-
-        # self.register_buffer('magic_number', torch.tensor([
-        #     3.0912,
-        #     1.0221
-        # ]).unsqueeze(0))
 
     def forward(self, parameters: T):
         """

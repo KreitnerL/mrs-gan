@@ -58,6 +58,12 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
         self.cropRange = range
         self.mag = magnitude
 
+        # WE USE THIS RATION TO ENFORCE SAME HEIGHT BETWEEN CHO, NAA and CRE
+        basis_spectra_ratio_cho = 3.0912
+        basis_spectra_ratio_naa = 1.0221
+        self.fidCh = self.fidCh/basis_spectra_ratio_cho
+        self.fidNaa = self.fidNaa/basis_spectra_ratio_naa
+
 
     def __repr__(self):
         return 'MRS_PhysicsModel(basis={}, lines={}, cropped={}, magnitude={})'.format('ISMRM', 3, self.cropped, self.mag)
