@@ -14,6 +14,7 @@ class DicomSpectralDataset(BaseDataset):
     """
     def initialize(self, opt):
         self.opt = opt
+        self.roi = self.opt.roi
         self.root = opt.dataroot
         if opt.real:
             self.channel_index = slice(0,1)
@@ -27,9 +28,6 @@ class DicomSpectralDataset(BaseDataset):
         if self.opt.phase == 'test':
             self.opt.phase = 'val'
 
-        self.dir_A = os.path.join(opt.dataroot, opt.phase + 'A')
-        self.dir_B = os.path.join(opt.dataroot, opt.phase + 'B')
-
         sizes_A = np.genfromtxt(os.path.join(self.root,'sizes_A') ,delimiter=',').astype(np.int64)
         sizes_B = np.genfromtxt(os.path.join(self.root,'sizes_B') ,delimiter=',').astype(np.int64)
 
@@ -42,21 +40,20 @@ class DicomSpectralDataset(BaseDataset):
 
         self.sampler_A = np.memmap(path_A, dtype='double', mode='r', shape=(self.A_size,sizes_A[4],sizes_A[3]))
         self.sampler_B = np.memmap(path_B, dtype='double', mode='r', shape=(self.B_size,sizes_B[4],sizes_B[3]))
-        self.counter=0
         if self.opt.phase == 'val':
             self.opt.phase = 'test'
 
         self.innit_transformations()
+        self.innit_length()
 
     def init_val(self, opt):
-        self.letter = 'A' if opt.AtoB else 'B'
+        self.letter = 'A'
         self.dir = os.path.join(opt.dataroot, opt.phase + self.letter)
         sizes = np.genfromtxt(os.path.join(self.root,'sizes_' + self.letter) ,delimiter=',').astype(np.int64)
         self.length = sizes[3]
         path = str(os.path.join(self.root, self.opt.phase + '_{0}.dat'.format(self.letter)))
         self.size = sizes[index[self.opt.phase]]
         self.sampler = np.memmap(path, dtype='double', mode='r', shape=(self.size,sizes[4],sizes[3]))
-        self.counter=0
         self.innit_transformations()
 
     def innit_transformations(self):
@@ -69,8 +66,8 @@ class DicomSpectralDataset(BaseDataset):
     def __getitem__(self, index):
         # 'Generates one sample of data'
         if self.opt.phase != 'val':
-            A = self.sampler_A[index % self.A_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
-            B = self.sampler_B[index % self.B_size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
+            A = self.sampler_A[index % self.A_size,self.roi]
+            B = self.sampler_B[index % self.B_size,self.roi]
             return {
                 'A': self.transform(A),
                 'B': self.transform(B),
@@ -78,7 +75,7 @@ class DicomSpectralDataset(BaseDataset):
                 'B_paths': '{:03d}.foo'.format(index % self.B_size)
             }
         else:
-            data = self.sampler[index % self.size,self.channel_index,self.opt.crop_start:self.opt.crop_end]
+            data = self.sampler[index % self.size,self.channel_index,self.roi]
             return {
                 self.letter: self.transform(data),
                 'A_paths': '{:03d}.foo'.format(index % self.size)
@@ -89,15 +86,10 @@ class DicomSpectralDataset(BaseDataset):
             return max(self.A_size, self.B_size) # Determines the length of the dataloader
         else:
             return self.size
-    
-    def get_length(self):
-        if self.opt.crop_start != None and self.opt.crop_end != None:
-            l = self.opt.crop_end - self.opt.crop_start
-        else:
-            l = self.length
-        # length must be power of 2
-        assert (l & (l-1) == 0) and l != 0
-        return l
+
+    def innit_length(self):
+        self.opt.full_data_length = self.length
+        self.opt.data_length = len(range(0, self.length)[self.roi])
 
     def name(self):
         return 'DicomSpectralDataset'

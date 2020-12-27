@@ -35,7 +35,7 @@ def convertdict(file, simple=False, device='cpu'):
 
 class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
     __version__ = ['3']
-    def __init__(self, cropped=True, magnitude=True, range=(1000,1250), gpu_ids=[]):
+    def __init__(self, cropped=True, magnitude=False, range=(1000,1250), gpu_ids=[]):
         super(PhysicsModelv3, self).__init__()
         self.gpu_ids = gpu_ids
         # Load basis spectra, concentration ranges, and units
@@ -44,10 +44,10 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
                  '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/units.mat']
 
         for path in paths:
-            with open(path, 'rb') as file:
-                dict = convertdict(io.loadmat(file))
-                for key, value in dict.items():
-                    self.register_buffer(str(key), value)
+            # with open(path, 'rb') as file:
+            dict = convertdict(io.loadmat(path))
+            for key, value in dict.items():
+                self.register_buffer(str(key), value)
 
         # Rephasing
         self.register_buffer('l', torch.FloatTensor([2048]).squeeze())
@@ -283,7 +283,7 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
         if gen: print('>>>>> Recovering spectra')
         specSummed = fftshift(fft(fidSumNoise.transpose(2,1),1).transpose(2,1),-1)
 
-        specSummed = remove_zeroorderphase(specSummed)
+        # specSummed = remove_zeroorderphase(specSummed)
         # if not simple:
             # specSummed = hamming_window(specSummed)
 
@@ -295,15 +295,15 @@ class PhysicsModelv3(nn.Module):      # Updated 06.24.2020 JTL
         # specSummed = complex_adjustment(specSummed, theta.unsqueeze(1))
 
         ## Normalize Spectra by dividing by the norm of the area under the 3 major peaks
-        if gen: print('>>>>> Normalizing spectra')
-        print('specSummed.shape: ',specSummed.shape)
-        channel_max = torch.max(torch.abs(specSummed),dim=-1).values
-        print('channel_max.shape: ',channel_max.shape)
-        sample_max = torch.max(torch.abs(channel_max),dim=-1).values
-        print('sample_max.shape: ',sample_max.shape)
-        denom = sample_max.unsqueeze(-1).unsqueeze(-1).repeat_interleave(2,dim=1)
-        print('denom.shape: ',denom.shape)
-        spec_norm = specSummed / denom
+        # if gen: print('>>>>> Normalizing spectra')
+        # print('specSummed.shape: ',specSummed.shape)
+        # channel_max = torch.max(torch.abs(specSummed),dim=-1).values
+        # print('channel_max.shape: ',channel_max.shape)
+        # sample_max = torch.max(torch.abs(channel_max),dim=-1).values
+        # print('sample_max.shape: ',sample_max.shape)
+        # denom = sample_max.unsqueeze(-1).unsqueeze(-1).repeat_interleave(2,dim=1)
+        # print('denom.shape: ',denom.shape)
+        spec_norm = specSummed # / denom
         # spec_norm = specSummed / torch.max(torch.abs(specSummed),dim=-1,keepdim=True).values
 
         if self.mag:

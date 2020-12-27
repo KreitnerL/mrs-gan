@@ -23,6 +23,9 @@ class CustomDatasetDataLoader(BaseDataLoader):
         elif opt.dataset_mode == 'dicom_spectral_dataset':
             from data.dicom_spectral_dataset import DicomSpectralDataset
             dataset = DicomSpectralDataset()
+        elif opt.dataset_mode == 'spectra_component_dataset':
+            from data.spectra_components_dataset import SpectraComponentDataset
+            dataset = SpectraComponentDataset()
         else:
             raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 

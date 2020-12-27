@@ -1,5 +1,5 @@
 from models.networks import *
-from models.auxiliary import init_weights
+from models.auxiliaries.auxiliary import init_weights
 
 ##############################################################################
 # Generator / Discriminator
@@ -76,7 +76,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', use_dr
         return netG
 
 def define_D(opt, input_nc, ndf, which_model_netD,
-             n_layers_D=3, norm='instance', gpu_ids=[], init_type='normal', cbam=False):
+             n_layers_D=3, norm='instance', gpu_ids=[], init_type='normal', cbam=False, output_nc=1):
     netD = None
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
@@ -84,13 +84,13 @@ def define_D(opt, input_nc, ndf, which_model_netD,
     if use_gpu:
         assert(torch.cuda.is_available())
     if which_model_netD == 'basic':
-        netD = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, gpu_ids=gpu_ids)
+        netD = NLayerDiscriminator(input_nc, ndf, n_layers=n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'n_layers':
         netD = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     elif which_model_netD == 'spectra':
-        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids, cbam=cbam)   
+        netD = SpectraNLayerDiscriminator(input_nc, ndf, n_layers=n_layers_D, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids, cbam=cbam, output_nc=output_nc)   
     elif which_model_netD == 'spectra_sn':
-        netD = SpectraNLayerDiscriminator_SN(input_nc, ndf, n_layers=3, data_length=opt.data_length, gpu_ids=gpu_ids)  
+        netD = SpectraNLayerDiscriminator_SN(input_nc, ndf, n_layers=n_layers_D, data_length=opt.data_length, gpu_ids=gpu_ids, output_nc=output_nc)  
     else:
         raise NotImplementedError('Discriminator model name [%s] is not recognized' %
                                   which_model_netD)
@@ -104,6 +104,21 @@ def define_D(opt, input_nc, ndf, which_model_netD,
     else:
         return netD
 
+def define_extractor(input_nc, output_nc, data_length, ndf, n_layers_D=3, norm='instance', gpu_ids=[], cbam=False):
+    use_gpu = len(gpu_ids) > 0
+    norm_layer = get_norm_layer(norm_type=norm)
+    if use_gpu:
+        assert(torch.cuda.is_available())
+    # netExtractor = ExtractorConv((input_nc, output_nc), ndf, n_layers=n_layers_D, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids, cbam=cbam)
+    netExtractor = ExtractorMLP((input_nc * data_length, output_nc), num_neurons=[ndf]*n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids, cbam=cbam)
+    if use_gpu:
+        netExtractor.cuda()
+    init_weights(netExtractor, "kaiming", activation='leaky_relu')
+
+    if len(gpu_ids): # and isinstance(input.data, torch.cuda.FloatTensor):
+        return nn.DataParallel(netExtractor, device_ids=gpu_ids)
+    else:
+        return netExtractor
 
 def define_feature_network(which_model_netFeat, gpu_ids=[]):
     netFeat = None

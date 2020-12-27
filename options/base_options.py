@@ -41,11 +41,13 @@ class BaseOptions():
         self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')
         self.parser.add_argument('--output_nc', type=int, default=3, help='# of output image channels')
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
-        self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')
+        self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')#
+        self.parser.add_argument('--nef', type=int, default=100, help='# of extrator filters in first conv layer')
         self.parser.add_argument('--which_model_netD', type=str, default='basic', help='selects model to use for netD')
         self.parser.add_argument('--which_model_netG', type=int, default=9, help='selects model to use for netG')
         self.parser.add_argument('--which_model_feat', type=str, default='resnet34', help='selects model to use for feature network')
-        self.parser.add_argument('--n_layers_D', type=int, default=3, help='only used if which_model_netD==n_layers')
+        self.parser.add_argument('--n_layers_D', type=int, default=3, help='number of layers for the discriminator')
+        self.parser.add_argument('--n_layers_E', type=int, default=3, help='number of layers for the extractor')
         self.parser.add_argument('--cbamG', action='store_true', help='Use the convolutional block attention module for the Generator')
         self.parser.add_argument('--cbamD', action='store_true', help='Use the convolutional block attention module for the Discriminator')
         self.parser.add_argument('--n_downsampling', type=int, default=2, help='Number of down-/upsampling steps in the Generator')
@@ -61,11 +63,8 @@ class BaseOptions():
         self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
-        self.parser.add_argument('--AtoB', dest='AtoB', action='store_true', help="Validate fakes of domain B")
-        self.parser.add_argument('--BtoA', dest='AtoB', action='store_false', help="Validate fakes of domain A")
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
-        self.parser.add_argument('--ppm_range', type=str, default='1.0221,3.0912', help='ppm range for the spectra')
-        self.parser.set_defaults(AtoB=True)
+        self.parser.add_argument('--ppm_range', type=str, default='7.171825,-0.501875', help='ppm range for the spectra')
 
         self.initialized = True
 
@@ -93,6 +92,7 @@ class BaseOptions():
                 self.opt.gpu_ids.append(id)
 
         self.opt.ppm_range = list(map(float, self.opt.ppm_range.split(',')))
+        self.opt.roi = slice(self.opt.crop_start, self.opt.crop_end)
         
         torch.cuda.set_device(self.opt.gpu_ids[0])
 

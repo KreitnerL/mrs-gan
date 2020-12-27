@@ -1,13 +1,14 @@
-from models.EntropyProfileLoss import EntropyProfileLoss
+from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
 import torch
 import torch.nn as nn
 from collections import OrderedDict
 import itertools
 from util.image_pool import ImagePool
 from .base_model import BaseModel
-from . import networks, auxiliary, define
+from . import networks, define
+import models.auxiliaries.auxiliary as auxiliary
 T = torch.Tensor
-from models.lr_scheduler import get_scheduler_G, get_scheduler_D
+from models.auxiliaries.lr_scheduler import get_scheduler_G, get_scheduler_D
 
 class CycleGANModel(BaseModel):
     """
@@ -21,7 +22,9 @@ class CycleGANModel(BaseModel):
     def __init__(self, opt, num_dimensions=2):
         super().__init__(opt)
         auxiliary.set_num_dimensions(num_dimensions)
+        self.init(opt)
 
+    def init(self, opt):
         nb = opt.batch_size
         size = opt.fineSize
         self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
@@ -115,6 +118,7 @@ class CycleGANModel(BaseModel):
         """
         if 'A' in input:
             input_A: T = input['A']
+            self.label_A: T = input['label_A']
             self.input_A.resize_(input_A.size()).copy_(input_A)
 
         if 'B' in input:
@@ -127,12 +131,11 @@ class CycleGANModel(BaseModel):
         """
         Uses Generators to generate fake and reconstructed spectra
         """
-        if self.opt.phase != 'val' or self.opt.AtoB:
-            self.real_A = self.input_A
-            self.fake_B = self.netG_A.forward(self.real_A)
-            self.rec_A = self.netG_B.forward(self.fake_B)
+        self.real_A = self.input_A
+        self.fake_B = self.netG_A.forward(self.real_A)
+        self.rec_A = self.netG_B.forward(self.fake_B)
 
-        if self.opt.phase != 'val' or not self.opt.AtoB:
+        if self.opt.phase != 'val':
             self.real_B = self.input_B
             self.fake_A = self.netG_B.forward(self.real_B)
             self.rec_B = self.netG_A.forward(self.fake_A)
@@ -259,8 +262,5 @@ class CycleGANModel(BaseModel):
         self.save_network(self.netD_B, 'D_B', label, self.gpu_ids)
 
     def get_fake(self):
-        if self.opt.AtoB:
-            return self.fake_B
-        else:
-            return self.fake_A
+        return self.fake_B
 

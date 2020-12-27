@@ -64,11 +64,39 @@ USCF:
 - change x axis to ppm
 - plot UCSF spectra s overlay (same patient and inter patients)
 
+New Horizon:
+    - adapt cycleGAN to work to use new dataset
+    - adapt generators to work with new domain
+    - adapt visualizer
+    - create physics model
+    - create new target dataset
+        - quantities
+        - baselines
+    - debug
+    - create noisy syn dataset
+    - sum of basis spectra as input
+    - entropy loss
+    - zero centering  
+    - Use Attention
+    - Use MLP for Extraction
+
+Refactor Dataloader to allow for labels
+
+#########
+- Upscale Entropy Loss
+- Content sliding kernel loss 
+- PBT
+#########
+
+
 TODO:
+- Create accurate synthetic version of UCSF
+- Make normal CycleGAN work again
+- Smooth edges of UCSF spectra
 
-
-- Try out New idea
-
+- Reasons for New Horizon:
+    - CycleGAN architecture as method for unsupervised training
+    - Train 
 - Reasons for CycleGAN:
     - CycleGAN as preprocessing step for other methods
     - We can compare different methods on the same domain

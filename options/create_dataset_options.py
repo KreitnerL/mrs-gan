@@ -15,7 +15,7 @@ class CreateDatasetOptions():
         self.parser.add_argument('--source_path_source_labels', type=str, help='File path of the labels of the target domain')
         self.parser.add_argument('--A_mat_var_name', type=str, default='spectra', help='Name of the matlab variable containing the spectra for domain A')
         self.parser.add_argument('--B_mat_var_name', type=str, default='spectra', help='Name of the matlab variable containing the spectra for domain B')
-        self.parser.add_argument('--name', type=str, default='spectra', help='Name of the dataset')
+        self.parser.add_argument('--label_names', type=str, default='cho,naa', help='Name of the dataset')
 
         self.parser.add_argument('--split', type=bool, default=True, help='Split the data into train, validation and test set')
         self.parser.add_argument('--val_split', type=float, default=0.1, help='Part of dataset that is used for validation')
@@ -30,6 +30,10 @@ class CreateDatasetOptions():
             self.initialize()
         self.opt = self.parser.parse_args()
         args = vars(self.opt)
+
+        self.opt.label_names = self.opt.label_names.split(',')
+        self.opt.train_indices, self.opt.val_indices, self.opt.test_indices = None, None, None
+
         if not self.opt.quiet:
             print('------------ Options -------------')
             for k, v in sorted(args.items()):

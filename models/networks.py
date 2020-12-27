@@ -6,8 +6,8 @@ from torch.nn.utils import spectral_norm
 import math
 import numpy as np
 
-from models.auxiliary import *
-from models.CBAM import CBAM1d
+from models.auxiliaries.auxiliary import *
+from models.auxiliaries.CBAM import CBAM1d
 
 
 ##############################################################################
@@ -81,6 +81,15 @@ class GANLoss(nn.Module):
             loss = self.loss(input, target_tensor)
         return loss
 
+class LambdaModule(nn.Module):
+    def __init__(self, lambd):
+        super().__init__()
+        import types
+        assert type(lambd) is types.LambdaType
+        self.lambd = lambd
+
+    def forward(self, x):
+        return self.lambd(x)
 
 class Encoder(nn.Module):
     def __init__(self, input_nc: int, ngf=64, norm_layer=get_norm_layer('batch'), n_downsampling=2, cbam=False):
@@ -185,6 +194,73 @@ class Encoder_Transform_Decoder(nn.Module):
     def forward(self, input):
         return self.decoder(self.transformer(self.encoder(input)))
 
+class ExtractorConv(nn.Module):
+    """
+    Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
+    and finally uses a Linear layer to compute a scalar that represents the networks prediction
+    """
+    def __init__(self, in_out = (1,1), ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
+        super(ExtractorConv, self).__init__()
+        self.gpu_ids = gpu_ids
+
+        kernel_size=4
+        padding=1
+        stride=2
+
+        self.sequence = nn.ModuleList([])
+        c_in = in_out[0]
+        c_out = ndf
+        # Scale down tensor of length L to L/(2**n_layers)
+        # Simultaniously upscale Feature dimension C to 2**_n_layers 
+        for _ in range(n_layers):
+            self.sequence.extend([
+                get_conv()(c_in, c_out, kernel_size=kernel_size, stride=stride, padding=padding),
+                norm_layer(c_out),
+                nn.LeakyReLU()
+            ])
+            if cbam:
+                self.sequence.extend([CBAM1d(c_out)])
+            c_in = c_out
+            c_out *= 2
+
+        self.sequence.extend([
+            get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.Flatten(),
+            nn.LeakyReLU(),
+            nn.Linear(int(data_length / (2**(n_layers+1))), in_out[1]),
+            nn.Sigmoid()
+        ])
+
+    def forward(self, input):
+        for layer in self.sequence:
+            input = layer(input)
+        return input.squeeze()
+
+class ExtractorMLP(nn.Module):
+    """
+    Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
+    and finally uses a Linear layer to compute a scalar that represents the networks prediction
+    """
+    def __init__(self, in_out = (1,1), num_neurons=(100,100,100), norm_layer=get_norm_layer('instance'), gpu_ids=[], cbam=False):
+        super(ExtractorMLP, self).__init__()
+        self.gpu_ids = gpu_ids
+
+        self.layers = nn.Sequential()
+        self.layers.add_module('Flatten', nn.Flatten())
+        num_neurons = [in_out[0], *num_neurons, in_out[1]]
+        for i in range(1, len(num_neurons)):
+            self.layers.add_module('Linear'+str(i), nn.Linear(num_neurons[i-1], num_neurons[i]))
+            if i < len(num_neurons)-1:
+                self.layers.add_module('LeakyReLU'+str(i), nn.LeakyReLU())
+            if cbam:
+                self.layers.add_module('Unsqueeze'+str(i), LambdaModule(lambda x: x.unsqueeze(-1)))
+                self.layers.add_module('CBAM'+str(i), CBAM1d(num_neurons[i]))
+                self.layers.add_module('Squeeze'+str(i), LambdaModule(lambda x: x.squeeze(-1)))
+        self.layers.add_module('Sigmoid', nn.Sigmoid())
+
+    def forward(self, input):
+        out = self.layers(input)
+        return out
 
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.
@@ -383,7 +459,7 @@ class SpectraNLayerDiscriminator(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
+    def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False, output_nc=1):
         super(SpectraNLayerDiscriminator, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -410,7 +486,7 @@ class SpectraNLayerDiscriminator(nn.Module):
         self.sequence.extend([
             get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding),
             nn.Flatten(),
-            nn.Linear(int(data_length / (2**(n_layers+1))), 1)
+            nn.Linear(int(data_length / (2**(n_layers+1))), output_nc)
         ])
 
     def forward(self, input):
