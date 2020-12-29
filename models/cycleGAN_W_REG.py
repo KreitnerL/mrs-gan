@@ -2,7 +2,7 @@ from collections import OrderedDict
 import itertools
 
 from models.auxiliaries.auxiliary import relativeMELoss
-from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
+from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
 from models.auxiliaries.physics_model import PhysicsModel
 
 from models.cycleGAN_W import CycleGAN_W
@@ -20,11 +20,9 @@ class cycleGAN_W_REG(CycleGAN_W):
     This class implements the novel cyleGAN for unsupervised spectral quantification tasks
     """
 
-    def __init__(self, opt, physicsModel):
+    def __init__(self, opt, physicsModel: PhysicsModel):
         opt.lambda_identity = 0
-        self.physicsModel: PhysicsModel = physicsModel
-        self.physicsModel.cuda()
-        super().__init__(opt)
+        super().__init__(opt, physicsModel)
     
     def name(self):
         return 'CycleGAN_REG'
@@ -51,7 +49,7 @@ class cycleGAN_W_REG(CycleGAN_W):
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
-            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4,5))
+            self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
 
     def init_optimizers(self, opt):
         """
@@ -93,15 +91,15 @@ class cycleGAN_W_REG(CycleGAN_W):
         self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_A
         # Backward cycle loss
         self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_B
-        # Entropy loss
-        if self.opt.lambda_entropy != 0:
+        # Feature loss
+        if self.opt.lambda_feat != 0:
             entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
-            self.loss_entropy_A: T = self.opt.lambda_entropy * (entropy_loss + content_loss)
+            self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
         else:
-            self.loss_entropy_A = 0
+            self.loss_feat_A = 0
 
         # combined loss
-        self.loss_G: T = self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_entropy_A
+        self.loss_G: T = self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_feat_A
         return self.loss_G
 
     def optimize_parameters(self, optimize_G=True, optimize_D=True):
@@ -119,20 +117,11 @@ class cycleGAN_W_REG(CycleGAN_W):
             self.backward_D_B()
             self.optimizer_D.step()
 
-    def get_current_losses(self):
-        D_B = self.loss_D_B.detach()
-        G_B = self.loss_G_B.detach()
-        Cyc_A = self.loss_cycle_A.detach()
-        Cyc_B = self.loss_cycle_B.detach()
-        entropy_A = self.loss_entropy_A.detach()
-        G = self.loss_G.detach()
-        return OrderedDict([('G', G), ('D_B', D_B), ('Cyc_B', Cyc_B), ('Cyc_A', Cyc_A), ('G_B', G_B), ('Entropy_A', entropy_A) ])
-
     def get_current_visuals(self):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
         if self.label_A.numel():
-            self.real_B = self.label_A
+            self.input_B = self.label_A
             self.forward()
 
         x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
@@ -148,5 +137,8 @@ class cycleGAN_W_REG(CycleGAN_W):
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                             ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
 
-    def get_fake(self):
-        return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu())
+    def get_prediction(self) -> np.ndarray:
+        return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu()).numpy()
+
+    def get_predicted_spectra(self) -> np.ndarray:
+        return self.physicsModel.forward(self.fake_B).detach().cpu().numpy()

@@ -1,3 +1,4 @@
+from models.auxiliaries.physics_model import PhysicsModel
 from models.cycleGAN import CycleGAN
 import torch
 
@@ -11,14 +12,14 @@ class CycleGAN_W(CycleGAN):
     def name(self):
         return 'CycleGAN_WGP'
 
-    def __init__(self, opt):
+    def __init__(self, opt, physicsModel: PhysicsModel):
         opt.gan_mode = 'wasserstein'
         opt.clip_value = 0.01
         opt.beta1 = 0
         opt.beta2 = 0.9
         if opt.weight_norm == 'sn':
             opt.which_model_netD = 'spectra_sn'
-        super().__init__(opt)
+        super().__init__(opt, physicsModel)
         
     def backward_D_basic(self, netD, real, fake):
         """Calculate GAN loss for the discriminator

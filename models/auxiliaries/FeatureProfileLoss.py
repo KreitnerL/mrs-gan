@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 
-__all__ = ['EntropyProfileLoss']
+__all__ = ['FeatureProfileLoss']
 
 
-class EntropyProfileLoss(nn.Module):
+class FeatureProfileLoss(nn.Module):
     '''
     This function calculates the entropy and the conent profile of 1D signals at various scales and
     returns the L1 losses comparing the entropy profiles of the input and target data.
@@ -23,7 +23,7 @@ class EntropyProfileLoss(nn.Module):
     Updated: Dec 22, 2020
     '''
     def __init__(self, kernel_sizes: tuple=(2, 3, 4, 5, 6, 7)):
-        super(EntropyProfileLoss, self).__init__()
+        super(FeatureProfileLoss, self).__init__()
         self.k = tuple( 2**val for val in kernel_sizes )
         self.entropyloss = nn.Sequential()
         self.entropy_loss = torch.tensor(0.0,requires_grad=True, device='cuda')
@@ -38,7 +38,7 @@ class EntropyProfileLoss(nn.Module):
 class Loss(nn.Module):
     def __init__(self, k):
         super().__init__()
-        self.entropy = Entropy(k)
+        self.entropy = Feature(k)
         self.loss_entropy = nn.L1Loss()
         self.loss_content = nn.MSELoss()
 
@@ -51,9 +51,9 @@ class Loss(nn.Module):
         return input, target, entropy_loss, content_loss
 
 
-class Entropy(nn.Module):
+class Feature(nn.Module):
     def __init__(self, k):
-        super(Entropy, self).__init__()
+        super(Feature, self).__init__()
         self.initialized = False
         self.k = k
 

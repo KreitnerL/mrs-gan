@@ -10,7 +10,7 @@ from torch.utils.data.dataloader import DataLoader
 from validation_networks.MLP.MLP_dataset import MLPDataset
 
 class MLP():
-    def __init__(self, save_path:str, val_fun=None, gpu: int = None, in_out = (1,1), num_neurons = (100, 100, 100), lr=0.0008, batch_size: int = 1, num_epoch: int = 15, validate_every: int = 5000):
+    def __init__(self, save_path:str, val_fun=None, gpu: int = None, in_out = (1,1), num_neurons = (100, 100, 100), lr=0.1, batch_size: int = 1, num_epoch: int = 15, validate_every: int = 5000):
 
         set_num_dimensions(1)
         self.network = ExtractorMLP(in_out, num_neurons, gpu_ids=[gpu], cbam=True)
@@ -55,7 +55,7 @@ class MLP():
                              num_workers=0, drop_last=False, shuffle=False)
         return self._predict(dataset)
 
-    def _predict(self, val_dataset: DataLoader):
+    def _predict(self, val_dataset: DataLoader) -> np.ndarray:
         pred = []
         for spectra, _ in val_dataset:
             self.input.resize_(spectra.size()).copy_(spectra)
@@ -78,10 +78,9 @@ class MLP():
 
         total_iters = 0
         loss = []
-        val_range = slice(-n_iter_no_change, None)
         score = []
         early_stop = False
-        early_stop_cond = lambda score, val_range: min(score[val_range]) > min(score)+tol
+        early_stop_cond = lambda score: min(score[-n_iter_no_change:]) > min(score[:-n_iter_no_change])-tol
         print('Training model...')
         while True:
             if early_stop:
@@ -103,7 +102,7 @@ class MLP():
                     if score[-1]==min(score):
                         self.save(self.save_path)
                     
-                    if len(score)>n_iter_no_change and early_stop_cond(score, val_range):
+                    if len(score)>n_iter_no_change and early_stop_cond(score):
                         early_stop=True
                         break
         

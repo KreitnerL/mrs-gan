@@ -43,14 +43,17 @@ visualizer = Visualizer(opt)    # create a visualizer that display/save images a
 web_dir = os.path.join(opt.results_dir, opt.name, '{}_{}'.format(opt.phase, opt.epoch_count))  # define the website directory
 print('creating web directory', web_dir)
 webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch_count))
-fakes=[]
+predictions=[]
+predicted_spectra=[]
 for data in progressbar(dataset, num_iters = opt.num_test):
     model.set_input(data)  # unpack data from data loader
     model.test()           # run inference
-    fakes.append(model.get_fake().detach().squeeze(dim=0).cpu().numpy())
+    predictions.append(model.get_prediction())
+    predicted_spectra.append(model.get_predicted_spectra())
     visuals = model.get_current_visuals()  # get image results
     image_paths = model.get_image_paths()
     save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
-fakes = np.squeeze(np.array(fakes))
-io.savemat(opt.results_dir + opt.name + '/fakes.mat', {"spectra": fakes})
+predictions = np.squeeze(np.array(predictions))
+predicted_spectra = np.squeeze(np.array(predicted_spectra))
+io.savemat(opt.results_dir + opt.name + '/fakes.mat', {"spectra": predicted_spectra, "predictions": predictions})
 webpage.save()  # save the HTML

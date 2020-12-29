@@ -109,6 +109,10 @@ class BaseOptions():
 
         self.opt.ppm_range = list(map(float, self.opt.ppm_range.split(',')))
         self.opt.roi = slice(*list(map(int, self.opt.roi.split(','))))
+        if any([self.opt.mag, self.opt.real, self.opt.imag]):
+            self.opt.input_nc = 1
+        else:
+            self.opt.input_nc = 2
         
         torch.cuda.set_device(self.opt.gpu_ids[0])
 

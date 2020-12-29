@@ -86,7 +86,7 @@ class CustomStopper(tune.Stopper):
 search_space = {
             "lambda_A":  tune.choice(list(range(8,15,1))),
             # "lambda_B":  tune.quniform(1,5,0.5), 2
-            "lambda_entropy": tune.quniform(1,5,0.2),
+            "lambda_feat": tune.quniform(1,5,0.2),
             "dlr": tune.quniform(0.0001, 0.0003, 0.00002),
             "glr": tune.quniform(0.0001, 0.0003, 0.00002)
         }
@@ -147,7 +147,7 @@ plt.savefig('raytune.png', format='png')
 #         # "glr": tune.quniform(0.0002, 0.0005, 0.0001),
 #         "lambda_A":  tune.choice(list(range(5,15,5))),
 #         "lambda_B":  tune.choice(list(range(5,15,5))),
-#         "lambda_entropy": tune.choice(list(range(0,10,2)))
+#         "lambda_feat": tune.choice(list(range(0,10,2)))
 #         # "batch_size": tune.choice(list(range(1,100))) 50
 
 #         # "which_model_netG": tune.choice([3,4,5,6]), 6

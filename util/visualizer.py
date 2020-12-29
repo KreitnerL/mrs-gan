@@ -95,12 +95,12 @@ class Visualizer():
             plt.figure(self.figure2.number)
 
         plt.xlabel('Iteration')
-        plt.ylabel('Mean Absolute Error ')
+        plt.ylabel('Mean Relative Error')
         plt.title(self.name + ' validation error over time')
-        plt.ylim([0,1])
+        plt.ylim([0,max(1,np.amax(self.validation_score))])
         step_size = int(total_iters/len(self.validation_score))
         x = list(range(step_size, total_iters+1, step_size))
-        plt.plot(x, [0.15/3.5]*len(x), 'r--')
+        plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
@@ -123,12 +123,12 @@ class Visualizer():
             plt.figure(self.figure2.number)
 
         plt.xlabel('Iteration')
-        plt.ylabel('Mean Absolute Error ')
+        plt.ylabel('Mean Relative Error')
         plt.title(self.name + ' training error over time')
-        plt.ylim([0,1])
+        plt.ylim([0,max(1,np.amax(self.training_score))])
         step_size = int(total_iters/len(self.training_score))
         x = list(range(step_size, total_iters+1, step_size))
-        plt.plot(x, [0.15/3.5]*len(x), 'r--')
+        plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.training_score)[:,i])
 

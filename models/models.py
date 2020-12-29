@@ -2,13 +2,13 @@
 def create_model(opt, physicsModel=None):
     model = None
     if opt.model == 'cycleGAN':
-        assert(opt.dataset_mode == 'dicom_spectral_dataset')
+        assert(opt.dataset_mode == 'spectra_component_dataset')
         from .cycleGAN import CycleGAN
-        model = CycleGAN(opt)
+        model = CycleGAN(opt, physicsModel)
     elif opt.model == 'cycleGAN_W':
-        assert(opt.dataset_mode == 'dicom_spectral_dataset')
+        assert(opt.dataset_mode == 'spectra_component_dataset')
         from .cycleGAN_W import CycleGAN_W
-        model = CycleGAN_W(opt)
+        model = CycleGAN_W(opt, physicsModel)
     elif opt.model == 'cycleGAN_W_REG':
         assert(opt.dataset_mode == 'spectra_component_dataset')
         from .cycleGAN_W_REG import cycleGAN_W_REG

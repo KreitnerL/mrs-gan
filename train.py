@@ -69,16 +69,17 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
             # if opt.val_path:
             avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
-            visualizer.plot_current_validation_score(avg_abs_err, total_iters)
+            visualizer.plot_current_validation_score(avg_err_rel, total_iters)
             avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
-            visualizer.plot_current_training_score(avg_abs_err, total_iters)
+            visualizer.plot_current_training_score(avg_err_rel, total_iters)
             print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
             model.create_checkpoint(latest_path)
+            visdom.display_current_results(model.get_current_visuals(), epoch, True)
 
         model.set_input(data)
         iter_data_time = time.time()
 
-    visdom.display_current_results(model.get_current_visuals(), epoch, True)
+    # visdom.display_current_results(model.get_current_visuals(), epoch, True)
 
     model.update_learning_rate()    # update learning rates in the end of every epoch.
 

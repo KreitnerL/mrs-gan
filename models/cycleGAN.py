@@ -1,4 +1,6 @@
-from models.auxiliaries.EntropyProfileLoss import EntropyProfileLoss
+from validation_networks.MLP.MLP import MLP
+from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -23,8 +25,10 @@ class CycleGAN():
     def name(self):
         return 'CycleGAN'
 
-    def __init__(self, opt, num_dimensions=1):
+    def __init__(self, opt, physicsModel: PhysicsModel, num_dimensions=1):
         auxiliary.set_num_dimensions(num_dimensions)
+        self.physicsModel = physicsModel
+        self.physicsModel.cuda()
         self.opt = opt
         self.gpu_ids = opt.gpu_ids
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
@@ -36,6 +40,7 @@ class CycleGAN():
         if opt.isTrain:
             self.old_glr = opt.lr
             self.old_dlr = opt.lr
+        self.init_loss_array()
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
             for network in self.networks:
@@ -48,6 +53,9 @@ class CycleGAN():
         size = opt.fineSize
         self.input_A: T = self.Tensor(nb, opt.input_nc, size, size)
         self.input_B: T = self.Tensor(nb, opt.output_nc, size, size)
+
+        self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (opt.input_nc * opt.data_length, opt.output_nc), batch_size=opt.batch_size)
+        assert self.val_network.pretrained
 
         # Generators
         self.netG_A = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
@@ -73,13 +81,24 @@ class CycleGAN():
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
             self.criterionIdt = torch.nn.L1Loss()
-            self.criterionEntropy = EntropyProfileLoss(kernel_sizes=(2,3,4))
+            self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
 
-            # Set loss weights
-            self.lambda_idt = self.opt.lambda_identity
-            self.lambda_A = self.opt.lambda_A
-            self.lambda_B = self.opt.lambda_B
-            self.lambda_entropy = self.opt.lambda_entropy
+    def init_loss_array(self):
+        self.loss_names = [
+            'loss_G',
+            'loss_D_A',
+            'loss_D_B',
+            'loss_G_A',
+            'loss_G_B',
+            'loss_cycle_A',
+            'loss_cycle_B',
+            'loss_feat_A',
+            'loss_feat_B',
+            'loss_idt_A',
+            'loss_idt_B'
+        ]
+        for loss in self.loss_names:
+            setattr(self, loss, 0)
 
     def init_optimizers(self, opt):
         """
@@ -139,7 +158,7 @@ class CycleGAN():
         self.rec_A = self.netG_B.forward(self.fake_B)
 
         if self.opt.phase != 'val':
-            self.real_B = self.input_B
+            self.real_B = self.physicsModel.forward(self.physicsModel.quantity_to_param(self.input_B))
             self.fake_A = self.netG_B.forward(self.real_B)
             self.rec_B = self.netG_A.forward(self.fake_A)
 
@@ -193,30 +212,32 @@ class CycleGAN():
         # D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.netD_B(self.fake_A), True)
         # Forward cycle loss
-        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.lambda_A
+        self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_A
         # Backward cycle loss
-        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.lambda_B
-        # Entropy loss
-        if self.lambda_entropy != 0:
-            self.loss_entropy_A: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_A, self.real_A)
-            self.loss_entropy_B: T = self.lambda_entropy * self.criterionEntropy.forward(self.rec_B, self.real_B)
+        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_B
+        # Feature loss
+        if self.opt.lambda_feat != 0:
+            entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
+            self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
+            entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_B, self.real_B)
+            self.loss_feat_B: T = self.opt.lambda_feat * (entropy_loss + content_loss)
         else:
-            self.loss_entropy_A = self.loss_entropy_B = 0
+            self.lambda_feat_A = self.lambda_feat_B = 0
 
 
         # combined loss
-        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_entropy_A + self.loss_entropy_B
+        self.loss_G: T = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A + self.loss_idt_B + self.loss_feat_A + self.loss_feat_B
         return self.loss_G
 
     def calculate_identity_loss(self):
         """Calculates the idetity loss"""
-        if self.lambda_idt > 0:
+        if self.opt.lambda_identity > 0:
             # G_A should be identity if real_B is fed.
             self.idt_A = self.netG_A.forward(self.real_B)
-            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.lambda_B * self.lambda_idt
+            self.loss_idt_A: T = self.criterionIdt(self.idt_A, self.real_B) * self.opt.lambda_B * self.opt.lambda_identity
             # G_B should be identity if real_A is fed.
             self.idt_B = self.netG_B.forward(self.real_A)
-            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.lambda_A * self.lambda_idt
+            self.loss_idt_B: T = self.criterionIdt(self.idt_B, self.real_A) * self.opt.lambda_A * self.opt.lambda_identity
         else:
             self.loss_idt_A = 0
             self.loss_idt_B = 0
@@ -238,34 +259,30 @@ class CycleGAN():
             self.optimizer_D.step()
 
     def get_current_losses(self):
-        D_A = self.loss_D_A.detach()
-        G_A = self.loss_G_A.detach()
-        Cyc_A = self.loss_cycle_A.detach()
-        D_B = self.loss_D_B.detach()
-        G_B = self.loss_G_B.detach()
-        Cyc_B = self.loss_cycle_B.detach()
-        G = self.loss_G
-        if self.opt.lambda_identity > 0.0:
-            idt_A = self.loss_idt_A.detach()
-            idt_B = self.loss_idt_B.detach()
-            return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G), ('G_A', G_A), ('G_B', G_B), 
-                                ('Cyc_B', Cyc_B), ('Cyc_A', Cyc_A), ('idt_A', idt_A), ('idt_B', idt_B)])
-        else:
-            return OrderedDict([('D_A', D_A), ('D_B', D_B), ('G', G),
-                                ('G_A', G_A), ('G_B', G_B), ('Cyc_A', Cyc_A), ('Cyc_B', Cyc_B), ])
+        d = OrderedDict()
+        for loss in self.loss_names:
+            val: T = getattr(self, loss)
+            if val != 0:
+                d[loss] = val.detach()
+        return d
 
     def get_current_visuals(self):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
+
+        if self.label_A.numel():
+            self.input_B.resize_(self.label_A.size()).copy_(self.label_A)
+            self.forward()
+
         if hasattr(self, 'real_A'):
             x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-            real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM')
-            fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM')
-            rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM')
+            real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
         if hasattr(self, 'real_B'):
             x = list(range(self.real_B.size()[-1]))
-            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM')
-            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM')
-            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM')
+            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
 
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                             ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
@@ -301,6 +318,8 @@ class CycleGAN():
             f.flush()
             f.close()
 
-    def get_fake(self):
-        return self.fake_B
+    def get_prediction(self) -> np.ndarray:
+        return self.val_network.predict(self.get_predicted_spectra())
 
+    def get_predicted_spectra(self) -> np.ndarray:
+        return self.fake_B.detach().cpu().numpy()

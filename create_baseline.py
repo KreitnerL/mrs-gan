@@ -13,16 +13,16 @@ from util.util import compute_error, save_boxplot
 from util.util import normalize
 
 
-def load_dataset(path, param_path, var_name, labels, mag, cropping):
+def load_dataset(path, param_path, var_name, roi, labels, mag):
     print('load spectra from:', path)
     data = np.array(io.loadmat(path)[var_name])
     if data.ndim == 2:
         data = np.expand_dims(data, 1)
     
     if mag:
-        data = np.sqrt(data[:,0:1,cropping]**2 + data[:,1:2,cropping]**2)
+        data = np.sqrt(data[:,0:1,roi]**2 + data[:,1:2,roi]**2)
     else:
-        data = data[:,:,cropping]
+        data = data[:,:,roi]
     data = normalize(data)
 
     print('load parameters from:', param_path)
@@ -40,18 +40,17 @@ class Dataset:
         self.param_test = None
 
 class BaselineCreator:
-    def __init__(self, save_dir, labels, mag=True, cropping=(slice(None,None)), val_split=0.1):
+    def __init__(self, save_dir, labels, mag=True, val_split=0.1):
         self.save_dir = save_dir
         self.labels = labels
         self.mag = mag
-        self.cropping = cropping
         self.val_split = val_split
         self.datasets: dict[str, Dataset] = dict()
 
     def get_dataset(self, label: str):
         if label not in self.datasets:
             dataset = Dataset()
-            spectra, params = load_dataset(*paths[label], self.labels, self.mag, self.cropping)
+            spectra, params = load_dataset(*paths[label], self.labels, self.mag)
             num_test = round(self.val_split * len(spectra))
             num_train = len(spectra) - num_test
             dataset.spectra_train = np.array([spectra[i] for i in range(num_train)])
@@ -87,23 +86,23 @@ class BaselineCreator:
 
 
 paths = {
-    "I": ('/home/kreitnerl/Datasets/syn_4_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_4_ideal/dataset_quantities.mat', 'spectra'),
-    "R": ('/home/kreitnerl/Datasets/ucsf_syn/dataset_spectra.mat', '/home/kreitnerl/Datasets/ucsf_syn/dataset_quantities.mat', 'spectra'),
-    "UCSF": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities.mat', 'spectra'),
-    "LCM": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra')
+    "I": ('/home/kreitnerl/Datasets/syn_4_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_4_ideal/dataset_quantities.mat', 'spectra', slice(300,812)),
+    "R": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(300,812)),
+    "UCSF": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra_corrected.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities.mat', 'spectra', slice(210,722)),
+    "LCM": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722))
 }
 gpu = 6
 
 if __name__ == "__main__":
-    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, cropping=slice(300, 812), val_split=0.1)
+    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.1)
     model = 'MLP'
 
     # b.create_baseline('I', 'I', model)
     # b.create_baseline('I', 'R', model)
     b.create_baseline('R', 'R', model)
 
-    # b.create_baseline('R', 'UCSF', model)
-    # b.create_baseline('UCSF', 'UCSF', model)
+    b.create_baseline('R', 'UCSF', model)
+    b.create_baseline('UCSF', 'UCSF', model)
 
     # b.create_baseline('I', 'LCM', model)
     # b.create_baseline('LCM', 'LCM', model)

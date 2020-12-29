@@ -3,12 +3,10 @@ from models.cycleGAN import CycleGAN
 
 from torch.utils.data.dataloader import DataLoader
 from util.util import compute_error
-import numpy as np
 import torch
-import time
+import numpy as np
 
 from data.data_loader import CreateDataLoader
-from validation_networks.MLP.MLP import MLP
 
 
 class Validator:
@@ -21,7 +19,6 @@ class Validator:
             self.opt.phase = 'val'
         else:
             self.opt = opt
-        # self.opt.batch_size=1
         print('------------ Creating Validation Set ------------')
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
@@ -32,9 +29,6 @@ class Validator:
 
         self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
         self.opt.num_test = int(self.num_test/self.opt.batch_size)
-
-        # self.val_network = MLP(self.opt.val_path, gpu=self.opt.gpu_ids[0], in_out= (512, 2))
-        # assert self.val_network.pretrained
 
     def get_validation_score(self, model: CycleGAN, dataset: DataLoader = None):
         """
@@ -52,9 +46,7 @@ class Validator:
             - The Average Relative Error per metabolite. (M) with M=number of metabolites
             - The Coefficient of Determination (R^2) pre metabolite. (M) with M=number of metabolites
         """
-        # print('Validating', self.num_test, 'samples')
-        start = time.time()
-        fakes = []
+        predictions = []
         labels = []
         if dataset is None:
             dataset = self.dataset
@@ -64,15 +56,10 @@ class Validator:
             model.set_input(data)  # unpack data from data loader
             labels.append(data['label_A'])
             model.test()           # run inference
-            fake = model.get_fake()
-            # fake = torch.reshape(fake, (fake.shape[0] * fake.shape[1], *fake.shape[2:])).detach().cpu().numpy()
-            fakes.append(fake)
-        fakes = torch.cat(fakes)
-        labels = torch.cat(labels)
-
-        # predictions = self.val_network.predict(np.squeeze(fakes))
-        predictions = np.array(fakes)
-        labels = np.array(labels)
+            prediction = model.get_prediction()
+            predictions.append(prediction)
+        predictions = np.concatenate(predictions)
+        labels = torch.cat(labels).numpy()
         avg_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, labels)
-        # print('prediction of', self.num_test, 'samples completed in {:.3f} sec'.format(time.time()-start))
+
         return avg_abs_err, err_rel, avg_err_rel, r2

@@ -20,12 +20,12 @@ for i, path in enumerate(paths):
     with open(path, 'r') as f:
         for line in f:
             step = json.loads(line.rstrip())['config']
-            configs.append([step['lambda_A'], step['lambda_entropy'], step['dlr'], step['glr']])
+            configs.append([step['lambda_A'], step['lambda_feat'], step['dlr'], step['glr']])
     schedule = np.transpose(configs)
 
     plt.figure()
     for j in range(len(schedule)):
         plt.plot(schedule[j])
-    plt.legend(['lambda_A', 'lambda_entropy', 'dlr', 'glr'])
+    plt.legend(['lambda_A', 'lambda_feat', 'dlr', 'glr'])
     plt.savefig('PBT/PBT_schedule_%d.png'%i, format='png')
     print('saved at PBT/PBT_schedule_%d.png'%i)
