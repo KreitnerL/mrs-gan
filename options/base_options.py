@@ -42,7 +42,6 @@ class BaseOptions():
         self.parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in first conv layer')
         self.parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in first conv layer')#
         self.parser.add_argument('--nef', type=int, default=100, help='# of extrator filters in first conv layer')
-        self.parser.add_argument('--which_model_netD', type=str, default='spectra', help='selects model to use for netD')
         self.parser.add_argument('--which_model_netG', type=int, default=6, help='number of resnet block for the generator')
         self.parser.add_argument('--which_model_feat', type=str, default='resnet34', help='selects model to use for feature network')
         self.parser.add_argument('--n_layers_D', type=int, default=3, help='number of layers for the discriminator')
@@ -55,7 +54,7 @@ class BaseOptions():
         self.parser.add_argument('--dataset_mode', type=str, default='spectra_component_dataset', help='chooses how datasets are loaded.  [dicom_spectral_dataset, spectra_component_dataset]')
         self.parser.add_argument('--model', type=str, default='cycleGAN_W_REG', help='chooses which model to use. [cycleGAN, cycleGAN_W, cycleGAN_W_REG]')
         self.parser.add_argument('--nThreads', default=0, type=int, help='# threads for loading data')
-        self.parser.add_argument('--checkpoints_dir', type=str, default='./checkpoints', help='model checkpoints are saved here')
+        self.parser.add_argument('--checkpoints_dir', type=str, default='/home/kreitnerl/mrs-gan/checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')

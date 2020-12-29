@@ -4,6 +4,7 @@ from torch.nn import init
 import torch
 
 num_dimensions = 2
+weight_norm = lambda x: x
 
 def relativeMELoss(input, target):
     return torch.mean(abs(target - input) / abs(target))

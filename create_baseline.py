@@ -86,23 +86,21 @@ class BaselineCreator:
 
 
 paths = {
-    "I": ('/home/kreitnerl/Datasets/syn_4_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_4_ideal/dataset_quantities.mat', 'spectra', slice(300,812)),
-    "R": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(300,812)),
-    "UCSF": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra_corrected.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities.mat', 'spectra', slice(210,722)),
-    "LCM": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722))
+    "syn_i_": ('/home/kreitnerl/Datasets/syn_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ideal/dataset_quantities.mat', 'spectra', slice(300,812)),
+    "syn_r_": ('/home/kreitnerl/Datasets/syn_real/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_real/dataset_quantities.mat', 'spectra', slice(300,812)),
+    "syn_ucsf_": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(300,812)),
+    "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra_corrected.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities.mat', 'spectra', slice(210,722)),
+    "lcm_": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722))
 }
-gpu = 6
+gpu = 7
 
 if __name__ == "__main__":
-    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.1)
+    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.02)
     model = 'MLP'
 
-    # b.create_baseline('I', 'I', model)
-    # b.create_baseline('I', 'R', model)
-    b.create_baseline('R', 'R', model)
+    # b.create_baseline('syn_i_', 'syn_i_', model)
+    b.create_baseline('syn_ucsf_', 'syn_ucsf_', model)
+    b.create_baseline('syn_r_', 'syn_r_', model)
 
-    b.create_baseline('R', 'UCSF', model)
-    b.create_baseline('UCSF', 'UCSF', model)
-
-    # b.create_baseline('I', 'LCM', model)
-    # b.create_baseline('LCM', 'LCM', model)
+    b.create_baseline('syn_r_', 'ucsf_', model)
+    b.create_baseline('ucsf_', 'ucsf_', model)

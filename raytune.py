@@ -13,14 +13,15 @@ import matplotlib.pyplot as plt
 
 
 os.environ["RAY_MEMORY_MONITOR_ERROR_THRESHOLD"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
+os.environ["CUDA_VISIBLE_DEVICES"] = "2,7"
 # export RAY_MEMORY_MONITOR_ERROR_THRESHOLD=1
 # export CUDA_VISIBLE_DEVICES=1
 # tensorboard --logdir /home/kreitnerl/ray_results
 
+scores = []
+
 def report(validator: Validator, model):
     avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
-    print(avg_err_rel)
     tune.report(score=np.mean(avg_err_rel))
 
 def training_function(config, checkpoint_dir=None):
@@ -73,12 +74,20 @@ def training_function(config, checkpoint_dir=None):
 class CustomStopper(tune.Stopper):
         def __init__(self):
             self.should_stop = False
+            # self.max_iter = 350
+            self.patience = 50
+            self.tolerance = 1e-3
 
         def __call__(self, trial_id, result):
-            max_iter = 350
-            if not self.should_stop and result["score"] < 0.05:
-                self.should_stop = True
-            return self.should_stop or result["training_iteration"] >= max_iter
+            step = result["training_iteration"]-1
+            if  len(scores)<=step:
+                scores.append(result["score"])
+            else:
+                scores[step] = min(scores[step], result["score"])
+            return self.should_stop or (len(scores)>self.patience and min(scores[-self.patience:]) > min(scores[:-self.patience])-self.tolerance)
+            # if not self.should_stop and result["score"] < 0.05:
+            #     self.should_stop = True
+            # return self.should_stop or result["training_iteration"] >= max_iter
 
         def stop_all(self):
             return self.should_stop

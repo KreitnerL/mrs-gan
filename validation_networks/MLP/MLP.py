@@ -43,8 +43,7 @@ class MLP():
             self.pretrained = False
 
     def backward(self, pred, label):
-        self.label.resize_(label.size()).copy_(label)
-        loss = self.loss_fn(pred, self.label)
+        loss = self.loss_fn(pred, label)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -64,7 +63,7 @@ class MLP():
         return np.concatenate(pred)
         
 
-    def train(self, spectra_train, labels_train, spectra_test, labels_test, tol: float = 1e-3, n_iter_no_change: int = 5):
+    def train(self, spectra_train, labels_train, spectra_test, labels_test, tolerance: float = 1e-3, patience: int = 5):
         dataset_train = DataLoader(MLPDataset(spectra_train, labels_train),
                                     batch_size=self.batch_size,
                                     num_workers=0,
@@ -80,7 +79,7 @@ class MLP():
         loss = []
         score = []
         early_stop = False
-        early_stop_cond = lambda score: min(score[-n_iter_no_change:]) > min(score[:-n_iter_no_change])-tol
+        early_stop_cond = lambda score: min(score[-patience:]) > min(score[:-patience])-tolerance 
         print('Training model...')
         while True:
             if early_stop:
@@ -99,10 +98,10 @@ class MLP():
                     score = np.append(score, self.val_fun(pred, labels_test))
                     self.plot_val_score(score)
 
-                    if score[-1]==min(score):
+                    if len(score)>1 and score[-1]<min(score[:-1]):
                         self.save(self.save_path)
                     
-                    if len(score)>n_iter_no_change and early_stop_cond(score):
+                    if len(score)>patience and early_stop_cond(score):
                         early_stop=True
                         break
         

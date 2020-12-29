@@ -1,6 +1,8 @@
+from torch.nn.utils.spectral_norm import spectral_norm
 from models.auxiliaries.physics_model import PhysicsModel
 from models.cycleGAN import CycleGAN
 import torch
+import models.auxiliaries.auxiliary as aux
 
 class CycleGAN_W(CycleGAN):
     """
@@ -17,8 +19,7 @@ class CycleGAN_W(CycleGAN):
         opt.clip_value = 0.01
         opt.beta1 = 0
         opt.beta2 = 0.9
-        if opt.weight_norm == 'sn':
-            opt.which_model_netD = 'spectra_sn'
+        aux.weight_norm = spectral_norm
         super().__init__(opt, physicsModel)
         
     def backward_D_basic(self, netD, real, fake):

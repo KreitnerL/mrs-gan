@@ -66,11 +66,9 @@ class CycleGAN():
         self.networks = [self.netG_A, self.netG_B]
         # Discriminators
         if opt.isTrain:
-            self.netD_A = define.define_D(opt, opt.input_nc,
-                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+            self.netD_A = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
-            self.netD_B = define.define_D(opt, opt.input_nc,
-                                            opt.ndf, opt.which_model_netD, opt.n_layers_D, 
+            self.netD_B = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
             self.networks.extend([self.netD_A, self.netD_B])
 

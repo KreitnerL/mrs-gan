@@ -1,7 +1,5 @@
-from argparse import Namespace
 import os
 from models.auxiliaries.physics_model import PhysicsModel
-from data.dicom_spectral_dataset import DicomSpectralDataset
 import time
 from util.validator import Validator
 from options.train_options import TrainOptions

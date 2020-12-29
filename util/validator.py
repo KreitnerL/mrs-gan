@@ -19,7 +19,6 @@ class Validator:
             self.opt.phase = 'val'
         else:
             self.opt = opt
-        print('------------ Creating Validation Set ------------')
         data_loader = CreateDataLoader(self.opt)     # get training options
         self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
         self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
