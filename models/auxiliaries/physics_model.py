@@ -30,7 +30,7 @@ class PhysicsModel(nn.Module):
             self.params['naa_max']
         ]).unsqueeze(0))
 
-        self.register_buffer('cre_p', torch.ones(self.opt.batch_size,1))
+        self.register_buffer('cre_p', torch.ones(1,1))
 
         # Tensor of shape (1,M,2,L)
         basis_fids = torch.cat((
@@ -58,7 +58,7 @@ class PhysicsModel(nn.Module):
         --------
             - Tensor of shape (BxCxL) containing ideal spectrum
         """
-        parameters = torch.cat([parameters*self.max_per_met, self.cre_p],1)
+        parameters = torch.cat([parameters*self.max_per_met, self.cre_p.repeat(parameters.shape[0],1)],1)
         if self.opt.mag:
             modulated_basis_spectra = parameters.unsqueeze(-1)*self.basis_spectra
             ideal_spectra = modulated_basis_spectra.sum(1, keepdim=True)

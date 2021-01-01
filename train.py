@@ -12,7 +12,7 @@ opt = TrainOptions().parse()
 if not opt.quiet:
     print('------------ Creating Training Set ------------')
 pysicsModel = PhysicsModel(opt)
-data_loader = CreateDataLoader(opt)     # get training options
+data_loader = CreateDataLoader(opt, 'train')     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
 if not opt.quiet:

@@ -164,7 +164,7 @@ class ExtractorMLP(nn.Module):
 # Code and idea originally from Justin Johnson's architecture.
 # https://github.com/jcjohnson/fast-neural-style/
 class ResnetGenerator(nn.Module):
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, gpu_ids=[], padding_type='zero'):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, gpu_ids=[], padding_type='zero', cbam=False):
         """Construct a Resnet-based generator
         Parameters:
             input_nc (int)      -- the number of channels in input images
@@ -183,31 +183,30 @@ class ResnetGenerator(nn.Module):
         self.gpu_ids = gpu_ids
 
         model = [get_padding('reflect')(3),
-                 weight_norm(get_conv()(input_nc, ngf, kernel_size=7, padding=0)),
+                get_conv()(input_nc, ngf, kernel_size=7, padding=0),
                  norm_layer(ngf),
                  nn.ReLU(True)]
 
         n_downsampling = 2
         for i in range(n_downsampling):
             mult = 2**i
-            model += [weight_norm(get_conv()(ngf * mult, ngf * mult * 2, kernel_size=3),
-                                stride=2, padding=1),
+            model += [get_conv()(ngf * mult, ngf * mult * 2, kernel_size=3, stride=2, padding=1),
                       norm_layer(ngf * mult * 2),
                       nn.ReLU(True)]
 
         mult = 2**n_downsampling
         for i in range(n_blocks):
-            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout)]
+            model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, cbam=cbam)]
 
         for i in range(n_downsampling):
             mult = 2**(n_downsampling - i)
-            model += [weight_norm(get_conv_transpose()(ngf * mult, int(ngf * mult / 2),
+            model += [get_conv_transpose()(ngf * mult, int(ngf * mult / 2),
                                          kernel_size=3, stride=2,
-                                         padding=1, output_padding=1)),
+                                         padding=1, output_padding=1),
                       norm_layer(int(ngf * mult / 2)),
                       nn.ReLU(True)]
         model += [get_padding('reflect')(3)]
-        model += [weight_norm(get_conv()(ngf, output_nc, kernel_size=7, padding=0))]
+        model += [get_conv()(ngf, output_nc, kernel_size=7, padding=0)]
         model += [nn.Tanh()]
 
         self.model = nn.Sequential(*model)
@@ -220,7 +219,7 @@ class ResnetGenerator(nn.Module):
 class ResnetBlock(nn.Module):
     def __init__(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, cbam=cbam, weight_norm=weight_norm)
+        self.conv_block = self.build_conv_block(dim, padding_type, norm_layer, use_dropout, cbam=cbam)
 
     def build_conv_block(self, dim, padding_type, norm_layer, use_dropout, cbam=False):
         conv_block = []
@@ -230,7 +229,7 @@ class ResnetBlock(nn.Module):
         else:
             conv_block += [get_padding('reflect')(padding_type)]
 
-        conv_block += [weight_norm(get_conv()(dim, dim, kernel_size=3, padding=p)),
+        conv_block += [get_conv()(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim),
                        nn.ReLU(True)]
         if use_dropout:
@@ -242,7 +241,7 @@ class ResnetBlock(nn.Module):
         else:
             conv_block += [get_padding('reflect')(padding_type)]
 
-        conv_block += [weight_norm(get_conv()(dim, dim, kernel_size=3, padding=p)),
+        conv_block += [get_conv()(dim, dim, kernel_size=3, padding=p),
                        norm_layer(dim)]
         if cbam:
             conv_block.append(CBAM1d(dim))

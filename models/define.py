@@ -5,7 +5,7 @@ from models.auxiliaries.auxiliary import init_weights
 # Generator / Discriminator
 ##############################################################################
 
-def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', gpu_ids=[], init_type='normal'):
+def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', gpu_ids=[], init_type='normal', cbam=False):
     """Create a generator
     Parameters:
         ngf (int) -- the number of filters in the last conv layer
@@ -29,7 +29,7 @@ def define_G(input_nc, output_nc, ngf, which_model_netG, norm='instance', gpu_id
 
     if use_gpu:
         assert(torch.cuda.is_available())
-    netG = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, n_blocks=which_model_netG, gpu_ids=gpu_ids)
+    netG = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, n_blocks=which_model_netG, gpu_ids=gpu_ids, cbam=cbam)
     if len(gpu_ids) > 0:
         netG.cuda()
     init_weights(netG, init_type, activation='relu')

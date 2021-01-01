@@ -11,25 +11,21 @@ from ray.tune.trial import ExportFormat
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-os.environ["RAY_MEMORY_MONITOR_ERROR_THRESHOLD"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "2,7"
-# export RAY_MEMORY_MONITOR_ERROR_THRESHOLD=1
-# export CUDA_VISIBLE_DEVICES=1
 # tensorboard --logdir /home/kreitnerl/ray_results
+# best config:  {'lambda_A': 11, 'lambda_feat': 0.27359367736275786, 'dlr': 0.00026542079999999994, 'glr': 0.00024000000000000003}
 
 scores = []
 
-def report(validator: Validator, model):
-    avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
+def report(validator: Validator, dataset, model):
+    avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
     tune.report(score=np.mean(avg_err_rel))
 
 def training_function(config, checkpoint_dir=None):
     opt = update_options(init_opt, config)
 
     physicsModel = PhysicsModel(opt)
-    data_loader = CreateDataLoader(opt)     # get training options
-    dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
+    train_set = CreateDataLoader(opt, 'train').load_data()
+    val_set = CreateDataLoader(opt, 'val').load_data()
 
     model = create_model(opt, physicsModel)       # create a model given opt.model and other options
     if checkpoint_dir is not None:
@@ -47,7 +43,7 @@ def training_function(config, checkpoint_dir=None):
     iter_to_next_save = 25000
     while True:
         # Loads batch_size samples from the dataset
-        for i, data in enumerate(dataset):
+        for i, data in enumerate(train_set):
             model.set_input(data)         # unpack data from dataset and apply preprocessing
             # Only update critic every n_critic steps
             optimize_gen = not(i % opt.n_critic)
@@ -66,7 +62,7 @@ def training_function(config, checkpoint_dir=None):
             
             iter_to_next_display-= opt.batch_size
             if iter_to_next_display<=0:
-                report(validator, model)
+                report(validator, val_set, model)
                 step+=1
                 iter_to_next_display += opt.display_freq
             
@@ -75,7 +71,7 @@ class CustomStopper(tune.Stopper):
         def __init__(self):
             self.should_stop = False
             # self.max_iter = 350
-            self.patience = 50
+            self.patience = 60
             self.tolerance = 1e-3
 
         def __call__(self, trial_id, result):
@@ -94,10 +90,10 @@ class CustomStopper(tune.Stopper):
 
 search_space = {
             "lambda_A":  tune.choice(list(range(8,15,1))),
-            # "lambda_B":  tune.quniform(1,5,0.5), 2
+            "lambda_B":  tune.quniform(1,5,0.5),
             "lambda_feat": tune.quniform(1,5,0.2),
-            "dlr": tune.quniform(0.0001, 0.0003, 0.00002),
-            "glr": tune.quniform(0.0001, 0.0003, 0.00002)
+            # "dlr": tune.quniform(0.0001, 0.0003, 0.00002),
+            # "glr": tune.quniform(0.0001, 0.0003, 0.00002)
         }
 
 PBT = PopulationBasedTraining (
@@ -107,6 +103,9 @@ PBT = PopulationBasedTraining (
     )
 
 init_opt = TrainOptions().parse()
+os.environ["RAY_MEMORY_MONITOR_ERROR_THRESHOLD"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(list(map(str, init_opt.gpu_ids)))
+init_opt.gpu_ids = [0]
 stopper = CustomStopper()
 
 
@@ -120,8 +119,8 @@ analysis = tune.run(
     export_formats=[ExportFormat.MODEL],
     checkpoint_score_attr="score",
     resources_per_trial={"gpu": 0.125},
-    keep_checkpoints_num=16,
-    num_samples=16,
+    keep_checkpoints_num=30,
+    num_samples=30,
     config=search_space,
     raise_on_failed_trial=False
 )

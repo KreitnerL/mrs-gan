@@ -73,12 +73,33 @@ class BaseOptions():
         all_defaults = dict()
         for key in vars(args):
             all_defaults[key] = self.parser.get_default(key)
-        return argparse.Namespace(**all_defaults)
+        default_opts = argparse.Namespace(**all_defaults)
+        self.adjust(default_opts)
+        return default_opts
+
+    def adjust(self, opt):
+        opt.isTrain = self.isTrain   # train or test
+
+        str_ids = opt.gpu_ids.split(',')
+        opt.gpu_ids = []
+        for str_id in str_ids:
+            id = int(str_id)
+            if id >= 0:
+                opt.gpu_ids.append(id)
+
+        opt.ppm_range = list(map(float, opt.ppm_range.split(',')))
+        opt.roi = slice(*list(map(int, opt.roi.split(','))))
+        if any([opt.mag, opt.real, opt.imag]):
+            opt.input_nc = 1
+        else:
+            opt.input_nc = 2
 
     def parse(self):
         if not self.initialized:
             self.initialize()
         self.opt = self.parser.parse_args()
+        
+        self.adjust(self.opt)
 
         args = vars(self.opt)
         # save to the disk
@@ -96,22 +117,6 @@ class BaseOptions():
             for k, v in sorted(args.items()):
                 print('%s: %s' % (str(k), str(v)))
             print('-------------- End ----------------')
-
-        self.opt.isTrain = self.isTrain   # train or test
-
-        str_ids = self.opt.gpu_ids.split(',')
-        self.opt.gpu_ids = []
-        for str_id in str_ids:
-            id = int(str_id)
-            if id >= 0:
-                self.opt.gpu_ids.append(id)
-
-        self.opt.ppm_range = list(map(float, self.opt.ppm_range.split(',')))
-        self.opt.roi = slice(*list(map(int, self.opt.roi.split(','))))
-        if any([self.opt.mag, self.opt.real, self.opt.imag]):
-            self.opt.input_nc = 1
-        else:
-            self.opt.input_nc = 2
         
         torch.cuda.set_device(self.opt.gpu_ids[0])
 

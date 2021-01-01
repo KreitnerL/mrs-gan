@@ -37,26 +37,27 @@ class cycleGAN_W_REG(CycleGAN_W):
                                             opt.norm, self.gpu_ids, cbam=True)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
                                             opt.norm, self.gpu_ids, init_type=opt.init_type)
+        # self.netG_B = define.define_G_MLP(opt.input_nc, opt.data_length, opt.nef, opt.n_layers_E, self.gpu_ids)
+        self.networks = [self.netG_A, self.netG_B]
         
         if opt.isTrain:
             self.netD_B = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
-        self.networks = [self.netG_A, self.netD_B, self.netD_B]
 
-        if opt.isTrain:
             self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
             self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
+            self.networks.extend([self.netD_B])
 
     def init_optimizers(self, opt):
         """
         Initialize optimizers and learning rate schedulers
         """
         self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
-                                            lr=opt.glr, betas=(0, 0.9))
-        self.optimizer_D = torch.optim.Adam(self.netD_B.parameters(), lr=opt.dlr, betas=(0, 0.9))
+                                            lr=opt.glr, betas=(opt.beta1, opt.beta2))
+        self.optimizer_D = torch.optim.Adam(self.netD_B.parameters(), lr=opt.dlr, betas=(opt.beta1, opt.beta2))
 
         self.optimizers['Generator'] = self.optimizer_G
         self.optimizers['Discriminator'] = self.optimizer_D
@@ -120,7 +121,7 @@ class cycleGAN_W_REG(CycleGAN_W):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
         if self.label_A.numel():
-            self.input_B = self.label_A
+            self.input_B.resize_(self.label_A.size()).copy_(self.label_A)
             self.forward()
 
         x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]

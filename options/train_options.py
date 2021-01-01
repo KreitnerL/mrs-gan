@@ -20,7 +20,6 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--plot_freq', type=int, default=10000, help="number of iterations between plotting")
         self.parser.add_argument('--no_html', action='store_true', help='do not save intermediate training results to [opt.checkpoints_dir]/[opt.name]/web/')
         self.parser.add_argument('--val_path', type=str, default=None, help='File path to the pretrained random forest dump.')
-        self.parser.add_argument('--num_test', type=int, default=float("inf"), help='how many test images to run')
 
         # network saving and loading parameters
         self.parser.add_argument('--save_latest_freq', type=int, default=20000, help='frequency of saving the latest results')

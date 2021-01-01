@@ -36,17 +36,17 @@ class CycleGAN():
         self.optimizers = dict()
         self.schedulers = []
         self.init(opt)
-        self.init_optimizers(opt)
         if opt.isTrain:
             self.old_glr = opt.lr
             self.old_dlr = opt.lr
+            self.init_optimizers(opt)
+            self.save_network_architecture(self.networks)
         self.init_loss_array()
         if not self.opt.quiet:
             print('---------- Networks initialized -------------')
             for network in self.networks:
                 define.print_network(network)
             print('-----------------------------------------------')
-        self.save_network_architecture([self.netG_A, self.netG_B, self.netD_B])
 
     def init(self, opt):
         nb = opt.batch_size
@@ -299,7 +299,7 @@ class CycleGAN():
     def load_checkpoint(self, path):
         checkpoint = torch.load(path)
         states = checkpoint.pop('networks')
-        for i in range(len(states)):
+        for i in range(len(self.networks)):
             self.networks[i].load_state_dict(states[i])
         print('Loaded checkpoint successfully')
         return checkpoint

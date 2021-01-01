@@ -91,14 +91,16 @@ Refactor Dataloader to allow for labels
 - Always use magic ratio for basis spectra
 - Unify cycleGAN models
 - simplify code
+- Make normal CycleGAN work again
 
 TODO:
 - Create accurate synthetic version of UCSF
-- Make normal CycleGAN work again
 - Smooth edges of UCSF spectra
+- Test with small set of labeled data
+- Test Conv Extractor + Attention
+- Test again with corrected UCSF
+- https://github.com/heykeetae/Self-Attention-GAN/blob/master/sagan_models.py
 - Use attention for G and D
-- Use SN
-
 
 docs:
 - Update READMEs
