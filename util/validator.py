@@ -14,20 +14,7 @@ class Validator:
     The Validator can validate a given cycleGAN model end to end by running a pretrained random forest on the generated fakes and computing the average relative error. 
     """
     def __init__(self, opt):
-        if opt.phase != 'val':
-            self.opt = Namespace(**vars(opt))
-            self.opt.phase = 'val'
-        else:
-            self.opt = opt
-        data_loader = CreateDataLoader(self.opt)     # get training options
-        self.dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
-        self.dataset_size = len(data_loader)         # get the number of samples in the dataset.
-        if not opt.quiet:
-            print('val spectra = %d' % self.dataset_size)
-            print('val batches = %d' % len(self.dataset))
-
-        self.num_test = min(self.dataset_size, self.opt.num_test*self.opt.batch_size)
-        self.opt.num_test = int(self.num_test/self.opt.batch_size)
+        self.opt = opt
 
     def get_validation_score(self, model: CycleGAN, dataset: DataLoader = None):
         """
@@ -50,8 +37,6 @@ class Validator:
         if dataset is None:
             dataset = self.dataset
         for i, data in enumerate(dataset):
-            if i>=self.opt.num_test:
-                break
             model.set_input(data)  # unpack data from data loader
             labels.append(data['label_A'])
             model.test()           # run inference
