@@ -279,22 +279,18 @@ class CycleGAN():
         self.test()
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
-        visuals = []
-        for i in range(len(self.real_A) if get_all else 1):
-            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-            real_A = util.get_img_from_fig(x, self.real_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
-            fake_B = util.get_img_from_fig(x, self.fake_B[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
-            rec_A = util.get_img_from_fig(x, self.rec_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
-            if hasattr(self, 'real_B'):
-                x = list(range(self.real_B.size()[-1]))
-                real_B = util.get_img_from_fig(x, self.real_B[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
-                fake_A = util.get_img_from_fig(x, self.fake_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
-                rec_B = util.get_img_from_fig(x, self.rec_B[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
+        x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
+        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        if hasattr(self, 'real_B'):
+            x = list(range(self.real_B.size()[-1]))
+            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
 
-            visuals.append(OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
-                            ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)]))
-
-        return visuals
+        return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
+                        ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
 
     def get_items(self):
         items = dict()
