@@ -36,8 +36,7 @@ class cycleGAN_W_REG(CycleGAN_W):
         self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
                                             opt.norm, self.gpu_ids, cbam=True)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
-                                            opt.norm, self.gpu_ids, init_type=opt.init_type)
-        # self.netG_B = define.define_G_MLP(opt.input_nc, opt.data_length, opt.nef, opt.n_layers_E, self.gpu_ids)
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=True)
         self.networks = [self.netG_A, self.netG_B]
         
         if opt.isTrain:
@@ -117,25 +116,40 @@ class cycleGAN_W_REG(CycleGAN_W):
             self.backward_D_B()
             self.optimizer_D.step()
 
-    def get_current_visuals(self):
+    def get_current_visuals(self, get_all = False):
+        self.test()
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
-        if self.label_A.numel():
-            self.input_B.resize_(self.label_A.size()).copy_(self.label_A)
-            self.forward()
+        visuals = []
+        for i in range(len(self.real_A) if get_all else 1):
+            x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
+            real_A = util.get_img_from_fig(x, self.real_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
+            fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
+            rec_A = util.get_img_from_fig(x, self.rec_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
 
-        x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            if hasattr(self, 'real_B'):
+                real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
+                fake_A = util.get_img_from_fig(x, self.fake_A[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
+                rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[i:i+1].detach(), 'PPM', magnitude=self.opt.mag)
 
-        if hasattr(self, 'real_B'):
-            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            visuals.append(OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
+                                ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)]))
+        return visuals
 
-        return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
-                            ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
+    def get_items(self):
+        items = dict()
+        items['real_A_spectra'] = self.real_A.detach().cpu().numpy()
+        items['fake_B_quantity'] = self.physicsModel.param_to_quantity(self.fake_B.detach().cpu()).numpy()
+        items['fake_B_spectra'] = self.physicsModel.forward(self.fake_B).detach().cpu().numpy()
+        items['rec_A_spectra'] = self.rec_A.detach().cpu().numpy()
+
+        items['real_B_quantity'] = self.physicsModel.param_to_quantity(self.real_B.detach().cpu()).numpy()
+        items['real_B_spectra'] = self.physicsModel.forward(self.real_B).detach().cpu().numpy()
+        items['fake_A_spectra'] = self.fake_A.detach().cpu().numpy()
+        items['rec_B_quantity'] =  self.physicsModel.param_to_quantity(self.rec_B.detach().cpu()).numpy()
+        items['rec_B_spectra'] = self.physicsModel.forward(self.rec_B).detach().cpu().numpy()
+
+        return items
 
     def get_prediction(self) -> np.ndarray:
         return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu()).numpy()

@@ -86,7 +86,7 @@ class SpectraComponentDataset(BaseDataset):
             }
 
     def __len__(self):
-        if self.phase == 'train':
+        if self.phase == 'train' and self.opt.phase == 'train':
             return max(self.A_size, self.B_size)
         else:
             return self.A_size

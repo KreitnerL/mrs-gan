@@ -6,15 +6,13 @@ It will load a saved model from '--checkpoints_dir' and save the results to '--r
 It first creates model and dataset given the option. It will hard-code some parameters.
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
-from argparse import Namespace
-from data.dicom_spectral_dataset import DicomSpectralDataset
+from debugging_scripts.visualize_results import generate_images_of_spectra
+from models.auxiliaries.physics_model import PhysicsModel
 import os
-from util.util import progressbar
+from util.util import mkdir, progressbar
 from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
-from util.visualizer import Visualizer, save_images
-from util import html
 import numpy as np
 import scipy.io as io
 
@@ -22,38 +20,28 @@ opt = TestOptions().parse()  # get test options
 
 # hard-code some parameters for test
 opt.num_threads = 0   # test code only supports num_threads = 1
-opt.batch_size = 1    # test code only supports batch_size = 1
-opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
 
-
-print('------------ Creating Test Set ------------')
-data_loader = CreateDataLoader(opt)     # get training options
+pysicsModel = PhysicsModel(opt)
+data_loader = CreateDataLoader(opt, 'test')     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
-print('test spectra = %d' % dataset_size)
-print('test batches = %d' % len(dataset))
 
-model = create_model(opt)      # create a model given opt.model and other options
-latest_path = os.path.join(model.save_dir, 'latest')
-model.load_checkpoint(latest_path)
+model = create_model(opt, pysicsModel)      # create a model given opt.model and other options
+model.load_checkpoint(opt.model_path)
 
-
-visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
-# create a website
-web_dir = os.path.join(opt.results_dir, opt.name, '{}_{}'.format(opt.phase, opt.epoch_count))  # define the website directory
-print('creating web directory', web_dir)
-webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.epoch_count))
-predictions=[]
-predicted_spectra=[]
+items_list = None
 for data in progressbar(dataset, num_iters = opt.num_test):
     model.set_input(data)  # unpack data from data loader
-    model.test()           # run inference
-    predictions.append(model.get_prediction())
-    predicted_spectra.append(model.get_predicted_spectra())
-    visuals = model.get_current_visuals()  # get image results
-    image_paths = model.get_image_paths()
-    save_images(webpage, visuals, image_paths, aspect_ratio=opt.aspect_ratio, width=opt.display_winsize)
-predictions = np.squeeze(np.array(predictions))
-predicted_spectra = np.squeeze(np.array(predicted_spectra))
-io.savemat(opt.results_dir + opt.name + '/fakes.mat', {"spectra": predicted_spectra, "predictions": predictions})
-webpage.save()  # save the HTML
+    model.test()
+
+    items = model.get_items()
+    if items_list is None:
+        items_list = items
+    else:
+        items_list = {key: np.concatenate([val, items[key]], axis=0) for key,val in items_list.items()}
+path = os.path.join(opt.results_dir, opt.name, 'items.mat')
+mkdir(os.path.dirname(path))
+io.savemat(path, items_list)
+
+if opt.num_visuals>0:
+    generate_images_of_spectra(items_list, opt.num_visuals, os.path.join(opt.results_dir, opt.name))
