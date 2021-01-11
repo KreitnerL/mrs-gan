@@ -14,18 +14,32 @@ def make_dataset(dir, file_ext=[]):
                     paths.append(path)
     return paths
 
-paths = sorted(make_dataset('/home/kreitnerl/ray_results_25-12-20/pbt_WGP_REG/', ['result.json']))
+paths = sorted(make_dataset('/home/kreitnerl/mrs-gan/ray_results/pbt_WGP_REG_syn_real_tweak_all', ['result.json']))
+configs = []
+params = None
 for i, path in enumerate(paths):
-    configs=[]
+    configs.append([])
     with open(path, 'r') as f:
         for line in f:
-            step = json.loads(line.rstrip())['config']
-            configs.append([step['lambda_A'], step['lambda_feat'], step['dlr'], step['glr']])
-    schedule = np.transpose(configs)
+            step: dict = json.loads(line.rstrip())['config']
+            configs[-1].append(list(step.values()))
+            if params is None:
+                params = list(step.keys())
+            # configs.append([step['lambda_A'], step['lambda_feat'], step['dlr'], step['glr']])
 
+# configs = (N,L,P)
+directory = 'PBT/'
+if not os.path.isdir(directory):
+    os.mkdir(directory)
+max_iter = min(list(map(len, configs)))
+configs = np.array(list(map(lambda x: x[:max_iter], configs)))
+for i, param in enumerate(params):
+    # schedule = np.transpose(configs[:,:,i])
+    schedule = np.mean(configs[:,:,i], 0, keepdims=False)
     plt.figure()
-    for j in range(len(schedule)):
-        plt.plot(schedule[j])
-    plt.legend(['lambda_A', 'lambda_feat', 'dlr', 'glr'])
-    plt.savefig('PBT/PBT_schedule_%d.png'%i, format='png')
-    print('saved at PBT/PBT_schedule_%d.png'%i)
+    plt.plot(schedule)
+    plt.title('Evolution of %s over time' % param)
+    plt.xlabel('Steps')
+    plt.savefig(os.path.join(directory, 'PBT_shedule_%s.png'%param), format='png', bbox_inches='tight')
+
+print('Done. You can find the schedules at at', directory)

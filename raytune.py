@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 scores = []
 
 def report(validator: Validator, dataset, model):
-    avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
+    avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset, 20)
     tune.report(score=np.mean(avg_err_rel))
 
 def training_function(config, checkpoint_dir=None):
@@ -111,7 +111,8 @@ stopper = CustomStopper()
 
 analysis = tune.run(
     training_function,
-    name='pbt_WGP_REG',
+    local_dir='ray_results/',
+    name='pbt_WGP_REG_syn_ucsf',
     scheduler=PBT,
     metric="score",
     mode="min",

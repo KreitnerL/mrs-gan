@@ -12,12 +12,15 @@ opt = TrainOptions().parse()
 if not opt.quiet:
     print('------------ Creating Training Set ------------')
 pysicsModel = PhysicsModel(opt)
+
 data_loader = CreateDataLoader(opt, 'train')     # get training options
-dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
+train_set = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.
 if not opt.quiet:
     print('training spectra = %d' % dataset_size)
-    print('training batches = %d' % len(dataset))
+    print('training batches = %d' % len(train_set))
+
+val_set = CreateDataLoader(opt, 'val').load_data()
 
 model = create_model(opt, pysicsModel)       # create a model given opt.model and other options
 latest_path = os.path.join(model.save_dir, 'latest')
@@ -40,7 +43,7 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
     epoch_iter = 0                  # the number of training iterations in current epoch, reset to 0 every epoch
     visdom.reset()              # reset the visualizer: make sure it saves the results to HTML at least once every epoch
     # Loads batch_size samples from the dataset
-    for i, data in enumerate(dataset):
+    for i, data in enumerate(train_set):
         iter_start_time = time.time()  # timer for computation per iteration
 
         total_iters += opt.batch_size
@@ -66,10 +69,12 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
         if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
             # if opt.val_path:
-            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
+            opt.phase = 'val'
+            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set, num_batches=20)
             visualizer.plot_current_validation_score(avg_err_rel, total_iters)
-            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
+            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set, num_batches=20)
             visualizer.plot_current_training_score(avg_err_rel, total_iters)
+            opt.phase = 'train'
             print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
             model.create_checkpoint(latest_path)
             visdom.display_current_results(model.get_current_visuals(), epoch, True)
@@ -90,8 +95,10 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
           (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))
 
 # if opt.val_path:
-avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model)
+opt.phase = 'val'
+avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set)
 visualizer.plot_current_validation_score(avg_abs_err, total_iters)
-avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
+avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set)
 visualizer.plot_current_training_score(avg_abs_err, total_iters)
+opt.phase = 'train'
 model.create_checkpoint(latest_path)

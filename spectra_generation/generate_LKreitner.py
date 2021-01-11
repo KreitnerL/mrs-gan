@@ -285,7 +285,7 @@ if __name__=='__main__':
         quantitites = io.loadmat(args.param_path)
         params = []
         num_samples = 10
-        # num_samples = quantitites['cho'].shape[1]
+        num_samples = quantitites['cho'].shape[1]
         params.append(torch.from_numpy(quantitites['cho'][:,:num_samples]/(3.6)))
         
         params.append(torch.ones(num_samples))

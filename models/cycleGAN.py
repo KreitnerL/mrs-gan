@@ -284,7 +284,6 @@ class CycleGAN():
         fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
         rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
         if hasattr(self, 'real_B'):
-            x = list(range(self.real_B.size()[-1]))
             real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
             fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
             rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)

@@ -1,12 +1,10 @@
-from argparse import Namespace
 from models.cycleGAN import CycleGAN
 
 from torch.utils.data.dataloader import DataLoader
 from util.util import compute_error
 import torch
 import numpy as np
-
-from data.data_loader import CreateDataLoader
+import sys
 
 
 class Validator:
@@ -16,7 +14,7 @@ class Validator:
     def __init__(self, opt):
         self.opt = opt
 
-    def get_validation_score(self, model: CycleGAN, dataset: DataLoader = None):
+    def get_validation_score(self, model: CycleGAN, dataset: DataLoader, num_batches=sys.maxsize):
         """
         Computes various validation metrics for the given model.
 
@@ -34,9 +32,9 @@ class Validator:
         """
         predictions = []
         labels = []
-        if dataset is None:
-            dataset = self.dataset
         for i, data in enumerate(dataset):
+            if i>num_batches:
+                break
             model.set_input(data)  # unpack data from data loader
             labels.append(data['label_A'])
             model.test()           # run inference
