@@ -1,4 +1,5 @@
 import os
+import sys
 from models.auxiliaries.physics_model import PhysicsModel
 import time
 from util.validator import Validator
@@ -24,6 +25,8 @@ val_set = CreateDataLoader(opt, 'val').load_data()
 
 model = create_model(opt, pysicsModel)       # create a model given opt.model and other options
 latest_path = os.path.join(model.save_dir, 'latest')
+best_path = os.path.join(model.save_dir, 'best')
+best_score = sys.maxsize
 if opt.continue_train:
     model.load_checkpoint(latest_path)
 visualizer = Visualizer(opt)    # create a visualizer that display/save images and plots
@@ -72,6 +75,10 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             opt.phase = 'val'
             avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set, num_batches=20)
             visualizer.plot_current_validation_score(avg_err_rel, total_iters)
+            if best_score > sum(avg_err_rel):
+                best_score = sum(avg_err_rel)
+                model.create_checkpoint(best_path)
+
             avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set, num_batches=20)
             visualizer.plot_current_training_score(avg_err_rel, total_iters)
             opt.phase = 'train'
@@ -98,6 +105,9 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 opt.phase = 'val'
 avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set)
 visualizer.plot_current_validation_score(avg_abs_err, total_iters)
+if best_score > sum(avg_err_rel):
+    best_score = sum(avg_err_rel)
+    model.create_checkpoint(best_path)
 avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set)
 visualizer.plot_current_training_score(avg_abs_err, total_iters)
 opt.phase = 'train'

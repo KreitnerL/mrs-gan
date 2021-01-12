@@ -286,7 +286,7 @@ def save_boxplot(err_rel, path: str, labels: list, max_y = None):
     if max_y:
         plt.ylim([0,max_y])
     path = path+'_rel_err_boxplot.png'
-    plt.savefig(path, format='png')
+    plt.savefig(path, format='png', bbox_inches='tight')
     plt.cla()
     print('Saved error plot at', path)
 

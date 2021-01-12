@@ -68,6 +68,10 @@ def training_function(config, checkpoint_dir=None):
             
 
 class CustomStopper(tune.Stopper):
+        '''
+        Implements a custom Pleatau Stopper that stops all trails once there was no improvement on the score by more than
+        self.tolerance for more than self.patience steps.
+        '''
         def __init__(self):
             self.should_stop = False
             # self.max_iter = 350
@@ -135,7 +139,7 @@ for d in dfs.values():
     ax = d.plot("training_iteration", "score", ax=ax, legend=False)
 plt.xlabel("Steps")
 plt.ylabel("Relative Absolute Error")
-plt.savefig('raytune.png', format='png')
+plt.savefig('raytune.png', format='png', bbox_inches='tight')
 
 
 

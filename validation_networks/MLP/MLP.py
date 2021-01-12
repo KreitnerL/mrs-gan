@@ -117,7 +117,7 @@ class MLP():
         plt.plot(x, loss)
         plt.xlabel('Iterations')
         plt.ylabel('Loss')
-        plt.savefig(self.save_path+'loss.png', format='png')
+        plt.savefig(self.save_path+'loss.png', format='png', bbox_inches='tight')
         plt.cla()
 
     def plot_val_score(self, score: np.ndarray, total_iters):
@@ -127,7 +127,7 @@ class MLP():
         plt.plot(x, score)
         plt.xlabel('Iterations')
         plt.ylabel('Mean Reltative Error')
-        plt.savefig(self.save_path+'val_score.png', format='png')
+        plt.savefig(self.save_path+'val_score.png', format='png', bbox_inches='tight')
         plt.cla()
 
     def save(self, path):

@@ -79,7 +79,7 @@ class Visualizer():
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
         plt.tight_layout()
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     def plot_current_validation_score(self, score, total_iters):
@@ -104,10 +104,10 @@ class Visualizer():
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
-        plt.legend(('acceptance threshold', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.label_names))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     def plot_current_training_score(self, score, total_iters):
@@ -132,10 +132,10 @@ class Visualizer():
         for i in range(len(score)):
             plt.plot(x, np.array(self.training_score)[:,i])
 
-        plt.legend(('acceptance threshold', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.label_names))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'training_score.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     # losses: same format as |losses| of plot_current_losses
@@ -187,7 +187,7 @@ class Visualizer():
         plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss_smooth.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
 def save_images(webpage: HTML, visuals: dict, image_path: list, aspect_ratio=1.0, width=256):

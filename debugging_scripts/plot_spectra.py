@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 # path = '/home/kreitnerl/Datasets/syn_4_real/dataset_spectra.mat'
 path_UCSF = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra.mat'
-path = '/home/kreitnerl/Datasets/syn_ucsf_corrected2/dataset_spectra.mat'
+path = '/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat'
 var_name = 'spectra'
 ppm_range = [7.171825,-0.501875]
 crop_range_UCSF=slice(210,722)
@@ -16,33 +16,35 @@ def plotUCSF():
     spectra[:,:,623:]=0
     spectra = spectra[:,:,crop_range_UCSF]
     plt.figure()
-    for i in range(10):
+    for i in range(1):
         spectrum = spectra[i]/np.amax(abs(spectra[i]))
         for j in (0,1):
             plt.plot(x, spectrum[j])
+        plt.title('UCSF Spectrum')
         plt.xlim([x[0], x[-1]])
         plt.xlabel('ppm')
-        plt.ylim(-1,1)
-        plt.savefig('ucsf_ideal/UCSFspectrum%d.png'%i, format='png')
+        # plt.ylim(-1,1)
+        plt.savefig('ucsf_ideal/UCSFspectrum%d.png'%i, format='png', bbox_inches='tight')
         plt.cla()
 
 def plotSYN():
     spectra = io.loadmat(path)[var_name]
     spectra = spectra[:,:,crop_range]
     plt.figure()
-    for i in range(10):
+    for i in range(1):
         spectrum = spectra[i]/np.amax(abs(spectra[i]))
         for j in (0,1):
             plt.plot(x, spectrum[j])
+        plt.title('Syn_real Spectrum')
         plt.xlim([x[0], x[-1]])
         plt.xlabel('ppm')
-        plt.ylim(-1,1)
-        plt.savefig('ucsf_ideal/spectrum%d.png'%i, format='png')
+        # plt.ylim(-1,1)
+        plt.savefig('ucsf_ideal/spectrum%d.png'%i, format='png', bbox_inches='tight')
         plt.cla()
 
 plotSYN()
-# plotUCSF()
+plotUCSF()
 # import matplotlib.pyplot as plt
 # plt.figure()
 # plt.plot(fake[0])
-# plt.savefig('spectrum.png', format='png')
+# plt.savefig('spectrum.png', format='png', bbox_inches='tight')

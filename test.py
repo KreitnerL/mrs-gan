@@ -9,14 +9,20 @@ It then runs inference for '--num_test' images and save results to an HTML file.
 from debugging_scripts.visualize_results import generate_images_of_spectra
 from models.auxiliaries.physics_model import PhysicsModel
 import os
-from util.util import mkdir, progressbar
+from util.util import load_options, merge_options, mkdir, progressbar
 from options.test_options import TestOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
 import numpy as np
 import scipy.io as io
 
-opt = TestOptions().parse()  # get test options
+# opt = TestOptions().parse()  # get test options
+
+testOptions = TestOptions()
+opt = testOptions.parse()  # get test options
+train_options = load_options(os.path.join(opt.checkpoints_dir, opt.name, 'opt.txt'))
+default_options = testOptions.get_defaults()
+opt = merge_options(default_options, train_options, opt)
 
 # hard-code some parameters for test
 opt.num_threads = 0   # test code only supports num_threads = 1
@@ -44,4 +50,4 @@ mkdir(os.path.dirname(path))
 io.savemat(path, items_list)
 
 if opt.num_visuals>0:
-    generate_images_of_spectra(items_list, opt.num_visuals, os.path.join(opt.results_dir, opt.name))
+    generate_images_of_spectra(items_list, opt.num_visuals, os.path.join(opt.results_dir, opt.name), x = np.linspace(*opt.ppm_range, opt.full_data_length)[opt.roi])
