@@ -25,10 +25,12 @@ def load_metabolic_map(metabolic_map_path):
     data = np.reshape(data, np.flip(shape), order='C')
     data = np.moveaxis(data, [0,1,2], [2,0,1])
 
-    
+    rescaleSlope = float(metabolic_map_info.SharedFunctionalGroupsSequence._list[0].PixelValueTransformationSequence._list[0].RescaleSlope)
+    rescaleIntercept = float(metabolic_map_info.SharedFunctionalGroupsSequence._list[0].PixelValueTransformationSequence._list[0].RescaleIntercept)
     metabolic_map = np.flip(np.flip(data, 0), 1)
     metabolic_map_flat = metabolic_map.flatten('F')
-    return metabolic_map_flat, shape
+    metabolic_values = metabolic_map_flat * rescaleSlope + rescaleIntercept
+    return metabolic_values, metabolic_map_flat, shape
 
 def get_activated_indices(metabolic_map_path, metabolic_map_path_double_check=None):
     """

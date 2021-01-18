@@ -102,35 +102,35 @@ class BaselineCreator:
         predictions = model.predict(test_set.spectra_train)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_train)
         print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
+        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Train_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
         
         print('\n----------- Val Set -----------')
         predictions = model.predict(test_set.spectra_val)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_val)
         print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
+        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Val_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
 
         print('\n----------- Test Set -----------')
         predictions = model.predict(test_set.spectra_test)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_test)
         print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
+        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Test_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
 
 
 paths = {
-    "syn_i_": ('/home/kreitnerl/Datasets/syn_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ideal/dataset_quantities.mat', 'spectra', slice(300,812), 0.1, 0.1),
-    "syn_r_": ('/home/kreitnerl/Datasets/syn_real/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_real/dataset_quantities.mat', 'spectra', slice(300,812), 0.1, 0.1),
-    "syn_ucsf_": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(300,812), 0.060224, 0.06802),
-    "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/spectra_corrected.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities.mat', 'spectra', slice(210,722), 0.060224, 0.06802),
+    "syn_i_": ('/home/kreitnerl/Datasets/syn_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ideal/dataset_quantities.mat', 'spectra', slice(461,713), 0.1, 0.1),
+    "syn_r_": ('/home/kreitnerl/Datasets/syn_real/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_real/dataset_quantities.mat', 'spectra', slice(461,713), 0.1, 0.1),
+    "syn_ucsf_": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(461,713), 0.0668, 0.0601),
+    "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', 'spectra', slice(461,713), 0.0668, 0.0601),
     # "lcm_": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722), 0.1, 0.1)
 }
-gpu = 7
+gpu = 1
 
 if __name__ == "__main__":
     b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.02)
@@ -139,6 +139,6 @@ if __name__ == "__main__":
     # b.create_baseline('syn_i_', 'syn_i_', model)
     b.create_baseline('syn_ucsf_', 'syn_ucsf_', model)
     b.create_baseline('syn_r_', 'syn_r_', model)
-
-    b.create_baseline('syn_r_', 'ucsf_', model)
     b.create_baseline('ucsf_', 'ucsf_', model)
+    
+    b.create_baseline('syn_r_', 'ucsf_', model)

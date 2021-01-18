@@ -91,48 +91,6 @@ class LambdaModule(nn.Module):
     def forward(self, x):
         return self.lambd(x)
 
-class ExtractorConv(nn.Module):
-    """
-    Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
-    and finally uses a Linear layer to compute a scalar that represents the networks prediction
-    """
-    def __init__(self, in_out = (1,1), ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False):
-        super(ExtractorConv, self).__init__()
-        self.gpu_ids = gpu_ids
-
-        kernel_size=4
-        padding=1
-        stride=2
-
-        self.sequence = nn.ModuleList([])
-        c_in = in_out[0]
-        c_out = ndf
-        # Scale down tensor of length L to L/(2**n_layers)
-        # Simultaniously upscale Feature dimension C to 2**_n_layers 
-        for _ in range(n_layers):
-            self.sequence.extend([
-                weight_norm(get_conv()(c_in, c_out, kernel_size=kernel_size, stride=stride, padding=padding)),
-                norm_layer(c_out),
-                nn.LeakyReLU()
-            ])
-            if cbam:
-                self.sequence.extend([CBAM1d(c_out)])
-            c_in = c_out
-            c_out *= 2
-
-        self.sequence.extend([
-            weight_norm(get_conv()(c_in, 1, kernel_size=kernel_size, stride=stride, padding=padding)),
-            nn.Flatten(),
-            nn.LeakyReLU(),
-            nn.Linear(int(data_length / (2**(n_layers+1))), in_out[1]),
-            nn.Sigmoid()
-        ])
-
-    def forward(self, input):
-        for layer in self.sequence:
-            input = layer(input)
-        return input.squeeze()
-
 class ExtractorMLP(nn.Module):
     """
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
@@ -175,7 +133,7 @@ class ResnetGenerator(nn.Module):
             n_blocks (int)      -- the number of ResNet blocks
             padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
         """
-        assert(n_blocks >= 0)
+        assert n_blocks >= 0
         super(ResnetGenerator, self).__init__()
         self.input_nc = input_nc
         self.output_nc = output_nc
@@ -259,6 +217,7 @@ class NLayerDiscriminator(nn.Module):
     """
     def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False, output_nc=1):
         super(NLayerDiscriminator, self).__init__()
+        assert data_length%(n_layers+1)==0
         self.gpu_ids = gpu_ids
 
         kernel_size=4

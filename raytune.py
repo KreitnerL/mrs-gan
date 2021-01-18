@@ -1,3 +1,4 @@
+from models.cycleGAN_W_REG import cycleGAN_W_REG
 import os
 from models.auxiliaries.physics_model import PhysicsModel
 from util.util import update_options
@@ -14,11 +15,11 @@ import matplotlib.pyplot as plt
 # tensorboard --logdir /home/kreitnerl/ray_results
 # best config:  {'lambda_A': 11, 'lambda_feat': 0.27359367736275786, 'dlr': 0.00026542079999999994, 'glr': 0.00024000000000000003}
 
-scores = []
-
-def report(validator: Validator, dataset, model):
+def report(validator: Validator, dataset, model: cycleGAN_W_REG):
     avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset, 20)
-    tune.report(score=np.mean(avg_err_rel))
+    score = np.mean(avg_err_rel)
+    tune.report(score=score)
+    return score
 
 def training_function(config, checkpoint_dir=None):
     opt = update_options(init_opt, config)
@@ -75,16 +76,18 @@ class CustomStopper(tune.Stopper):
         def __init__(self):
             self.should_stop = False
             # self.max_iter = 350
-            self.patience = 60
-            self.tolerance = 1e-3
+            self.patience = 80
+            self.tolerance = 0.01
+            self.scores = []
 
         def __call__(self, trial_id, result):
             step = result["training_iteration"]-1
-            if  len(scores)<=step:
-                scores.append(result["score"])
+            if  len(self.scores)<=step:
+                self.scores.append(result["score"])
             else:
-                scores[step] = min(scores[step], result["score"])
-            return self.should_stop or (len(scores)>self.patience and min(scores[-self.patience:]) > min(scores[:-self.patience])-self.tolerance)
+                self.scores[step] = min(self.scores[step], result["score"])
+            print(self.scores)
+            return self.should_stop or (len(self.scores)>self.patience and min(self.scores[-self.patience:]) > min(self.scores[:-self.patience])-self.tolerance)
             # if not self.should_stop and result["score"] < 0.05:
             #     self.should_stop = True
             # return self.should_stop or result["training_iteration"] >= max_iter
@@ -116,15 +119,15 @@ stopper = CustomStopper()
 analysis = tune.run(
     training_function,
     local_dir='ray_results/',
-    name='pbt_WGP_REG_syn_ucsf',
+    name=init_opt.name,
     scheduler=PBT,
     metric="score",
+    checkpoint_score_attr="min-score",
     mode="min",
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
-    checkpoint_score_attr="score",
     resources_per_trial={"gpu": 0.125},
-    keep_checkpoints_num=30,
+    keep_checkpoints_num=1,
     num_samples=30,
     config=search_space,
     raise_on_failed_trial=False
@@ -139,8 +142,7 @@ for d in dfs.values():
     ax = d.plot("training_iteration", "score", ax=ax, legend=False)
 plt.xlabel("Steps")
 plt.ylabel("Relative Absolute Error")
-plt.savefig('raytune.png', format='png', bbox_inches='tight')
-
+plt.savefig(init_opt.name+'.png', format='png', bbox_inches='tight')
 
 
 
