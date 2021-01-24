@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 
 from data.image_folder import make_dataset
-from data.data_auxiliary import splitData
 from util.util import mkdir
 
 from options.create_dataset_options import CreateDatasetOptions

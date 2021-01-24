@@ -217,7 +217,7 @@ class NLayerDiscriminator(nn.Module):
     """
     def __init__(self, input_nc, ndf=32, n_layers=3, norm_layer=get_norm_layer('instance'), data_length=1024, gpu_ids=[], cbam=False, output_nc=1):
         super(NLayerDiscriminator, self).__init__()
-        assert data_length%(n_layers+1)==0
+        assert data_length%(2**(n_layers+1))==0
         self.gpu_ids = gpu_ids
 
         kernel_size=4

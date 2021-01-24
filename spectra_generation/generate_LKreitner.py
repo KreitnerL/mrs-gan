@@ -77,7 +77,7 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
         params[:,i] = 0.5
 
     # Noise - SNR = 100
-    print('>>> Noise')
+    print('>>> SNR')
     # params[:,15] = (80-12.5) * params[:,15].fill_(1) + (12.5 / (80-12.5))
     if simple:
         params[:,15].fill_(1)#.47873799725652)#1)
@@ -272,7 +272,7 @@ if __name__=='__main__':
 
     path = args.savedir
     if args.phase=='train':
-        entries = 200000 if not args.totalEntries else args.totalEntries
+        entries = 100000 if not args.totalEntries else args.totalEntries
         train(totalEntries=entries,path=path,simple=args.not_simple, pair = args.pair)
     elif args.phase=='test':
         print('Needs updating...')

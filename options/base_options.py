@@ -21,7 +21,6 @@ class BaseOptions():
         self.parser.add_argument('--real', action="store_true", default=False, help='Use only the real portion of the signal')
         self.parser.add_argument('--imag', action="store_true", default=False, help='Use only the real portion of the signal')
         self.parser.add_argument('--mag', action="store_true", default=False, help='Use the magnitude of the spectra')
-        self.parser.add_argument('--shuffle_data', action='store_true', help='Shuffle sequence of data when initially extracted from dataset')
         self.parser.add_argument('--normalize', action='store_true', default=False, help='Normalize the input data')
         self.parser.add_argument('--standardize', action='store_true', default=False, help='Standardize the input data')
         self.parser.add_argument('--norm_range', type=list, default=[-1, 1], help='Range in which the input data should be normalized')

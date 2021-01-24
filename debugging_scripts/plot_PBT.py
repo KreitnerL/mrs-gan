@@ -17,7 +17,7 @@ x = int(math.ceil(x*1.1/10.0))*10
 plt.plot(list(range(x)), [0.15]*x, 'r--')
 plt.legend([*['_nolegend_']*len(dfs), '15% error mark'])
 plt.xlabel("Steps")
-plt.ylabel("Relative Absolute Error")
+plt.ylabel("Mean Relative Error")
 plt.ylim(0, plt.ylim()[1])
 # plt.title(name)
 plt.savefig('%s.png'%name, format='png', bbox_inches='tight')
