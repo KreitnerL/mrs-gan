@@ -55,13 +55,13 @@ def define_D(opt, input_nc, ndf, n_layers_D=3, norm='instance', gpu_ids=[], init
     else:
         return netD
 
-def define_extractor(input_nc, output_nc, data_length, ndf, n_layers_D=3, norm='instance', gpu_ids=[], cbam=False):
+def define_extractor(input_nc, output_nc, data_length, ndf, n_layers_D=3, norm='instance', gpu_ids=[]):
     use_gpu = len(gpu_ids) > 0
     norm_layer = get_norm_layer(norm_type=norm)
     if use_gpu:
         assert(torch.cuda.is_available())
     # netExtractor = ExtractorConv((input_nc, output_nc), ndf, n_layers=n_layers_D, norm_layer=norm_layer, data_length=opt.data_length, gpu_ids=gpu_ids, cbam=cbam)
-    netExtractor = ExtractorMLP((input_nc * data_length, output_nc), num_neurons=[ndf]*n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids, cbam=cbam)
+    netExtractor = ExtractorMLP((input_nc * data_length, output_nc), num_neurons=[ndf]*n_layers_D, norm_layer=norm_layer, gpu_ids=gpu_ids)
     if use_gpu:
         netExtractor.cuda()
     init_weights(netExtractor, "kaiming", activation='leaky_relu')

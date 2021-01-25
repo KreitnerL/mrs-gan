@@ -1,10 +1,5 @@
 import torch
 import torch.nn as nn
-import torchvision
-from torch.nn.utils import spectral_norm
-
-import math
-import numpy as np
 
 from models.auxiliaries.auxiliary import *
 from models.auxiliaries.CBAM import CBAM1d
@@ -96,7 +91,7 @@ class ExtractorMLP(nn.Module):
     Defines a Discriminator Network that scales down a given spectra of size L to L/(2*n_layers) with convolution, flattens it
     and finally uses a Linear layer to compute a scalar that represents the networks prediction
     """
-    def __init__(self, in_out = (1,1), num_neurons=(100,100,100), norm_layer=get_norm_layer('instance'), gpu_ids=[], cbam=False):
+    def __init__(self, in_out = (1,1), num_neurons=(100,100,100), norm_layer=get_norm_layer('instance'), gpu_ids=[]):
         super(ExtractorMLP, self).__init__()
         self.gpu_ids = gpu_ids
 
@@ -107,10 +102,6 @@ class ExtractorMLP(nn.Module):
             self.layers.add_module('Linear'+str(i), nn.Linear(num_neurons[i-1], num_neurons[i]))
             if i < len(num_neurons)-1:
                 self.layers.add_module('LeakyReLU'+str(i), nn.LeakyReLU())
-            if cbam:
-                self.layers.add_module('Unsqueeze'+str(i), LambdaModule(lambda x: x.unsqueeze(-1)))
-                self.layers.add_module('CBAM'+str(i), CBAM1d(num_neurons[i]))
-                self.layers.add_module('Squeeze'+str(i), LambdaModule(lambda x: x.squeeze(-1)))
         self.layers.add_module('Sigmoid', nn.Sigmoid())
 
     def forward(self, input):

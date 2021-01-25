@@ -7,17 +7,17 @@ from models.auxiliaries.physics_model import PhysicsModel
 import torch
 
 # path = '/home/kreitnerl/Datasets/syn_4_real/dataset_spectra.mat'
-path_UCSF = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data_corrected.mat'
-path_syn_ucsf = '/home/kreitnerl/Datasets/syn_ucsf_corrected/dataset_spectra.mat'
-path_quantities = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data_corrected.mat'
+path_UCSF = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat'
+path_syn_ucsf = '/home/kreitnerl/Datasets/syn_ucsf_2/dataset_spectra.mat'
+path_quantities = '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat'
 
 num_plots = 10
 
 var_name = 'spectra'
 ppm_range = [7.171825,-0.501875]
-crop_range_UCSF=slice(210,722)
-crop_range = crop_range_UCSF = slice(300,812)
-x = np.linspace(*ppm_range, 1024)[slice(300,812)]
+# crop_range_UCSF=slice(210,722)
+crop_range = crop_range_UCSF = slice(361,713)
+x = np.linspace(*ppm_range, 1024)[crop_range]
 indices = [random.randint(0, 1500) for i in range(10)]
 
 def plotUCSF():
@@ -56,7 +56,7 @@ def plotIdeal():
     cho = np.squeeze(d['cho'])
     naa = np.squeeze(d['naa'])
     torch.cuda.set_device(7)
-    opt = Namespace(**{'roi': slice(457,713), 'mag': True, 'ppm_range': ppm_range, 'full_data_length': 1024})
+    opt = Namespace(**{'roi': crop_range, 'mag': False, 'ppm_range': ppm_range, 'full_data_length': 1024})
     pm = PhysicsModel(opt).cuda()
 
     plt.figure()

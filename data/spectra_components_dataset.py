@@ -66,11 +66,11 @@ class SpectraComponentDataset(BaseDataset):
     def __getitem__(self, index):
         # 'Generates one sample of data'
         if self.phase == 'train':
-            A = self.sampler_A[index % self.A_size,self.channel_index,self.roi]
+            A = self.transform(self.sampler_A[index % self.A_size,self.channel_index,self.roi])
             label_A = self.sampler_labels_A[index % self.A_size] if self.sampler_labels_A is not None else self.empty_tensor
             B = self.sampler_B[index % self.B_size]
             return {
-                'A': self.transform(A),
+                'A': A,
                 'label_A': label_A,
                 'B': B,
                 'A_paths': '{:03d}.foo'.format(index % self.A_size),

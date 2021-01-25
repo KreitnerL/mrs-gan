@@ -1,13 +1,11 @@
 from collections import OrderedDict
 import itertools
 
-from models.auxiliaries.auxiliary import relativeMELoss
 from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
 from models.auxiliaries.physics_model import PhysicsModel
 
 from models.cycleGAN_W import CycleGAN_W
 from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
-from util.image_pool import ImagePool
 import torch
 import numpy as np
 import util.util as util
@@ -34,7 +32,7 @@ class cycleGAN_W_REG(CycleGAN_W):
 
         
         self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
-                                            opt.norm, self.gpu_ids, cbam=True)
+                                            opt.norm, self.gpu_ids)
         self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamG)
         self.networks = [self.netG_A, self.netG_B]
@@ -43,7 +41,6 @@ class cycleGAN_W_REG(CycleGAN_W):
             self.netD_B = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
 
-            self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()

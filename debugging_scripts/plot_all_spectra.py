@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 path = "/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data_corrected.mat"
 var_name = 'spectra'
 ppm_range = [7.171825,-0.501875]
-# crop_range=slice(372,713)
-crop_range=slice(457,713)
+crop_range=slice(361,713)
+# crop_range=slice(457,713)
 # crop_range=slice(210,722)
 x = np.linspace(*ppm_range, 1024)[crop_range]
 

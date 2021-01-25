@@ -13,7 +13,7 @@ class MLP():
     def __init__(self, save_path:str, val_fun=None, gpu: int = None, in_out = (1,1), num_neurons = (100, 100, 100), lr=0.001, batch_size: int = 1, num_epoch: int = 15, validate_every: int = 2500):
         assert validate_every % batch_size == 0
         set_num_dimensions(1)
-        self.network = ExtractorMLP(in_out, num_neurons, gpu_ids=[gpu], cbam=False)
+        self.network = ExtractorMLP(in_out, num_neurons, gpu_ids=[gpu])
         init_weights(self.network, "kaiming", activation='leaky_relu')
         self.optimizer = torch.optim.Adam(self.network.parameters(), lr = lr, betas=(0.9, 0.999))
         self.loss_fn = nn.MSELoss()
