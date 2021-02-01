@@ -22,7 +22,6 @@ citation = OrderedDict({'Title': 'CBAM: Convolutional Block Attention Module',
 
 
 class BasicConv(nn.Module):
-    no_dropout = True
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1, groups=1, relu=True, bn=True, bias=False, dim=1):
         super(BasicConv, self).__init__()
         self.out_channels = out_planes
@@ -40,7 +39,6 @@ class BasicConv(nn.Module):
 
 
 class EfficientChannelAttention(nn.Module):
-    no_dropout = True
     def __init__(self, num_channels, gamma=2, b=1, dim=1):
         super(EfficientChannelAttention, self).__init__()
         t =int(torch.abs((torch.log2(torch.tensor(num_channels, dtype=torch.float64)) + b) / gamma))
@@ -57,7 +55,6 @@ class EfficientChannelAttention(nn.Module):
         return out
 
 class ChannelGate(nn.Module):
-    no_dropout = True
     def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], method='efficient', dim=1):
         super(ChannelGate, self).__init__()
         self.gate_channels = gate_channels
@@ -96,12 +93,10 @@ class ChannelGate(nn.Module):
         return x * scale
 
 class ChannelPool(nn.Module):
-    no_dropout = True
     def forward(self, x):
         return torch.cat( (torch.max(x,1)[0].unsqueeze(1), torch.mean(x,1).unsqueeze(1)), dim=1 )
 
 class SpatialGate(nn.Module):
-    no_dropout = True
     def __init__(self, dim):
         super(SpatialGate, self).__init__()
         kernel_size = 7
@@ -116,7 +111,6 @@ class SpatialGate(nn.Module):
         return x * scale
 
 class CBAM1d(nn.Module):
-    no_dropout = True
     def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False, no_channel=False):
         super(CBAM1d, self).__init__()
         if no_channel:
@@ -135,7 +129,6 @@ class CBAM1d(nn.Module):
         return x_out
 
 class CBAM2d(nn.Module):
-    no_dropout = True
     def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False):
         super(CBAM2d, self).__init__()
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types, dim=2)
@@ -150,7 +143,6 @@ class CBAM2d(nn.Module):
         return x_out
 
 class CBAM3d(nn.Module):
-    no_dropout = True
     def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False):
         super(CBAM3d, self).__init__()
         self.ChannelGate = ChannelGate(gate_channels, reduction_ratio, pool_types, dim=3)

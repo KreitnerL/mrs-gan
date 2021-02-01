@@ -52,7 +52,9 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
         else:
             # sign = torch.tensor([True if torch.rand([1]) > 0.8 else False for _ in range(params.shape[0])])
             # params[:,n] = ((0.6 - 0.002) * params[:,n] + 0.002) / 0.6
-            params[:,n] = torch.empty_like(params[:,n]).fill_(0.04)
+
+            # params[:,n] = torch.empty_like(params[:,n]).fill_(0.04)
+            params[:,n] = torch.empty_like(params[:,n]).fill_(0.08)
 
 
     # Frequency Shift - zeroed out
@@ -75,13 +77,12 @@ def train(path, totalEntries=200000, simple=False, pair=False, blank=None, fixed
         params[:,i] = 0.5
 
     # Noise - SNR = 100
-    print('>>> Noise')
+    print('>>> SNR')
     # params[:,15] = (80-12.5) * params[:,15].fill_(1) + (12.5 / (80-12.5))
     if simple:
         params[:,15].fill_(1)#.47873799725652)#1)
     else:
         params[:,15].fill_(0.12)
-        # params[:,15].fill_(1)
 
     # Baseline - Entire baseline omitted
     print('>>> Baseline')
@@ -271,7 +272,7 @@ if __name__=='__main__':
 
     path = args.savedir
     if args.phase=='train':
-        entries = 200000 if not args.totalEntries else args.totalEntries
+        entries = 100000 if not args.totalEntries else args.totalEntries
         train(totalEntries=entries,path=path,simple=args.not_simple, pair = args.pair)
     elif args.phase=='test':
         print('Needs updating...')
@@ -283,9 +284,7 @@ if __name__=='__main__':
     elif args.phase=='pair':
         quantitites = io.loadmat(args.param_path)
         params = []
-        # Ratio's needed to comapare synthetic with ucsf spectra
-        # basis_spectra_ratio_cho = 3.0912
-        # basis_spectra_ratio_naa = 1.0221
+        num_samples = 10
         num_samples = quantitites['cho'].shape[1]
         params.append(torch.from_numpy(quantitites['cho'][:,:num_samples]/(3.6)))
         

@@ -79,7 +79,7 @@ class Visualizer():
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss.png')
         plt.tight_layout()
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     def plot_current_validation_score(self, score, total_iters):
@@ -95,19 +95,19 @@ class Visualizer():
             plt.figure(self.figure2.number)
 
         plt.xlabel('Iteration')
-        plt.ylabel('Mean Absolute Error ')
+        plt.ylabel('Mean Relative Error')
         plt.title(self.name + ' validation error over time')
-        plt.ylim([0,1])
+        plt.ylim([0,max(1,np.amax(self.validation_score))])
         step_size = int(total_iters/len(self.validation_score))
         x = list(range(step_size, total_iters+1, step_size))
-        plt.plot(x, [0.15/3.5]*len(x), 'r--')
+        plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
-        plt.legend(('acceptance threshold', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.label_names))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     def plot_current_training_score(self, score, total_iters):
@@ -123,19 +123,19 @@ class Visualizer():
             plt.figure(self.figure2.number)
 
         plt.xlabel('Iteration')
-        plt.ylabel('Mean Absolute Error ')
+        plt.ylabel('Mean Relative Error')
         plt.title(self.name + ' training error over time')
-        plt.ylim([0,1])
+        plt.ylim([0,max(1,np.amax(self.training_score))])
         step_size = int(total_iters/len(self.training_score))
         x = list(range(step_size, total_iters+1, step_size))
-        plt.plot(x, [0.15/3.5]*len(x), 'r--')
+        plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.training_score)[:,i])
 
-        plt.legend(('acceptance threshold', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.label_names))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'training_score.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
     # losses: same format as |losses| of plot_current_losses
@@ -152,7 +152,7 @@ class Visualizer():
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
         self.plot_data['X'].append(iter)
-        self.plot_data['Y'].append([losses[k].cpu().data.numpy() for k in self.plot_data['legend']])
+        self.plot_data['Y'].append([losses[k].detach().cpu().numpy() for k in self.plot_data['legend']])
 
         message = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
         for k, v in losses.items():
@@ -187,7 +187,7 @@ class Visualizer():
         plt.legend()
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'loss_smooth.png')
-        plt.savefig(path, format='png')
+        plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
 def save_images(webpage: HTML, visuals: dict, image_path: list, aspect_ratio=1.0, width=256):

@@ -88,19 +88,19 @@ Refactor Dataloader to allow for labels
 - PBT
 #########
 
+- Always use magic ratio for basis spectra
+- Unify cycleGAN models
+- simplify code
+- Make normal CycleGAN work again
 
 TODO:
 - Create accurate synthetic version of UCSF
-- Make normal CycleGAN work again
 - Smooth edges of UCSF spectra
-
-- Reasons for New Horizon:
-    - CycleGAN architecture as method for unsupervised training
-    - Train 
-- Reasons for CycleGAN:
-    - CycleGAN as preprocessing step for other methods
-    - We can compare different methods on the same domain
-
+- Test with small set of labeled data
+- Test Conv Extractor + Attention
+- Test again with corrected UCSF
+- https://github.com/heykeetae/Self-Attention-GAN/blob/master/sagan_models.py
+- Use attention for G and D
 
 docs:
 - Update READMEs

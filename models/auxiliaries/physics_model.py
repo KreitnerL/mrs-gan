@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import scipy.io as io
 import numpy as np
-from torch.nn import parameter
 from models.auxiliaries.cubichermitesplines import CubicHermiteSplines
 T = torch.Tensor
 
@@ -30,12 +29,13 @@ class PhysicsModel(nn.Module):
             self.params['naa_max']
         ]).unsqueeze(0))
 
-        self.register_buffer('cre_p', torch.ones(self.opt.batch_size,1))
+        # self.register_buffer('cre_p', torch.ones(1,1, dtype=torch.float64))
+        self.register_buffer('cre_p', torch.ones(1,1))
 
         # Tensor of shape (1,M,2,L)
         basis_fids = torch.cat((
-            self.params['fidCh'].unsqueeze(0),
-            self.params['fidNaa'].unsqueeze(0),
+            self.params['fidCh'].unsqueeze(0) / 3.0912,
+            self.params['fidNaa'].unsqueeze(0) / 1.0221,
             self.params['fidCr'].unsqueeze(0)
         ), dim=0).unsqueeze(0).cuda()
         self.register_buffer('basis_spectra', _export(basis_fids, roi=self.roi))
@@ -49,11 +49,6 @@ class PhysicsModel(nn.Module):
             spectrum_imag = self.basis_spectra[:,index_imag,:]
             self.basis_spectra = torch.sqrt(spectrum_real**2 + spectrum_imag**2)
 
-        # self.register_buffer('magic_number', torch.tensor([
-        #     3.0912,
-        #     1.0221
-        # ]).unsqueeze(0))
-
     def forward(self, parameters: T):
         """
         Parameters:
@@ -63,7 +58,7 @@ class PhysicsModel(nn.Module):
         --------
             - Tensor of shape (BxCxL) containing ideal spectrum
         """
-        parameters = torch.cat([parameters*self.max_per_met, self.cre_p],1)
+        parameters = torch.cat([parameters*self.max_per_met, self.cre_p.repeat(parameters.shape[0],1)],1)
         if self.opt.mag:
             modulated_basis_spectra = parameters.unsqueeze(-1)*self.basis_spectra
             ideal_spectra = modulated_basis_spectra.sum(1, keepdim=True)
@@ -91,6 +86,23 @@ class PhysicsModel(nn.Module):
     
     def param_to_quantity(self, params: T):
         return params * self.max_per_met.detach().cpu()
+
+    def plot_basisspectra(self, path):
+        import matplotlib.pyplot as plt
+        x = np.linspace(self.opt.ppm_range[0], self.opt.ppm_range[-1], self.opt.full_data_length)[self.opt.roi]
+        plt.figure()
+        if self.opt.mag:
+            s = self.basis_spectra[0].detach().cpu().numpy()
+            plt.plot(x, s.transpose())
+        else:
+            s = self.basis_spectra[0].detach().cpu().numpy()
+            colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+            for i in range(int(len(s)/2)):
+                plt.plot(x, s[i*2:i*2+2].transpose(), color=colors[i])
+        plt.legend(['cho', 'naa', 'cre'])
+        plt.xlim(x[0], x[-1])
+        plt.title('%sBasisspectra'%('Magnitude ' if self.opt.mag else ''))
+        plt.savefig(path)
 
 #################################################################
 #   HELPER FUNCTIONS                                            #

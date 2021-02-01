@@ -4,3 +4,5 @@ checkpoints/
 **/*.pyc
 **/__pycache__/
 results/
+ray_results/
+ucsf_ideal/

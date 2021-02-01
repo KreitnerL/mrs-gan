@@ -17,7 +17,6 @@ import json
 from pathlib import Path
 
 from data.image_folder import make_dataset
-from data.data_auxiliary import splitData
 from util.util import mkdir
 
 from options.create_dataset_options import CreateDatasetOptions
@@ -94,6 +93,9 @@ def split_dataset(spectra, labels, save_dir, type):
     if labels and len( opt.val_indices) > 0:
         with open(save_dir+'/val_labels_A.dat', 'w') as file:
             json.dump({key: val[opt.val_indices].tolist() for key,val in labels.items()}, file)
+    if labels and len( opt.test_indices) > 0:
+        with open(save_dir+'/test_labels_A.dat', 'w') as file:
+            json.dump({key: val[opt.test_indices].tolist() for key,val in labels.items()}, file)
             
 
 def save_dat_file(path, indices, d, spec_length, spectra):
@@ -134,7 +136,7 @@ def generate_quantity_dataset(type, source_dir, save_dir, label_names):
         p = np.squeeze(params[label])
         labels_train[label] = p.tolist()
 
-    print("# training samples: {0}\n# validation samples: {1}\n# test samples: {2}".format(len(labels_train), 0, 0))
+    print("# training samples: {0}\n# validation samples: {1}\n# test samples: {2}".format(len(labels_train[label_names[0]]), 0, 0))
     base, _ = os.path.split(save_dir)
     os.makedirs(base,exist_ok=True)
     with open(save_dir+'train_%s.dat'%type, 'w') as file:

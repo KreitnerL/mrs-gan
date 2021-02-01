@@ -197,8 +197,6 @@ def load_loss_from_file(path):
     for line in lines:
         if line.startswith('='):
             continue
-        # if int(re.search(r'\d+', line).group()) >= opt.epoch_count:
-        #     break
         line =  re.sub('\(.*\)', '', line)
         y_i = []
         for t in line.split():
@@ -288,7 +286,7 @@ def save_boxplot(err_rel, path: str, labels: list, max_y = None):
     if max_y:
         plt.ylim([0,max_y])
     path = path+'_rel_err_boxplot.png'
-    plt.savefig(path, format='png')
+    plt.savefig(path, format='png', bbox_inches='tight')
     plt.cla()
     print('Saved error plot at', path)
 

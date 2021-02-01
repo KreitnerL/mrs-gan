@@ -13,7 +13,8 @@ class SpectraComponentDataset(BaseDataset):
     def name(self):
         return 'SpectraComponentDataset'
 
-    def initialize(self, opt):
+    def initialize(self, opt, phase):
+        self.phase = phase
         # Setup
         self.opt = opt
         self.roi = self.opt.roi
@@ -24,11 +25,6 @@ class SpectraComponentDataset(BaseDataset):
             self.channel_index = slice(1,2)
         else:
             self.channel_index = slice(None, None)
-
-        if opt.phase == 'test':
-            phase = 'val'
-        else:
-            phase = opt.phase
 
         # Load data
         sizes_A = np.genfromtxt(os.path.join(self.root,'sizes_A') ,delimiter=',').astype(np.int64)
@@ -49,7 +45,7 @@ class SpectraComponentDataset(BaseDataset):
             self.sampler_labels_A = None
             self.empty_tensor = empty(0)
         
-        if self.opt.phase != 'val':
+        if self.phase == 'train':
             with open(path_B, 'r') as file:
                 params:dict = json.load(file)
                 self.sampler_B = from_numpy(np.transpose(list(params.values())))
@@ -69,12 +65,12 @@ class SpectraComponentDataset(BaseDataset):
 
     def __getitem__(self, index):
         # 'Generates one sample of data'
-        if self.opt.phase != 'val':
-            A = self.sampler_A[index % self.A_size,self.channel_index,self.roi]
+        if self.phase == 'train':
+            A = self.transform(self.sampler_A[index % self.A_size,self.channel_index,self.roi])
             label_A = self.sampler_labels_A[index % self.A_size] if self.sampler_labels_A is not None else self.empty_tensor
             B = self.sampler_B[index % self.B_size]
             return {
-                'A': self.transform(A),
+                'A': A,
                 'label_A': label_A,
                 'B': B,
                 'A_paths': '{:03d}.foo'.format(index % self.A_size),
@@ -90,8 +86,8 @@ class SpectraComponentDataset(BaseDataset):
             }
 
     def __len__(self):
-        if self.opt.phase != 'val':
-            return max(self.A_size, self.B_size) # Determines the length of the dataloader
+        if self.phase == 'train' and self.opt.phase == 'train':
+            return max(self.A_size, self.B_size)
         else:
             return self.A_size
 

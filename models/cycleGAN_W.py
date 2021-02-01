@@ -1,7 +1,10 @@
-from models.cycleGAN_spectra import CycleGAN_spectra
+from torch.nn.utils.spectral_norm import spectral_norm
+from models.auxiliaries.physics_model import PhysicsModel
+from models.cycleGAN import CycleGAN
 import torch
+import models.auxiliaries.auxiliary as aux
 
-class CycleGAN_WGP(CycleGAN_spectra):
+class CycleGAN_W(CycleGAN):
     """
     This class implements a CycleGAN model for learning 1d signal translation without paired data,
     using the wasserstein loss function with gradient penalty.
@@ -11,12 +14,13 @@ class CycleGAN_WGP(CycleGAN_spectra):
     def name(self):
         return 'CycleGAN_WGP'
 
-    def __init__(self, opt):
+    def __init__(self, opt, physicsModel: PhysicsModel):
         opt.gan_mode = 'wasserstein'
         opt.clip_value = 0.01
-        if not hasattr(opt, 'gp'):
-            opt.gp = True
-        super().__init__(opt)
+        opt.beta1 = 0
+        opt.beta2 = 0.9
+        aux.weight_norm = spectral_norm
+        super().__init__(opt, physicsModel)
         
     def backward_D_basic(self, netD, real, fake):
         """Calculate GAN loss for the discriminator
@@ -36,10 +40,12 @@ class CycleGAN_WGP(CycleGAN_spectra):
         pred_fake = netD.forward(fake.detach())
         loss_D_fake = self.criterionGAN(pred_fake, False)
 
-        #wgan-gp
-        self.gradient_penalty = self.cal_gradient_penalty(netD,real,fake,'cuda')
+        if self.opt.weight_norm == 'gp':
+            gradient_penalty = self.cal_gradient_penalty(netD,real,fake,'cuda')
+        else: 
+            gradient_penalty = 0
         # Combined loss and calculate gradients
-        loss_D = 0.5 * (loss_D_real + loss_D_fake) + self.gradient_penalty
+        loss_D = 0.5 * (loss_D_real + loss_D_fake) + gradient_penalty
         loss_D.backward()
         return loss_D
 
@@ -87,5 +93,5 @@ class CycleGAN_WGP(CycleGAN_spectra):
     def optimize_parameters(self, optimize_G=True, optimize_D=True):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
         super().optimize_parameters(optimize_G, optimize_D)
-        if not self.opt.gp:
+        if self.opt.weight_norm == 'clip':
             self.clip_weights_D()

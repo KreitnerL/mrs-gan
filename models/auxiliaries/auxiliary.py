@@ -4,6 +4,7 @@ from torch.nn import init
 import torch
 
 num_dimensions = 2
+weight_norm = lambda x: x
 
 def relativeMELoss(input, target):
     return torch.mean(abs(target - input) / abs(target))
@@ -52,7 +53,7 @@ def init_weights(net, init_type='normal', init_gain=0.02, activation='leaky_relu
             init.normal_(m.weight.data, 1.0, init_gain)
             init.constant_(m.bias.data, 0.0)
 
-    print('initialize network with %s' % init_type)
+    # print('initialize network with %s' % init_type)
     net.apply(init_func)  # apply the initialization function <init_func>
 
 conv = {
