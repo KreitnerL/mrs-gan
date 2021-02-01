@@ -122,21 +122,22 @@ class BaselineCreator:
         print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Test_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
 
-
+small_crop = slice(457,713)
+medium_crop = slice(361,713)
 paths = {
-    "syn_i_": ('/home/kreitnerl/Datasets/syn_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ideal/dataset_quantities.mat', 'spectra', slice(461,713), 0.1, 0.1),
-    "syn_r_": ('/home/kreitnerl/Datasets/syn_real/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_real/dataset_quantities.mat', 'spectra', slice(461,713), 0.1, 0.1),
-    "syn_ucsf_": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', slice(461,713), 0.0668, 0.0601),
-    "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', 'spectra', slice(461,713), 0.0668, 0.0601),
+    "syn_i_": ('/home/kreitnerl/Datasets/syn_ideal/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ideal/dataset_quantities.mat', 'spectra', medium_crop, 0.1, 0.1),
+    "syn_r_": ('/home/kreitnerl/Datasets/syn_real/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_real/dataset_quantities.mat', 'spectra', medium_crop, 0.1, 0.1),
+    "syn_ucsf_": ('/home/kreitnerl/Datasets/syn_ucsf/dataset_spectra.mat', '/home/kreitnerl/Datasets/syn_ucsf/dataset_quantities.mat', 'spectra', medium_crop, 0.0601, 0.0668),
+    "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', 'spectra', medium_crop, 0.0601, 0.0668),
     # "lcm_": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722), 0.1, 0.1)
 }
-gpu = 1
+gpu = 7
 
 if __name__ == "__main__":
     b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.02)
     model = 'MLP'
 
-    # b.create_baseline('syn_i_', 'syn_i_', model)
+    b.create_baseline('syn_i_', 'syn_i_', model)
     b.create_baseline('syn_ucsf_', 'syn_ucsf_', model)
     b.create_baseline('syn_r_', 'syn_r_', model)
     b.create_baseline('ucsf_', 'ucsf_', model)

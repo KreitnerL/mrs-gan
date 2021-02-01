@@ -1,3 +1,4 @@
+from util.image_pool import ImagePool
 from collections import OrderedDict
 import itertools
 
@@ -41,6 +42,7 @@ class cycleGAN_W_REG(CycleGAN_W):
             self.netD_B = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
                                             opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
 
+            self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()

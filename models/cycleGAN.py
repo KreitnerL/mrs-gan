@@ -1,3 +1,4 @@
+from util.image_pool import ImagePool
 from validation_networks.MLP.MLP import MLP
 from models.auxiliaries.physics_model import PhysicsModel
 from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
@@ -72,6 +73,8 @@ class CycleGAN():
             self.networks.extend([self.netD_A, self.netD_B])
 
         if opt.isTrain:
+            self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
+            self.fake_B_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
             # define loss functions
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.L1Loss()
@@ -192,12 +195,12 @@ class CycleGAN():
 
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
-        fake_B = self.fake_B.detach()
+        fake_B = self.fake_B_pool.query(self.fake_B)
         self.loss_D_A = self.backward_D_basic(self.netD_A, self.real_B, fake_B)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
-        fake_A = self.fake_A.detach()
+        fake_A = self.fake_A_pool.query(self.fake_A)
         self.loss_D_B = self.backward_D_basic(self.netD_B, self.real_A, fake_A)
 
     def calculate_G_loss(self):

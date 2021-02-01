@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 plt.figure()
 
-d = io.loadmat('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/quantities_raw.mat')
+d = io.loadmat('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data_raw.mat')
 metabolites = ['cre', 'cho', 'naa']
 cre_abs = np.squeeze(d['cre'])
 cho_abs = np.squeeze(d['cho'])

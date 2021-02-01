@@ -14,7 +14,7 @@ def make_dataset(dir, file_ext=[]):
                     paths.append(path)
     return paths
 
-paths = sorted(make_dataset('/home/kreitnerl/mrs-gan/ray_results/pbt_WGP_REG_syn_real_tweak_all', ['result.json']))
+paths = sorted(make_dataset('/home/kreitnerl/mrs-gan/ray_results/REG-CycleGAN_ucsf_narrow/', ['result.json']))
 configs = []
 params = None
 for i, path in enumerate(paths):

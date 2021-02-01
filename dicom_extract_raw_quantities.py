@@ -39,10 +39,10 @@ def extract_from_DCM(sourceDir: str, file_name_spec: str, file_ext_metabolite:st
 
     for metabolite in metabolites:
         quantities[metabolite] = np.concatenate(quantities[metabolite], axis=0)
-    spectra_real = np.expand_dims(np.concatenate(spectra_real, axis=0))
-    spectra_imag = np.expand_dims(np.concatenate(spectra_imag, axis=0))
+    spectra_real = np.expand_dims(np.concatenate(spectra_real, axis=0), axis=-1)
+    spectra_imag = np.expand_dims(np.concatenate(spectra_imag, axis=0), axis=-1)
     spectra = np.concatenate([spectra_real, spectra_imag], axis=-1)
-    spectra = spectra.transpose(1, 2)
+    spectra = np.transpose(spectra, (0,2,1))
 
     return spectra, quantities, num_spectra_per_patient
 

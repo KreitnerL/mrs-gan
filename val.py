@@ -33,9 +33,9 @@ model.load_checkpoint(opt.model_path)
 for phase, dataset in datasets.items():
     print('--------------- %s Set---------------' % phase.capitalize())
     avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset)
-    print('Average Absolute Error:', avg_abs_err)
-    print('Average Realative Error:', avg_err_rel)
-    print('Coefficient of Determination:', r2)
+    print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
+    print('Average Absolute Error:', list(map(lambda x: round(x, 3), avg_abs_err)))
+    print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
     save_boxplot(err_rel, opt.results_dir + opt.name + '_' + phase, opt.label_names, 1)
     print('\n')
 

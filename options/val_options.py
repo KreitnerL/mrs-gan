@@ -9,6 +9,5 @@ class ValidationOptions(BaseOptions):
         BaseOptions.initialize(self)
         self.parser.add_argument('--model_path', type=str, help='path of the pretrained model')
         self.parser.add_argument('--results_dir', type=str, default='./results/', help='saves results here.')
-        self.parser.add_argument('--val_path', type=str, help='File path to the pretrained random forest dump.')
         self.parser.add_argument('--phase', type=str, default='val', help='train, val, test, etc')
         self.isTrain = False

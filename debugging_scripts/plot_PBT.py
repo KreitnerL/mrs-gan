@@ -2,9 +2,10 @@ import math
 import matplotlib.pyplot as plt
 from ray.tune import Analysis
 
-path = '/home/kreitnerl/mrs-gan/ray_results/pbt_WGP_REG_syn_ucsf_tweak_lambda/'
+path = '/home/kreitnerl/mrs-gan/ray_results/REG-CycleGAN_ucsf_narrow/'
 name = path.split('/')[-2]
 analysis = Analysis(path)
+# analysis.get_best_checkpoint(metric="score", mode="min")
 # Plot by wall-clock time
 dfs = analysis.fetch_trial_dataframes()
 # This plots everything on the same plot
@@ -19,5 +20,6 @@ plt.legend([*['_nolegend_']*len(dfs), '15% error mark'])
 plt.xlabel("Steps")
 plt.ylabel("Mean Relative Error")
 plt.ylim(0, plt.ylim()[1])
+plt.title('REG-CycleGAN_ucsf PBT validation error over time')
 # plt.title(name)
 plt.savefig('%s.png'%name, format='png', bbox_inches='tight')
