@@ -1,6 +1,5 @@
 import os
 import os.path
-from util import util
 
 def get_file_extensions(file_type):
     if file_type == 'numpy':

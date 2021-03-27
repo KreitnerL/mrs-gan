@@ -87,22 +87,32 @@ class PhysicsModel(nn.Module):
     def param_to_quantity(self, params: T):
         return params * self.max_per_met.detach().cpu()
 
-    def plot_basisspectra(self, path):
+    def plot_basisspectra(self, path, plot_sum=False):
         import matplotlib.pyplot as plt
         x = np.linspace(self.opt.ppm_range[0], self.opt.ppm_range[-1], self.opt.full_data_length)[self.opt.roi]
         plt.figure()
         if self.opt.mag:
             s = self.basis_spectra[0].detach().cpu().numpy()
+            s = s/np.amax(s)
+            if plot_sum:
+                basis_spectra_sum = np.sum(s, axis=0)
+                plt.plot(x, basis_spectra_sum, color='gray')
             plt.plot(x, s.transpose())
         else:
             s = self.basis_spectra[0].detach().cpu().numpy()
             colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
             for i in range(int(len(s)/2)):
                 plt.plot(x, s[i*2:i*2+2].transpose(), color=colors[i])
-        plt.legend(['cho', 'naa', 'cre'])
+        
+        if plot_sum:
+            labels = ['sum','cho', 'naa', 'cre']
+        else:
+            labels = ['cho', 'naa', 'cre']
+        plt.legend(labels)
         plt.xlim(x[0], x[-1])
+        plt.xlabel('ppm')
         plt.title('%sBasisspectra'%('Magnitude ' if self.opt.mag else ''))
-        plt.savefig(path)
+        plt.savefig(path, format='png', bbox_inches='tight')
 
 #################################################################
 #   HELPER FUNCTIONS                                            #
