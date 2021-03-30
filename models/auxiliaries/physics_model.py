@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import scipy.io as io
 import numpy as np
+import os
 from models.auxiliaries.cubichermitesplines import CubicHermiteSplines
 T = torch.Tensor
 
@@ -12,20 +13,15 @@ class PhysicsModel(nn.Module):
         self.roi = self.opt.roi
         self.standard_β = -0.000416455078125
 
-        # TODO make optional
-        paths = [
-            '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/Para_for_spectra_gen.mat',
-            '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/conc_ranges_for_Linus.mat',
-            '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/units.mat'
-        ]
         self.params = dict()
-        for path in paths:
-            parameters = io.loadmat(path)
-            for key in parameters.keys():
-                if str(key).startswith('_'):
-                    continue
-                self.params[key] = torch.FloatTensor(np.asarray(parameters[key], dtype=np.float64)).squeeze()
-        
+        dirname = os.path.dirname(__file__)
+        filename = os.path.join(dirname, 'spectra_generation_params.mat')
+        parameters = io.loadmat(filename)
+        for key in parameters.keys():
+            if str(key).startswith('_'):
+                continue
+            self.params[key] = torch.FloatTensor(np.asarray(parameters[key], dtype=np.float64)).squeeze()
+    
         self.register_buffer('max_per_met', torch.tensor([
             self.params['pch_max'],
             self.params['naa_max']
