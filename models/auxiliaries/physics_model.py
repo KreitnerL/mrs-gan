@@ -10,6 +10,8 @@ class PhysicsModel(nn.Module):
         super().__init__()
         self.opt = opt
         self.roi = self.opt.roi
+        self.standard_β = -0.000416455078125
+
         # TODO make optional
         paths = [
             '/home/kreitnerl/mrs-gan/spectra_generation/basis_spectra/Para_for_spectra_gen.mat',
@@ -33,12 +35,12 @@ class PhysicsModel(nn.Module):
         self.register_buffer('cre_p', torch.ones(1,1))
 
         # Tensor of shape (1,M,2,L)
-        basis_fids = torch.cat((
+        self.basis_fids = torch.cat((
             self.params['fidCh'].unsqueeze(0) / 3.0912,
             self.params['fidNaa'].unsqueeze(0) / 1.0221,
             self.params['fidCr'].unsqueeze(0)
         ), dim=0).unsqueeze(0).cuda()
-        self.register_buffer('basis_spectra', _export(basis_fids, roi=self.roi))
+        self.register_buffer('basis_spectra', _export(self.basis_fids, roi=self.roi))
 
         self.opt.relativator = torch.max(torch.sqrt(self.basis_spectra[:,-2]**2 + self.basis_spectra[:,-1]**2))
 
@@ -48,6 +50,59 @@ class PhysicsModel(nn.Module):
             spectrum_real = self.basis_spectra[:,index_real,:]
             spectrum_imag = self.basis_spectra[:,index_imag,:]
             self.basis_spectra = torch.sqrt(spectrum_real**2 + spectrum_imag**2)
+
+    def build_spectra(self, quantities: T, β_min = 1.0, β_max = 1.0, snr_min = 1, snr_max = 1):
+        """
+        Generates the simulated spectra with the given quantities using the given parameters. Formula: \n
+        s[l] = FFT(Σ_{m∈M} (λ_m * b_m[t] * exp[β_m*l] + n*g[l]
+
+        where n*g[l] is chosen to that the required SNR is achieved.
+
+        Params:
+        ------
+            - quantities: Tensor of size (NxM) - The concentration of each metabolite for each sample
+            - β_min: float - the minimum line broadening factor. Default = 1.0
+            - β_max: float - the maximum line broadening factor. Default = 1.0
+            - snr_min: float- the minimal SNR in dB. Default = 1.0
+            - snr_max: float- the maximal SNR in dB. Default = 1.0
+
+        Returns:
+        -------
+            A Tensor of shape Nx2xL, containing N spectra with real and imaginary channel and L datapoints (cf. self.roi).
+        """
+        fids: T = self.basis_fids
+        M = fids.shape[1]
+        N = quantities.shape[0]
+        L = fids.shape[-1]
+
+        # Line Broadening
+        x = torch.arange(L, device='cuda').unsqueeze(0).repeat(M, 1)
+        β_factor = (β_max-β_min) * torch.rand(N, M, device='cuda') + β_min
+        β = self.standard_β / β_factor
+        x = β.unsqueeze(-1) * x.unsqueeze(0)
+        line_broadening = torch.exp(x) # Invidual line broadening function per metabolite per sample
+        fids = fids * line_broadening.unsqueeze(2) # Nx3x2x2048
+
+        # Concentration scaling
+        fids = fids * quantities.unsqueeze(-1).unsqueeze(-1)
+        fid_sum = fids.sum(1) # Nx2x2048
+
+        # FFT
+        spectra = fftshift(torch.fft(fid_sum.transpose(2,1),1).transpose(2,1),-1)
+        spectra = _resample_(spectra, 1024).cuda() # Nx2xROI
+
+        # Noise SNR_db = 10*log10(P_s/ P_n)
+        snr = (snr_max-snr_min) * torch.rand(N, device='cuda') + snr_min
+        P_signal = (spectra**2).mean(-1).mean(-1) # Signal power
+        P_noise = P_signal / (10**(snr/10)) # Noise power
+        noise = torch.distributions.normal.Normal(0, torch.sqrt(P_noise)).sample((2, spectra.shape[-1])).permute(2,0,1) # Nx2xROI
+        noisy_spec = spectra + noise
+
+        # Normalize
+        norm_spectra = self.normalize(noisy_spec[:,:,self.roi])
+
+        return norm_spectra
+
 
     def forward(self, parameters: T):
         """
@@ -74,7 +129,7 @@ class PhysicsModel(nn.Module):
 
     def normalize(self, x: T):
         shape = x.shape
-        x = x.view(shape[0],-1)
+        x = x.reshape(shape[0],-1)
         x = x/abs(x).max(1, keepdim=True)[0]
         return x.view(*shape)
 
@@ -98,16 +153,22 @@ class PhysicsModel(nn.Module):
                 basis_spectra_sum = np.sum(s, axis=0)
                 plt.plot(x, basis_spectra_sum, color='gray')
             plt.plot(x, s.transpose())
+            if plot_sum:
+                labels = ['sum','cho', 'naa', 'cre']
+            else:
+                labels = ['cho', 'naa', 'cre']
         else:
             s = self.basis_spectra[0].detach().cpu().numpy()
+            s_sum = torch.tensor([s[0]+s[2]+s[4], s[1]+s[3]+s[5]])
+            plt.plot(x, s_sum.transpose(0,1), color='gray')
             colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
             for i in range(int(len(s)/2)):
                 plt.plot(x, s[i*2:i*2+2].transpose(), color=colors[i])
-        
-        if plot_sum:
-            labels = ['sum','cho', 'naa', 'cre']
-        else:
-            labels = ['cho', 'naa', 'cre']
+            if plot_sum:
+                labels = ['sum', '_nolegend_','cho', '_nolegend_', 'naa', '_nolegend_', 'cre', '_nolegend_']
+            else:
+                labels = ['cho', '_nolegend_', 'naa', '_nolegend_', 'cre', '_nolegend_']
+
         plt.legend(labels)
         plt.xlim(x[0], x[-1])
         plt.xlabel('ppm')
@@ -158,39 +219,3 @@ def fftshift(x, dim=None):
     else:
         shift = [x.shape[dim] // 2]
     return torch.roll(x, shift, dim) 
-
-# def angle(z: torch.Tensor, deg=False):
-#     zreal = z[:,:,0,:]
-#     zimag = z[:,:,1,:]
-
-#     a = zimag.atan2(zreal)
-#     if deg:
-#         a = a * 180 / torch.from_numpy(np.pi)
-#     return a
-
-# def complex_adjustment(input, theta):
-#     out = torch.empty_like(input, requires_grad=input.requires_grad)
-
-#     if theta.dim() <= 2:
-#         if input.dim()>=3.0:
-#             out[:,0,::] = input[:,0,::]*torch.cos(theta) - input[:,1,::]*torch.sin(theta)
-#             out[:,1,::] = input[:,0,::]*torch.sin(theta) + input[:,1,::]*torch.cos(theta)
-#         elif input.dim()==2:
-#             out[0,:] = input[0,:]*torch.cos(theta) - input[1,:]*torch.sin(theta)
-#             out[1,:] = input[0,:]*torch.sin(theta) + input[1,:]*torch.cos(theta)
-#     elif theta.dim() == 3:
-#         if input.dim()>=3.0:
-#             out[:,0,::] = input[:,0,::]*torch.cos(theta[:,0,:]) - input[:,1,::]*torch.sin(theta[:,0,:])
-#             out[:,1,::] = input[:,0,::]*torch.sin(theta[:,0,:]) + input[:,1,::]*torch.cos(theta[:,0,:])
-#         elif input.dim()==2:
-#             out[0,:] = input[0,:]*torch.cos(theta) - input[1,:]*torch.sin(theta)
-#             out[1,:] = input[0,:]*torch.sin(theta) + input[1,:]*torch.cos(theta)
-#     elif theta.dim() == 4:
-#         if input.dim()>=4.0:
-#             out[:,:,0,::] = input[:,:,0,::]*torch.cos(theta[:,:,0,:]) - input[:,:,1,::]*torch.sin(theta[:,:,0,:])
-#             out[:,:,1,::] = input[:,:,0,::]*torch.sin(theta[:,:,0,:]) + input[:,:,1,::]*torch.cos(theta[:,:,0,:])
-#     return out
-
-# def remove_zeroorderphase(spec: torch.Tensor):
-#     a = angle (spec, deg=False)
-#     return complex_adjustment(spec, -a)
