@@ -61,12 +61,11 @@ class Dataset:
         self.param_test = None
 
 class BaselineCreator:
-    def __init__(self, save_dir, labels, mag=True, val_split=0.1):
+    def __init__(self, save_dir, labels, mag=True):
         self.save_dir = save_dir
         self.labels = labels
         self.mag = mag
-        self.val_split = val_split
-        self.datasets: dict[str, Dataset] = dict()
+        self.datasets: "dict[str, Dataset]" = dict()
 
     def get_dataset(self, label: str):
         if label not in self.datasets:
@@ -83,7 +82,7 @@ class BaselineCreator:
         return self.datasets[label]
 
     def create_baseline(self, train: str, test: str, model_type:str):
-        print('\n------------- Creating baseline:', train, 'to', test, '-------------')
+        f.write('\n------------- Creating baseline: ' + train + ' to ' + test + ' -------------\n')
         train_set: Dataset = self.get_dataset(train)
         test_set: Dataset = self.get_dataset(test)
 
@@ -98,30 +97,34 @@ class BaselineCreator:
         else:
             raise NotImplementedError()
 
-        print('\n----------- Train Set -----------')
+        f.write('\n----------- Train Set -----------\n')
         predictions = model.predict(test_set.spectra_train)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_train)
-        print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
+        f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
+        f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
+        f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Train_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
         
-        print('\n----------- Val Set -----------')
+        f.write('\n----------- Val Set -----------\n')
         predictions = model.predict(test_set.spectra_val)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_val)
-        print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
+        f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
+        f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
+        f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Val_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
 
-        print('\n----------- Test Set -----------')
+        f.write('\n----------- Test Set -----------\n')
         predictions = model.predict(test_set.spectra_test)
         mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_test)
-        print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
-        print('Mean Absolute Error:', list(map(lambda x: round(x, 3), mean_abs_err)))
-        print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
+        f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
+        f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
+        f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')
         save_boxplot(err_rel, self.save_dir + train + '_to_' + test + '_Test_' + model_type, self.labels, max_y=max(1.0, np.sum(avg_err_rel)))
 
+
+###################################################################################################################################################################################
+# You want to adapt these options for your environment
+###################################################################################################################################################################################
 small_crop = slice(457,713)
 medium_crop = slice(361,713)
 paths = {
@@ -131,10 +134,12 @@ paths = {
     "ucsf_": ('/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', '/home/kreitnerl/Datasets/UCSF_TUM_MRSI/MRSI_data.mat', 'spectra', medium_crop, 0.0601, 0.0668),
     # "lcm_": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722), 0.1, 0.1)
 }
-gpu = 7
+gpu = 2
+f = open("baselines.txt", "w")
+###################################################################################################################################################################################
 
 if __name__ == "__main__":
-    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False, val_split=0.02)
+    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False)
     model = 'MLP'
 
     b.create_baseline('syn_i_', 'syn_i_', model)
