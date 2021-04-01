@@ -12,17 +12,10 @@ from sklearn.metrics import r2_score
 
 fig = ax = None
 
-
-# Converts a Tensor into a Numpy array
-# |imtype|: the desired type of the converted numpy array
-def tensor2im(image_tensor, imtype=np.uint8):
-    image_numpy = image_tensor[0].cpu().float().numpy()
-    image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
-    return image_numpy.astype(imtype)
-
-# define a function which returns an image as numpy array from figure
-# TODO add global option
 def get_img_from_fig(x, y, xlabel='', ylabel='', dpi=180, magnitude=True):
+    """
+    Generates an image from the given function.
+    """
     global fig, ax
     if fig==None:
         fig, ax = plt.subplots()

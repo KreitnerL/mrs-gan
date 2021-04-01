@@ -1,11 +1,8 @@
 """
-Run this file to create a baseline for the performance of the random forest.
-The program will test:
-    - Train on real, test of real
-    - Train on ideal, test on real
-    - Train on ideal, test on ideal
+Run this file to create a the baseline performance for the regression network.
 """
 import scipy.io as io
+import os
 import numpy as np
 from validation_networks.random_forest.random_forest import RandomForest
 from validation_networks.MLP.MLP import MLP
@@ -123,7 +120,7 @@ class BaselineCreator:
 
 
 ###################################################################################################################################################################################
-# You want to adapt these options for your environment
+# Please adapt these options / paths for your environment
 ###################################################################################################################################################################################
 small_crop = slice(457,713)
 medium_crop = slice(361,713)
@@ -135,11 +132,13 @@ paths = {
     # "lcm_": ('/home/kreitnerl/Datasets/LCM_MRS/spectra.mat', '/home/kreitnerl/Datasets/LCM_MRS/quantities.mat', 'spectra', slice(210,722), 0.1, 0.1)
 }
 gpu = 2
-f = open("baselines.txt", "w")
+dirname = os.path.dirname(__file__)
+save_dir = os.path.join(dirname, 'results/baselines/')
+f = open(os.path.join(save_dir, 'baselines.txt', 'w'))
 ###################################################################################################################################################################################
 
 if __name__ == "__main__":
-    b = BaselineCreator(save_dir='/home/kreitnerl/mrs-gan/results/baselines/', labels=["cho", "naa"], mag=False)
+    b = BaselineCreator(save_dir=save_dir, labels=["cho", "naa"], mag=False)
     model = 'MLP'
 
     b.create_baseline('syn_i_', 'syn_i_', model)

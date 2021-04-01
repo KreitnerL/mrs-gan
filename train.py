@@ -55,10 +55,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         # Only update critic every n_critic steps
         optimize_gen = not(i % opt.n_critic)
         model.optimize_parameters(optimize_G=optimize_gen)   # calculate loss functions, get gradients, update network weights
-        
-        if opt.display_id > 0 and total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
-            save_result = total_iters % opt.update_html_freq == 0
-            visdom.display_current_results(model.get_current_visuals(), epoch, save_result)
 
         if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
             t_data = iter_start_time - iter_data_time

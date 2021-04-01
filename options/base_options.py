@@ -13,11 +13,6 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self):
-        self.parser.add_argument('--split', action='store_true', default=False, help='split the dataset into training, validating, and testing segments')
-        self.parser.add_argument('--test_split', type=float, default=0.0, help='percent of data to use for testing') #default=0.1
-        self.parser.add_argument('--phase_data_path', type=str, help='if data has already been split, indicate the path for the data split index')#, default='./tests/SpectraGAN_test_012/data')#, default='/home/john/Documents/Research/SpectraGAN/tests/SpectraGAN_test_010/data')
-        self.parser.add_argument('--CpoolSize', type=int, default=50, help='critic value pool size for relative loss')
-        self.parser.add_argument('--input_dim', type=int, default=1, help='dimension of input data - "1" for spectra, "2" for images,"3" for image volumes')
         self.parser.add_argument('--real', action="store_true", default=False, help='Use only the real portion of the signal')
         self.parser.add_argument('--imag', action="store_true", default=False, help='Use only the real portion of the signal')
         self.parser.add_argument('--mag', action="store_true", default=False, help='Use the magnitude of the spectra')
@@ -29,9 +24,7 @@ class BaseOptions():
         self.parser.add_argument('--val_path', type=str, default=None, help='File path to the pretrained random forest dump.')
 
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
-        self.parser.add_argument('--plot_grads', action='store_true', default=False, help='Plot the gradients for each network after the backward step')
-        self.parser.add_argument('--display_winsize', type=int, default=256, help='display window size for both visdom and HTML')
-        self.parser.add_argument('--network_stage', type=str, default='latest', help='which epoch to load? set to latest to use latest cached model')
+        self.parser.add_argument('--display_winsize', type=int, default=256, help='display window size for HTML')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         self.parser.add_argument('--batch_size', type=int, default=50, help='input batch size')
@@ -57,7 +50,6 @@ class BaseOptions():
         self.parser.add_argument('--checkpoints_dir', type=str, default='/home/kreitnerl/mrs-gan/checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
-        self.parser.add_argument('--max_dataset_size', type=int, default=float("inf"), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')

@@ -7,7 +7,7 @@ Alzheimer’s, Parkinson’s and brain tumors are considered some of the most da
 tissue. Areas infected with tumor cells often show different metabolite profiles when compared to healthy tissue. Therefore, given the normal state of metabolite quantities, it is possible to detect abnormalities in the examined region [HB10].
 
 ![MR spectra](docs/images/sivic.png)
-***Figure 1**: MR scan of a tumor patient.* <br>
+***Figure 1**: MR scan of a tumor patient.*  
 *The MRI scan on the left shows choline
 metabolite concentrations in the region of interest. On the right is a plot of
 the respective long echo spectra for each voxel. Data was visualized using SIVIC.*
@@ -26,24 +26,24 @@ tasks.
 
 ## Approach 1: Style Transfer with CycleGAN
 
-In a first approach, we try to address the domain shift by directly briding the domain gap using style transfer. With this pre-processing step we translate a real spectrum into the domain of simulated spectra, i.e. we get rid of all artifacts, line-broadening and noise. After that, the spectra we can directly use the pretrained regression network to infer the metabolic profile.
+In a first approach, we try to address the domain shift by directly bridging the domain gap using style transfer. With this pre-processing step we translate a real spectrum into the domain of simulated spectra, i.e. we get rid of all artifacts, line-broadening and noise. After that, we can directly use the pretrained regression network to analyze the metabolic profile.
 
 Since we work with unlabeled data only, we use the CycleGAN architecture that allows for unsupervised style transfer.
 
 ![CycleGAN](docs/images/CycleGAN_setup.png)
 ***Figure 2: Idea of CycleGAN:***  
-*Our CycleGAN setup. Samples  s<sub>S</sub>[l] from the source domain will be translated into the target domain by generator G<sub>A</sub>. Discriminator D<sub>A</sub> will judge the quality of the fake ˆs<sub>T</sub>[l]. The spectrum will then be translated back into the original domain by G<sub>B</sub>. Arec will be used to compute the cycle consistency loss between the source and the reconstructed spectrum. We also train the reverse cycle to improve feature preservation. During validation, B<sub>fake</sub> = ˆs<sub>T</sub>[l] is fed into the pre-trained NT.*
+*Our CycleGAN setup. Samples  s<sub>S</sub>[l] from the source domain will be translated into the target domain by generator G<sub>A</sub>. Discriminator D<sub>A</sub> will judge the quality of the fake ŝ<sub>T</sub>[l]. The spectrum will then be translated back into the original domain by G<sub>B</sub>. A<sub>rec</sub> will be used to compute the cycle consistency loss between the source and the reconstructed spectrum. We also train the reverse cycle to improve feature preservation. During validation, B<sub>fake</sub> = ŝ<sub>T</sub>[l] is fed into the pre-trained N<sub>T</sub>.*
 
 
 ## Approach 2:  Unsupervised Regression with REG-CycleGAN
 
-To overcome the flaws of the vanilla CycleGAN, we present a novel CycleGAN architecture that is specifically optimized for regression tasks. First, let us note that we actually face a very special case of unsupervised translation. We can generate the ground truth synthetic target spectra given the source quantities using our physics model. This means, our CycleGAN does not have to create fakes of the synthetic spectra since we can create them perfectly ourselves. We therefore propose to directly generate quantities from the source spectra. We do that by replacing generator GA with the regression network NT.
+To overcome the flaws of the vanilla CycleGAN, we present a novel CycleGAN architecture that is specifically optimized for regression tasks. First, let us note that we actually face a very special case of unsupervised translation. We can generate the ground truth synthetic target spectra given the source quantities using our physics model. This means, our CycleGAN does not have to create fakes of the synthetic spectra since we can create them perfectly ourselves. We therefore propose to directly generate quantities from the source spectra. We do that by replacing generator GA with the regression network N<sub>T</sub>.
 
 ![CycleGAN](docs/images/REG-CycleGAN_setup.png)
-***Figure 2: Our proposed REG-CycleGAN setup:***  
-*A regression network NT extracts quantities from the spectra. A physics model, PM, builds the ideal version of the spectrum and translates it back into the source domain using generator G. Using the cycle consistency loss in both domains enables us to effectively train N<sub>T</sub> in an unsupervised manner.*
+***Figure 3: Our proposed REG-CycleGAN setup:***  
+*A regression network N<sub>T</sub> extracts quantities from the spectra. A physics model, PM, builds the ideal version of the spectrum and translates it back into the source domain using generator G. Using the cycle consistency loss in both domains enables us to effectively train N<sub>T</sub> in an unsupervised manner.*
 
-Let us analyze both cycles of the our network in detail to highlight the benefits. We start with the spectra from our source domain. The regression network NT extracts the respective quantities. We omit the discriminator here because we cannot judge the quality of the prediction at this point. Note that we can now easily adapt our method to a semi-supervised setting by comparing some of the predictions with the ground truth training labels. We then modulate the basis spectra with the prediction to form the ideal version of the spectrum. Predicting only the quantities serves as a bottleneck which
+Let us analyze both cycles of the our network in detail to highlight the benefits. We start with the spectra from our source domain. The regression network N<sub>T</sub> extracts the respective quantities. We omit the discriminator here because we cannot judge the quality of the prediction at this point. Note that we can now easily adapt our method to a semi-supervised setting by comparing some of the predictions with the ground truth training labels. We then modulate the basis spectra with the prediction to form the ideal version of the spectrum. Predicting only the quantities serves as a bottleneck which
 takes away the possibility for the generator to store any style information. By explicitly building the ideal spectrum with the quantities we define how the quantities must be interpreted and prevent the generator from using the values as any other information
 than peak heights. The ideal spectrum is then translated back into its original domain by generator G. Explicitly building a spectrum also decreases the distance between the source and target domains, simplifying the task for our generator.
 

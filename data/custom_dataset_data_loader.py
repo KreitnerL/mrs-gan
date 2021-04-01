@@ -38,4 +38,4 @@ class CustomDatasetDataLoader(BaseDataLoader):
         return self.dataloader
 
     def __len__(self):
-        return min(len(self.dataset), float(self.opt.max_dataset_size))
+        return len(self.dataset)
