@@ -1,0 +1,22 @@
+TODO:
+- Test with small set of labeled data
+- Infinite Stream of simulated spectra
+- Increase noise level of real spectra to get more samples
+- Run against LCModel
+
+- Loss functions
+    - wavelet
+    - cosine embedding loss (https://pytorch.org/docs/stable/generated/torch.nn.CosineEmbeddingLoss.html)
+
+- Style Prediction:
+    1 Style parameters. Style gets directly added in physics model
+        ✅ Enforce how to use parameter
+        ✅ Easily integrateable to REG-CycleGAN
+        ✅ Easily aplicable for reverse cycle
+        ❌ Makes quantity prediction fuzzy
+        ❌ Cannot recreate spectrum perfectly
+    2 Style vector. Style gets directly added in Generator
+        ✅ Generator can decide how to use vector
+        ✅ Perfect reconstruction possible
+        ❌ No control how vector is used
+        ❌ Reverse cycle needs cached style vectors

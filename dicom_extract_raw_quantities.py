@@ -63,6 +63,6 @@ def dcm2mat(source_dir, save_dir):
     spectra, quantities, num_spectra_per_patient = extract_from_DCM(source_dir, opt.file_ext_spectra, opt.file_ext_metabolite, ['cre', 'cho', 'NAA'])
     quantities.update({'num_spectra_per_patient': num_spectra_per_patient, 'spectra': np.array(spectra)})
     export_mat(quantities, save_dir + 'quantities_raw')
-    print('Done. You can find the exported matlab file at', save_dir + 'quantities.mat')
+    print('Done. You can find the exported matlab file at', save_dir + 'quantities_raw.mat')
 
 dcm2mat(opt.source_dir,  opt.save_dir)
