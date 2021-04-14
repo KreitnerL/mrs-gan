@@ -2,9 +2,8 @@ numpy
 scipy
 matlab
 pydicom
-pandas
 matplotlib
-visdom
+scikit-learn
 dominate
 opencv-python
 ray[tune]

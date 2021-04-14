@@ -55,7 +55,7 @@ Before you begin, make sure you have a valid python3 installation, and a CUDA-en
 
 First, install PyTorch and torchvision. Make sure to install a [version compatible with your GPU's CUDA version](https://pytorch.org/get-started/previous-versions/). E.g. for a conda environment and CUDA 10.1 run:
 ```sh
-conda install pytorch==1.5.1 torchvision==0.6.1 cudatoolkit=10.1 -c pytorch
+conda install pytorch==1.7.1 torchvision==0.8.2 cudatoolkit=10.1 -c pytorch
 ```
 
 Next, install all the necessary requirements:

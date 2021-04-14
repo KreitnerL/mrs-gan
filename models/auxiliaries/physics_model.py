@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.fft
 import scipy.io as io
 import numpy as np
 import os
@@ -84,7 +85,7 @@ class PhysicsModel(nn.Module):
         fid_sum = fids.sum(1) # Nx2x2048
 
         # FFT
-        spectra = fftshift(torch.fft(fid_sum.transpose(2,1),1).transpose(2,1),-1)
+        spectra = fftshift(torch.fft.fft(fid_sum.transpose(2,1)).real.transpose(2,1),-1)
         spectra = _resample_(spectra, 1024).cuda() # Nx2xROI
 
         # Noise SNR_db = 10*log10(P_s/ P_n)
@@ -195,7 +196,7 @@ def _export(fids: T, roi=slice(None,None)):
         - Tensor of shape (Bx2MxL) containing the basis spectra for each metabolite for each sample
     """
     # Recover Spectrum
-    specSummed = fftshift(torch.fft(fids.transpose(3,2),1).transpose(3,2),-1)
+    specSummed = fftshift(torch.fft.fft(fids.transpose(3,2)).real.transpose(3,2),-1)
 
     # Normalize Spectra by dividing by the norm of the area under the 3 major peaks
     # channel_max = torch.max(torch.abs(specSummed),dim=-1, keepdim=True).values
