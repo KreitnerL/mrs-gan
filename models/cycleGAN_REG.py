@@ -1,49 +1,46 @@
-from util.image_pool import ImagePool
-from collections import OrderedDict
 import itertools
-
-from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
-from models.auxiliaries.physics_model import PhysicsModel
-
-from models.cycleGAN_W import CycleGAN_W
-from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
+from collections import OrderedDict
 import torch
 import numpy as np
 import util.util as util
-
-from . import networks, define
+from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
+from models import networks
+from util.image_pool import ImagePool
+from models.define import define_D, define_splitter, define_styleGenerator
+from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
+from models.cycleGAN_W import CycleGAN_W
 T = torch.Tensor
 
-class cycleGAN_W_REG(CycleGAN_W):
+class CycleGAN_REG(CycleGAN_W):
     """
-    This class implements the novel cyleGAN for unsupervised spectral quantification tasks
+    This class implements the novel CycleGAN architecture for arbitrary unsupervised regression task
     """
 
     def __init__(self, opt, physicsModel: PhysicsModel):
         opt.lambda_identity = 0
         super().__init__(opt, physicsModel)
-    
+
     def name(self):
-        return 'CycleGAN_W_REG'
+        return 'CycleGAN_REG'
 
     def init(self, opt):
         nb = opt.batch_size
         self.input_A: T = self.Tensor(nb, opt.input_nc, opt.data_length)
         self.input_B: T = self.Tensor(nb, self.physicsModel.get_num_out_channels(), 1)
 
-        
-        self.netG_A = define.define_extractor(opt.input_nc, self.physicsModel.get_num_out_channels(), opt.data_length, opt.nef, opt.n_layers_E,
-                                            opt.norm, self.gpu_ids)
-        self.netG_B = define.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.which_model_netG,
-                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamG)
-        self.networks = [self.netG_A, self.netG_B]
-        
-        if opt.isTrain:
-            self.netD_B = define.define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
-                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
+        style_nc = 16
+        self.splitter = define_splitter(opt.input_nc, opt.data_length, self.physicsModel.get_num_out_channels(), opt.ngf, 16, norm=opt.norm, gpu_ids=self.gpu_ids)
+        self.styleGenerator = define_styleGenerator(opt.input_nc, opt.input_nc, 64, gpu_ids=self.gpu_ids)
+        self.networks = [self.splitter, self.styleGenerator]
 
-            self.fake_A_pool = ImagePool(opt.pool_size)  # create image buffer to store previously generated images
-            # define loss functions
+        if opt.isTrain:
+            self.netD_B = define_D(opt, opt.input_nc, opt.ndf, opt.n_layers_D, 
+                                            opt.norm, self.gpu_ids, init_type=opt.init_type, cbam=opt.cbamD)
+            self.fake_A_pool = ImagePool(opt.pool_size)
+            # TODO create option
+            self.style_cache = ImagePool(opt.batch_size)
+
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
             self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
@@ -53,7 +50,7 @@ class cycleGAN_W_REG(CycleGAN_W):
         """
         Initialize optimizers and learning rate schedulers
         """
-        self.optimizer_G = torch.optim.Adam(itertools.chain(self.netG_A.parameters(), self.netG_B.parameters()),
+        self.optimizer_G = torch.optim.Adam(itertools.chain(self.splitter.parameters(), self.styleGenerator.parameters()),
                                             lr=opt.glr, betas=(opt.beta1, opt.beta2))
         self.optimizer_D = torch.optim.Adam(self.netD_B.parameters(), lr=opt.dlr, betas=(opt.beta1, opt.beta2))
 
@@ -69,18 +66,21 @@ class cycleGAN_W_REG(CycleGAN_W):
         Uses Generators to generate fake and reconstructed spectra
         """
         self.real_A = self.input_A
-        self.fake_B = self.netG_A.forward(self.real_A)
-        ideal_spectra = self.physicsModel.forward(self.fake_B)
-        self.rec_A = self.netG_B.forward(ideal_spectra)
+        self.fake_params, self.fake_style = self.splitter.forward(self.real_A)
+        ideal_spectra = self.physicsModel.forward(self.fake_params)
+        self.rec_A = self.styleGenerator.forward(ideal_spectra, self.fake_style)
 
         if self.opt.phase != 'val':
-            self.real_B = self.physicsModel.quantity_to_param(self.input_B)
-            ideal_spectra = self.physicsModel.forward(self.real_B)
-            self.fake_A = self.netG_B.forward(ideal_spectra)
-            self.rec_B = self.netG_A.forward(self.fake_A)
+            self.real_params = self.physicsModel.quantity_to_param(self.input_B)
+            ideal_spectra = self.physicsModel.forward(self.real_params)
+
+            self.real_style: "T" = self.style_cache.query(self.fake_style.detach())
+    
+            self.fake_A = self.styleGenerator.forward(ideal_spectra, self.real_style)
+            self.rec_params, self.rec_style = self.splitter.forward(self.fake_A)
 
     def calculate_G_loss(self):
-        """Calculate the loss for generators G_A and G_B"""
+        """Calculate the loss for the splitter and the styleGenerator"""
         # GAN loss
         # The Generator performs good when the the discriminator return a small number for a fake, i.e. treats it like a real sample. => Aversarial to D loss
         # D_B(G_B(B))
@@ -88,7 +88,7 @@ class cycleGAN_W_REG(CycleGAN_W):
         # Forward cycle loss
         self.loss_cycle_A: T = self.criterionCycle(self.rec_A, self.real_A) * self.opt.lambda_A
         # Backward cycle loss
-        self.loss_cycle_B: T = self.criterionCycle(self.rec_B, self.real_B) * self.opt.lambda_B
+        self.loss_cycle_B: T = (self.criterionCycle(self.fake_params, self.fake_params) + self.criterionCycle(self.real_style, self.real_style)) * self.opt.lambda_B
         # Feature loss
         if self.opt.lambda_feat != 0:
             entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
@@ -121,13 +121,13 @@ class cycleGAN_W_REG(CycleGAN_W):
 
         x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
         real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
         rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
 
-        if hasattr(self, 'real_B'):
-            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        if hasattr(self, 'real_params'):
+            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
             fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_B)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
 
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                                 ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])
@@ -135,20 +135,20 @@ class cycleGAN_W_REG(CycleGAN_W):
     def get_items(self):
         items = dict()
         items['real_A_spectra'] = self.real_A.detach().cpu().numpy()
-        items['fake_B_quantity'] = self.physicsModel.param_to_quantity(self.fake_B.detach().cpu()).numpy()
-        items['fake_B_spectra'] = self.physicsModel.forward(self.fake_B).detach().cpu().numpy()
+        items['fake_B_quantity'] = self.physicsModel.param_to_quantity(self.fake_params.detach().cpu()).numpy()
+        items['fake_B_spectra'] = self.physicsModel.forward(self.fake_params).detach().cpu().numpy()
         items['rec_A_spectra'] = self.rec_A.detach().cpu().numpy()
 
-        items['real_B_quantity'] = self.physicsModel.param_to_quantity(self.real_B.detach().cpu()).numpy()
-        items['real_B_spectra'] = self.physicsModel.forward(self.real_B).detach().cpu().numpy()
+        items['real_B_quantity'] = self.physicsModel.param_to_quantity(self.real_params.detach().cpu()).numpy()
+        items['real_B_spectra'] = self.physicsModel.forward(self.real_params).detach().cpu().numpy()
         items['fake_A_spectra'] = self.fake_A.detach().cpu().numpy()
-        items['rec_B_quantity'] =  self.physicsModel.param_to_quantity(self.rec_B.detach().cpu()).numpy()
-        items['rec_B_spectra'] = self.physicsModel.forward(self.rec_B).detach().cpu().numpy()
+        items['rec_B_quantity'] =  self.physicsModel.param_to_quantity(self.rec_params.detach().cpu()).numpy()
+        items['rec_B_spectra'] = self.physicsModel.forward(self.rec_params).detach().cpu().numpy()
 
         return items
 
     def get_prediction(self) -> np.ndarray:
-        return self.physicsModel.param_to_quantity(self.fake_B.detach().cpu()).numpy()
+        return self.physicsModel.param_to_quantity(self.fake_params.detach().cpu()).numpy()
 
     def get_predicted_spectra(self) -> np.ndarray:
-        return self.physicsModel.forward(self.fake_B).detach().cpu().numpy()
+        return self.physicsModel.forward(self.fake_params).detach().cpu().numpy()

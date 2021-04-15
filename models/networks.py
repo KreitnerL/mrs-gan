@@ -108,21 +108,125 @@ class ExtractorMLP(nn.Module):
         out = self.layers(input)
         return out
 
+class SplitterNetwork(nn.Module):
+    """
+    Creates a Splitter network consisting of a style extractor S and a parameter regression network R.
+    The given input is individually fed into the style extractor and the parameter regressor.
+    
+    Parameters:
+    -----------  
+        - input_dim: tuple(int): Dimensions of the input
+        - n_p: int: Number of parameters to predict
+        - s_nc: int: Number of style channels
+        - R_num_filter: int: Number of filters for the regressor network
+        - S_num_filter: int: Number of filters for the style extraction network
+        - R_num_layers: int: Number of layers for the regressor network. Default = 3
+        - S_num_layers: int: Number of layers for the style extraction network. Default = 3
+        - norm: string: Normalization technique. Cf. get_norm_layer(). 
+        - gpu_ids: [int]: GPU ids available to this network. Default = []
+    """
+    def __init__(self, input_nc: int, input_length: int, n_p: int, R_num_filter: int, S_num_filter: int, R_num_layers=3, S_num_layers=3, norm_layer=get_norm_layer('instance'), gpu_ids=[]):
+        super(SplitterNetwork, self).__init__()
+        self.parameter_regressor = ExtractorMLP((input_nc * input_length, n_p), num_neurons=[R_num_filter]*R_num_layers, norm_layer=norm_layer, gpu_ids=gpu_ids)
+
+        style_extractor_layers = [
+            get_padding('reflect')(3),
+            get_conv()(input_nc, S_num_filter, kernel_size=7, padding=0),
+            norm_layer(S_num_filter),
+            nn.ReLU(True)
+        ]
+
+        for i in range(S_num_layers):
+            mult = 2**i
+            style_extractor_layers += [
+                get_conv()(S_num_filter * mult, S_num_filter * mult * 2, kernel_size=3, stride=2, padding=1),
+                norm_layer(S_num_filter * mult * 2),
+                nn.ReLU(True)
+            ]
+        mult = 2**S_num_layers
+
+        # TODO
+        for i in range(0):
+            style_extractor_layers += [ResnetBlock(S_num_filter * mult, padding_type='zero', norm_layer=norm_layer)]
+
+        style_extractor_layers += [
+            get_conv()(S_num_filter * mult, 2**(S_num_layers+2), kernel_size=3, stride=2, padding=1),
+            norm_layer(S_num_filter * mult * 2),
+            nn.ReLU(True)
+        ]
+        
+        style_extractor_layers += [LambdaModule(lambda x: torch.reshape(x, (x.shape[0], input_nc, input_length)))]
+
+        self.style_extractor = nn.Sequential(*style_extractor_layers)
+
+    def forward(self, input):
+        """
+        The given input is individually fed into the style extractor and the parameter regressor.
+
+        Returns:
+        --------
+            - parameters: (1 x n_p)
+            - style: (NxM)
+        """
+        parameters = self.parameter_regressor(input)
+        style = self.style_extractor(input)
+        return parameters, style
+
+class StyleGenerator(nn.Module):
+    def __init__(self, content_nc: int, style_nc: int, n_c: int, n_blocks=4, norm_layer=get_norm_layer('instance'), use_dropout=False, padding_type='zero', cbam=False):
+        """
+        This ResNet applies the encoded style from the style tensor onto the given content tensor.
+
+        Parameters:
+        ----------
+            - content_nc (int): number of channels in the content tensor
+            - style_nc (int): number of channels in the style tensor
+            - n_c (int): number of channels used inside the network
+            - n_blocks (int): number of Resnet blocks
+            - norm_layer: normalization layer
+            - use_dropout: (boolean): if use dropout layers
+            - padding_type (str): the name of padding layer in conv layers: reflect | replicate | zero
+            - cbam (boolean): If true, use the Convolution Block Attention Module
+        """
+        assert n_blocks > 0
+        super(StyleGenerator, self).__init__()
+        channels = [content_nc + style_nc] + [n_c]*n_blocks + [content_nc]
+        layers = [
+            get_conv()(channels[0], channels[1], kernel_size=3, padding=1),
+            norm_layer(channels[1]),
+            nn.ReLU(True)
+        ]
+        for i in range(1,n_blocks):
+            layers.append(ResnetBlock(channels[i], padding_type=padding_type, norm_layer=norm_layer, use_dropout=use_dropout, cbam=cbam))
+        if i < len(channels):
+            layers.append(get_conv()(channels[-2], channels[-1], kernel_size=3, padding=1))
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, content, style):
+        """
+        The given style tensor is is applied onto the given content tensor.
+
+        Returns:
+        --------
+            - combined tensor of the same shape as the content tensor
+        """
+        return self.model(torch.cat([content, style], 1))
+
 # Defines the generator that consists of Resnet blocks between a few
 # downsampling/upsampling operations.
 # Code and idea originally from Justin Johnson's architecture.
 # https://github.com/jcjohnson/fast-neural-style/
 class ResnetGenerator(nn.Module):
     def __init__(self, input_nc, output_nc, ngf=64, norm_layer=get_norm_layer('batch'), use_dropout=False, n_blocks=4, gpu_ids=[], padding_type='zero', cbam=False):
-        """Construct a Resnet-based generator
-        Parameters:
-            input_nc (int)      -- the number of channels in input images
-            output_nc (int)     -- the number of channels in output images
-            ngf (int)           -- the number of filters in the last conv layer
-            norm_layer          -- normalization layer
-            use_dropout (bool)  -- if use dropout layers
-            n_blocks (int)      -- the number of ResNet blocks
-            padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
+        """Construct a Resnet-based generator  
+        Parameters:  
+            - input_nc (int)      -- the number of channels in input images
+            - output_nc (int)     -- the number of channels in output images
+            - ngf (int)           -- the number of filters in the last conv layer
+            - norm_layer          -- normalization layer
+            - use_dropout (bool)  -- if use dropout layers
+            - n_blocks (int)      -- the number of ResNet blocks
+            - padding_type (str)  -- the name of padding layer in conv layers: reflect | replicate | zero
         """
         assert n_blocks >= 0
         super(ResnetGenerator, self).__init__()

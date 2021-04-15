@@ -71,6 +71,61 @@ def define_extractor(input_nc, output_nc, data_length, ndf, n_layers_D=3, norm='
     else:
         return netExtractor
 
+def define_splitter(input_nc: int, input_length: int, n_p: int, R_num_filter: int, S_num_filter: int, R_num_layers=3, S_num_layers=3, norm='instance', gpu_ids=[]):
+    """
+    Creates a Splitter network consisting of a style extractor S and a parameter regression network R.
+    The given input is individually fed into the style extractor and the parameter regressor.
+    
+    Parameters:
+    -----------  
+        - input_dim: tuple(int): Dimensions of the input
+        - n_p: int: Number of parameters to predict
+        - s_nc: int: Number of style channels
+        - R_num_filter: int: Number of filters for the regressor network
+        - S_num_filter: int: Number of filters for the style extraction network
+        - R_num_layers: int: Number of layers for the regressor network. Default = 3
+        - S_num_layers: int: Number of layers for the style extraction network. Default = 3
+        - norm: string: Normalization technique. Any of ['instance', 'batch', 'group']. Default = 'instance'
+        - gpu_ids: [int]: GPU ids available to this network. Default = []
+    """
+    use_gpu = len(gpu_ids) > 0
+    norm_layer = get_norm_layer(norm_type=norm)
+    if use_gpu:
+        assert(torch.cuda.is_available())
+    splitter_network = SplitterNetwork(input_nc, input_length, n_p, R_num_filter, S_num_filter, R_num_layers, S_num_layers, get_norm_layer(norm), gpu_ids)
+    init_weights(splitter_network, "kaiming", activation='leaky_relu')
+    if len(gpu_ids):
+        return nn.DataParallel(splitter_network, device_ids=gpu_ids)
+    else:
+        return splitter_network
+
+def define_styleGenerator(content_nc: int, style_nc: int, n_c: int, n_blocks=4, norm='instance', use_dropout=False, padding_type='zero', cbam=False, gpu_ids=[]):
+    """
+    This ResNet applies the encoded style from the style tensor onto the given content tensor.
+
+    Parameters:
+    ----------
+        - content_nc (int): number of channels in the content tensor
+        - style_nc (int): number of channels in the style tensor
+        - n_c (int): number of channels used inside the network
+        - n_blocks (int): number of Resnet blocks
+        - norm_layer: normalization layer
+        - use_dropout: (boolean): if use dropout layers
+        - padding_type (str): the name of padding layer in conv layers: reflect | replicate | zero
+        - cbam (boolean): If true, use the Convolution Block Attention Module
+        - gpu_ids: [int]: GPU ids available to this network. Default = []
+    """
+    use_gpu = len(gpu_ids) > 0
+    norm_layer = get_norm_layer(norm_type=norm)
+    if use_gpu:
+        assert(torch.cuda.is_available())
+    styleGenerator = StyleGenerator(content_nc, style_nc, n_c, n_blocks=n_blocks, norm_layer=norm_layer, use_dropout=use_dropout, padding_type=padding_type, cbam=False)
+    init_weights(styleGenerator, "kaiming", activation='leaky_relu')
+    if len(gpu_ids):
+        return nn.DataParallel(styleGenerator, device_ids=gpu_ids)
+    else:
+        return styleGenerator
+
 def print_network(net):
     num_params = 0
     for param in net.parameters():
