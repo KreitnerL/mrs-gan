@@ -15,7 +15,7 @@ def create_model(opt, physicsModel=None):
         model = cycleGAN_W_REG(opt, physicsModel)
     elif opt.model == 'cycleGAN_REG':
         assert(opt.dataset_mode == 'spectra_component_dataset')
-        from .cycleGAN_REG import CycleGAN_REG
+        from .cycleGAN_REGv2 import CycleGAN_REG
         model = CycleGAN_REG(opt, physicsModel)
     else:
         raise ValueError("Model [%s] not recognized." % opt.model)

@@ -22,16 +22,15 @@ class CycleGAN_REG(CycleGAN_W):
         super().__init__(opt, physicsModel)
 
     def name(self):
-        return 'CycleGAN_REG'
+        return 'CycleGAN_REG_v2'
 
     def init(self, opt):
         nb = opt.batch_size
         self.input_A: T = self.Tensor(nb, opt.input_nc, opt.data_length)
         self.input_B: T = self.Tensor(nb, self.physicsModel.get_num_out_channels(), 1)
 
-        style_nc = 16
-        self.splitter = define_splitter(opt.input_nc, opt.data_length, self.physicsModel.get_num_out_channels(), opt.ngf, 16, norm=opt.norm, gpu_ids=self.gpu_ids)
-        self.styleGenerator = define_styleGenerator(opt.input_nc, opt.input_nc, 64, gpu_ids=self.gpu_ids)
+        self.splitter = define_splitter(opt.input_nc, opt.data_length, self.physicsModel.get_num_out_channels(), opt.nef, 16, norm=opt.norm, gpu_ids=self.gpu_ids)
+        self.styleGenerator = define_styleGenerator(opt.input_nc, opt.input_nc, opt.ngf, gpu_ids=self.gpu_ids)
         self.networks = [self.splitter, self.styleGenerator]
 
         if opt.isTrain:
@@ -43,7 +42,7 @@ class CycleGAN_REG(CycleGAN_W):
 
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
-            self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
+            # self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
             self.networks.extend([self.netD_B])
 
     def init_optimizers(self, opt):
@@ -90,14 +89,14 @@ class CycleGAN_REG(CycleGAN_W):
         # Backward cycle loss
         self.loss_cycle_B: T = (self.criterionCycle(self.fake_params, self.fake_params) + self.criterionCycle(self.real_style, self.real_style)) * self.opt.lambda_B
         # Feature loss
-        if self.opt.lambda_feat != 0:
-            entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
-            self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
-        else:
-            self.loss_feat_A = 0
+        # if self.opt.lambda_feat != 0:
+        #     entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
+        #     self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
+        # else:
+        #     self.loss_feat_A = 0
 
         # combined loss
-        self.loss_G: T = self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_feat_A
+        self.loss_G: T = self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B # + self.loss_feat_A
         return self.loss_G
 
     def optimize_parameters(self, optimize_G=True, optimize_D=True):

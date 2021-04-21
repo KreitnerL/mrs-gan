@@ -89,11 +89,10 @@ def define_splitter(input_nc: int, input_length: int, n_p: int, R_num_filter: in
         - gpu_ids: [int]: GPU ids available to this network. Default = []
     """
     use_gpu = len(gpu_ids) > 0
-    norm_layer = get_norm_layer(norm_type=norm)
     if use_gpu:
         assert(torch.cuda.is_available())
     splitter_network = SplitterNetwork(input_nc, input_length, n_p, R_num_filter, S_num_filter, R_num_layers, S_num_layers, get_norm_layer(norm), gpu_ids)
-    init_weights(splitter_network, "kaiming", activation='leaky_relu')
+    init_weights(splitter_network, "kaiming", activation='relu')
     if len(gpu_ids):
         return nn.DataParallel(splitter_network, device_ids=gpu_ids)
     else:
