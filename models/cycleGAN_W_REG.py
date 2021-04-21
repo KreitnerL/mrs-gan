@@ -24,7 +24,7 @@ class cycleGAN_W_REG(CycleGAN_W):
         super().__init__(opt, physicsModel)
     
     def name(self):
-        return 'CycleGAN_REG'
+        return 'CycleGAN_W_REG'
 
     def init(self, opt):
         nb = opt.batch_size
