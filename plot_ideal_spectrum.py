@@ -1,5 +1,5 @@
 from argparse import Namespace
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import torch
 import numpy as np
 import matplotlib.pyplot as plt

@@ -1,7 +1,7 @@
 import math
 from models.cycleGAN_W_REG import cycleGAN_W_REG
 import os
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 from util.util import update_options
 from util.validator import Validator
 from options.train_options import TrainOptions

@@ -8,7 +8,7 @@ It first creates model and dataset given the option. It will hard-code some para
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
 from data.data_loader import CreateDataLoader
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 from util.util import load_options, merge_options, save_boxplot
 from util.validator import Validator
 from options.val_options import ValidationOptions

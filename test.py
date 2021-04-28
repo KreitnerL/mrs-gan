@@ -7,7 +7,7 @@ It first creates model and dataset given the option. It will hard-code some para
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
 from debugging_scripts.visualize_results import generate_images_of_spectra
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import os
 from util.util import load_options, merge_options, mkdir, progressbar
 from options.test_options import TestOptions

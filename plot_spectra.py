@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from argparse import Namespace
 import random
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import torch
 
 # path = '/home/kreitnerl/Datasets/syn_4_real/dataset_spectra.mat'

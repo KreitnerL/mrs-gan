@@ -14,7 +14,7 @@ class MRSPhysicsModel(PhysicsModel):
         self.opt = opt
         self.roi = self.opt.roi
         self.standard_β = -0.000416455078125
-        opt.physics_model = self
+        opt.mrs_physics_model = self
 
         self.params = dict()
         dirname = os.path.dirname(__file__)

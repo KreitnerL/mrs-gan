@@ -1,6 +1,6 @@
 import os
 import sys
-from models.auxiliaries.physics_model import MRSPhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import time
 from util.validator import Validator
 from options.train_options import TrainOptions
