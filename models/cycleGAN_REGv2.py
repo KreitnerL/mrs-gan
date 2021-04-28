@@ -7,8 +7,7 @@ from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
 from models import networks
 from util.image_pool import ImagePool
 from models.define import define_D, define_splitter, define_styleGenerator
-from models.auxiliaries.physics_model import PhysicsModel
-from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
+from models.auxiliaries.physics_model_interface import PhysicsModel
 from models.cycleGAN_W import CycleGAN_W
 T = torch.Tensor
 

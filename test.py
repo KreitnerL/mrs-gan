@@ -7,7 +7,7 @@ It first creates model and dataset given the option. It will hard-code some para
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
 from debugging_scripts.visualize_results import generate_images_of_spectra
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model import MRSPhysicsModel
 import os
 from util.util import load_options, merge_options, mkdir, progressbar
 from options.test_options import TestOptions
@@ -27,7 +27,7 @@ opt = merge_options(default_options, train_options, opt)
 # hard-code some parameters for test
 opt.num_threads = 0   # test code only supports num_threads = 1
 
-pysicsModel = PhysicsModel(opt)
+pysicsModel = MRSPhysicsModel(opt)
 data_loader = CreateDataLoader(opt, 'test')     # get training options
 dataset = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options
 dataset_size = len(data_loader)         # get the number of samples in the dataset.

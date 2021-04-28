@@ -1,3 +1,4 @@
+from models.auxiliaries.physics_model_interface import PhysicsModel
 import torch
 import torch.nn as nn
 # import torch.fft
@@ -7,12 +8,13 @@ import os
 from models.auxiliaries.cubichermitesplines import CubicHermiteSplines
 T = torch.Tensor
 
-class PhysicsModel(nn.Module):
+class MRSPhysicsModel(PhysicsModel):
     def __init__(self, opt) -> None:
         super().__init__()
         self.opt = opt
         self.roi = self.opt.roi
         self.standard_β = -0.000416455078125
+        opt.physics_model = self
 
         self.params = dict()
         dirname = os.path.dirname(__file__)
@@ -27,6 +29,10 @@ class PhysicsModel(nn.Module):
             self.params['pch_max'],
             self.params['naa_max']
         ]).unsqueeze(0))
+        self.register_buffer('min_per_met', torch.tensor([
+            self.params['pch_min'],
+            self.params['naa_min']
+        ]).unsqueeze(0))
 
         # self.register_buffer('cre_p', torch.ones(1,1, dtype=torch.float64))
         self.register_buffer('cre_p', torch.ones(1,1))
@@ -38,8 +44,6 @@ class PhysicsModel(nn.Module):
             self.params['fidCr'].unsqueeze(0)
         ), dim=0).unsqueeze(0).cuda()
         self.register_buffer('basis_spectra', _export(self.basis_fids, roi=self.roi))
-
-        self.opt.relativator = torch.max(torch.sqrt(self.basis_spectra[:,-2]**2 + self.basis_spectra[:,-1]**2))
 
         if self.opt.mag:
             index_real = [i%2==0 for i in range(self.basis_spectra.shape[1])]
@@ -110,7 +114,7 @@ class PhysicsModel(nn.Module):
         --------
             - Tensor of shape (BxCxL) containing ideal spectrum
         """
-        parameters = torch.cat([parameters*self.max_per_met, self.cre_p.repeat(parameters.shape[0],1)],1)
+        parameters = torch.cat([parameters*self.max_per_met+self.min_per_met, self.cre_p.repeat(parameters.shape[0],1)],1)
         if self.opt.mag:
             modulated_basis_spectra = parameters.unsqueeze(-1)*self.basis_spectra
             ideal_spectra = modulated_basis_spectra.sum(1, keepdim=True)
@@ -134,10 +138,10 @@ class PhysicsModel(nn.Module):
         return 2
 
     def quantity_to_param(self, quantities: T):
-        return quantities / self.max_per_met
+        return (quantities-self.min_per_met) / self.max_per_met
     
     def param_to_quantity(self, params: T):
-        return params * self.max_per_met.detach().cpu()
+        return params * self.max_per_met.detach().cpu() + self.min_per_met.detach().cpu()
 
     def plot_basisspectra(self, path, plot_sum=False):
         import matplotlib.pyplot as plt

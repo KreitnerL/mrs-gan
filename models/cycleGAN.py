@@ -1,6 +1,6 @@
 from util.image_pool import ImagePool
 from validation_networks.MLP.MLP import MLP
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model_interface import PhysicsModel
 from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
 import torch
 import torch.nn as nn

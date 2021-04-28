@@ -3,7 +3,7 @@ from collections import OrderedDict
 import itertools
 
 from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model_interface import PhysicsModel
 
 from models.cycleGAN_W import CycleGAN_W
 from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G

@@ -1,5 +1,5 @@
 from argparse import Namespace
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model import MRSPhysicsModel
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ torch.cuda.set_device(7)
 ppm_range = [7.171825,-0.501875]
 opt = Namespace(**{'roi': slice(300,812), 'mag': True, 'ppm_range': ppm_range, 'full_data_length': 1024})
 x = np.linspace(ppm_range, 1024)[opt.roi]
-pm = PhysicsModel(opt).cuda()
+pm = MRSPhysicsModel(opt).cuda()
 pm.plot_basisspectra('basis_spec.png', True)
 
 # params = torch.tensor([[2.607970112079701, 1.641095890410959]]).cuda()

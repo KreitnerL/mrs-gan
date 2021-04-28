@@ -1,7 +1,7 @@
 import math
 from models.cycleGAN_W_REG import cycleGAN_W_REG
 import os
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model import MRSPhysicsModel
 from util.util import update_options
 from util.validator import Validator
 from options.train_options import TrainOptions
@@ -24,7 +24,7 @@ def get_score(validator: Validator, dataset, model: cycleGAN_W_REG):
 def training_function(config, checkpoint_dir=None):
     opt = update_options(init_opt, config)
 
-    physicsModel = PhysicsModel(opt)
+    physicsModel = MRSPhysicsModel(opt)
     train_set = CreateDataLoader(opt, 'train').load_data()
     val_set = CreateDataLoader(opt, 'val').load_data()
 
@@ -101,7 +101,7 @@ class CustomStopper(tune.Stopper):
 search_space = {
             "lambda_A":  tune.choice(list(range(8,15,1))),
             "lambda_B":  tune.quniform(1,5,0.5),
-            "lambda_feat": tune.quniform(1,5,0.2),
+            # "lambda_feat": tune.quniform(1,5,0.2),
             "dlr": tune.quniform(0.0001, 0.0003, 0.00002),
             "glr": tune.quniform(0.0001, 0.0003, 0.00002)
         }

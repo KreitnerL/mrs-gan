@@ -1,6 +1,6 @@
 import os
 import sys
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model import MRSPhysicsModel
 import time
 from util.validator import Validator
 from options.train_options import TrainOptions
@@ -12,7 +12,7 @@ from util.visdom import Visdom
 opt = TrainOptions().parse()
 if not opt.quiet:
     print('------------ Creating Training Set ------------')
-pysicsModel = PhysicsModel(opt)
+pysicsModel = MRSPhysicsModel(opt)
 
 data_loader = CreateDataLoader(opt, 'train')     # get training options
 train_set = data_loader.load_data()       # create a dataset given opt.dataset_mode and other options

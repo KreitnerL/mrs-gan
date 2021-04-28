@@ -8,7 +8,7 @@ It first creates model and dataset given the option. It will hard-code some para
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
 from data.data_loader import CreateDataLoader
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model import MRSPhysicsModel
 from util.util import load_options, merge_options, save_boxplot
 from util.validator import Validator
 from options.val_options import ValidationOptions
@@ -26,7 +26,7 @@ opt.phase = 'val'
 
 datasets = {phase: CreateDataLoader(opt, phase).load_data() for phase in ['train', 'val', 'test']}
 validator = Validator(opt)
-physicsModel = PhysicsModel(opt)
+physicsModel = MRSPhysicsModel(opt)
 model = create_model(opt, physicsModel)      # create a model given opt.model and other options
 model.load_checkpoint(opt.model_path)
 
