@@ -145,8 +145,6 @@ class CycleGAN():
             input_B: T = input['B']
             self.input_B.resize_(input_B.size()).copy_(input_B)
 
-        self.image_paths = input['A_paths']
-
     def forward(self):
         """
         Uses Generators to generate fake and reconstructed spectra
@@ -167,10 +165,6 @@ class CycleGAN():
             else:
                 print('WARNING: Paired forward not possile: No label_A found.')
             self.forward()
-
-    # get image paths
-    def get_image_paths(self):
-        return self.image_paths
 
     def backward_D_basic(self, netD: nn.Module, real: T, fake: T):
         """Calculate GAN loss for the discriminator\n
@@ -280,13 +274,13 @@ class CycleGAN():
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
         x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+        fake_B = util.get_img_from_fig(x, self.fake_B[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
         if hasattr(self, 'real_B'):
-            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            real_B = util.get_img_from_fig(x, self.real_B[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+            rec_B = util.get_img_from_fig(x, self.rec_B[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
 
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                         ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])

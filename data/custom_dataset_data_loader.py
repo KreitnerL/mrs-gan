@@ -17,15 +17,12 @@ class CustomDatasetDataLoader(BaseDataLoader):
 
     def createDataset(self, opt, phase):
         dataset = None
-        if opt.dataset_mode == 'unaligned':
-            from data.unaligned_dataset import UnalignedDataset
-            dataset = UnalignedDataset()
-        elif opt.dataset_mode == 'dicom_spectral_dataset':
-            from data.dicom_spectral_dataset import DicomSpectralDataset
-            dataset = DicomSpectralDataset()
-        elif opt.dataset_mode == 'spectra_component_dataset':
+        if opt.dataset_mode == 'spectra_component_dataset':
             from data.spectra_components_dataset import SpectraComponentDataset
             dataset = SpectraComponentDataset()
+        elif opt.dataset_mode == 'reg_cyclegan_dataset':
+            from data.reg_cyclegan_dataset import RegCycleGANDataset
+            dataset = RegCycleGANDataset()
         else:
             raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 
