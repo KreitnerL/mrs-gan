@@ -13,3 +13,4 @@ python generate_spectra.py --save_path "datasets/syn_ideal.mat" --N 100000 --β_
 # Create baslines and pretrain models
 echo Creating baselines and pretrain models...
 python create_baseline.py
+echo Done

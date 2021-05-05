@@ -26,8 +26,8 @@ class BaseOptions():
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
         self.parser.add_argument('--dataname', type=str, default='spectra', help='Name of the variable in dataroot containing the spectra')
-        self.parser.add_argument('--val_offset', type=int, required=True, help='Offset of the validation set in the dataset')
-        self.parser.add_argument('--test_offset', type=int, required=True, help='Offset of the test set in the dataset')
+        self.parser.add_argument('--val_offset', type=int, help='Offset of the validation set in the dataset')
+        self.parser.add_argument('--test_offset', type=int, help='Offset of the test set in the dataset')
         self.parser.add_argument('--batch_size', type=int, default=50, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
