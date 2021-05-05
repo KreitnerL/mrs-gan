@@ -4,7 +4,6 @@ Run this file to create a the baseline performance for the regression network.
 import scipy.io as io
 import os
 import numpy as np
-from validation_networks.random_forest.random_forest import RandomForest
 from validation_networks.MLP.MLP import MLP
 from util.util import compute_error, save_boxplot
 from util.util import normalize
@@ -83,11 +82,7 @@ class BaselineCreator:
         train_set: Dataset = self.get_dataset(train)
         test_set: Dataset = self.get_dataset(test)
 
-        if model_type=='RF':
-            model = RandomForest(100, self.labels, self.save_dir+train)
-            if not model.pretrained:
-                model.train(train_set.spectra_train, train_set.param_train)
-        elif model_type=='MLP':
+        if model_type=='MLP':
             model = MLP(self.save_dir+train, lambda pred, y: np.mean(compute_error(pred, y)[2]), gpu=gpu, in_out= (np.prod(train_set.spectra_train.shape[1:]), len(self.labels)), batch_size=100)
             if not model.pretrained:
                 model.train(train_set.spectra_train, train_set.param_train, test_set.spectra_val, test_set.param_val)

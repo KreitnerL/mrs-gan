@@ -50,7 +50,7 @@ class BaseOptions():
         self.parser.add_argument('--nThreads', default=0, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='/home/kreitnerl/mrs-gan/checkpoints', help='model checkpoints are saved here')
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
-        self.parser.add_argument('--shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
+        self.parser.add_argument('--no_shuffle', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
         self.parser.add_argument('--no_flip', action='store_true', default=False, help='if specified, do not flip the images for data augmentation')
         self.parser.add_argument('--init_type', type=str, default='normal', help='network initialization [normal | xavier | kaiming | orthogonal]')
