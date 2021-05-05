@@ -1,5 +1,5 @@
 from torch.nn.utils.spectral_norm import spectral_norm
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.physics_model_interface import PhysicsModel
 from models.cycleGAN import CycleGAN
 import torch
 import models.auxiliaries.auxiliary as aux

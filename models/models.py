@@ -13,8 +13,8 @@ def create_model(opt, physicsModel=None):
         assert(opt.dataset_mode == 'spectra_component_dataset')
         from .cycleGAN_W_REG import cycleGAN_W_REG
         model = cycleGAN_W_REG(opt, physicsModel)
-    elif opt.model == 'cycleGAN_REG':
-        assert(opt.dataset_mode == 'spectra_component_dataset')
+    elif opt.model == 'cycleGAN_REGv2':
+        assert(opt.dataset_mode == 'reg_cyclegan_dataset')
         from .cycleGAN_REGv2 import CycleGAN_REG
         model = CycleGAN_REG(opt, physicsModel)
     else:

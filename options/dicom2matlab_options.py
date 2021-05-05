@@ -20,9 +20,6 @@ class Dicom2MatlabOptions():
         self.parser.add_argument('--normalize', type=bool, default=False, help='normalize the spectra in preprocessing')
         self.parser.add_argument('--standardize', type=bool, default=False, help='standardize the spectra in preprocessing')
         self.parser.add_argument('--pad_data', type=bool, default=False, help='pad_data the spectra in preprocessing')
-        self.parser.add_argument('--real', action='store_true', help='only use real part of the spectra')
-        self.parser.add_argument('--imag', action='store_true', help='only use imaginary part of the spectra')
-        self.parser.add_argument('--mag', action='store_true', help='only use the magnitude of the spectra')
         self.parser.add_argument('--quiet', action='store_true', default=False, help='Does not print the options in the terminal when initializing')
 
         self.initialized = True
@@ -31,7 +28,6 @@ class Dicom2MatlabOptions():
         if not self.initialized:
             self.initialize()
         self.opt = self.parser.parse_args()
-        assert sum([self.opt.real, self.opt.imag, self.opt.mag]) <= 1
         args = vars(self.opt)
         if not self.opt.quiet:
             print('------------ Options -------------')

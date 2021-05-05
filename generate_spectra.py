@@ -2,7 +2,7 @@ import argparse
 import torch
 import time
 from argparse import Namespace
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import scipy.io as io
 
 parser = argparse.ArgumentParser()
@@ -24,7 +24,7 @@ args.crop_range = slice(*eval(args.crop_range))
 
 opt = Namespace(**{'roi': args.crop_range, 'mag': False, 'ppm_range': args.ppm_range, 'full_data_length': 1024})
 torch.cuda.set_device('cuda:'+ str(args.gpu_id))
-pm = PhysicsModel(opt).cuda()
+pm = MRSPhysicsModel(opt).cuda()
 
 if args.quantitity_path:
     quantitites = io.loadmat(args.quantitity_path)

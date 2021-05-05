@@ -7,8 +7,7 @@ from models.auxiliaries.lr_scheduler import get_scheduler_D, get_scheduler_G
 from models import networks
 from util.image_pool import ImagePool
 from models.define import define_D, define_splitter, define_styleGenerator
-from models.auxiliaries.physics_model import PhysicsModel
-from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
+from models.auxiliaries.physics_model_interface import PhysicsModel
 from models.cycleGAN_W import CycleGAN_W
 T = torch.Tensor
 
@@ -119,14 +118,14 @@ class CycleGAN_REG(CycleGAN_W):
         real_A = real_B = fake_A = fake_B = rec_A = rec_B = x = None
 
         x = np.linspace(*self.opt.ppm_range, self.opt.full_data_length)[self.opt.roi]
-        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+        real_A = util.get_img_from_fig(x, self.real_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+        fake_B = util.get_img_from_fig(x, self.physicsModel.forward(self.fake_params)[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+        rec_A = util.get_img_from_fig(x, self.rec_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
 
         if hasattr(self, 'real_params'):
-            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.mag)
-            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_params)[0:1].detach(), 'PPM', magnitude=self.opt.mag)
+            real_B = util.get_img_from_fig(x, self.physicsModel.forward(self.real_params)[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+            fake_A = util.get_img_from_fig(x, self.fake_A[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
+            rec_B = util.get_img_from_fig(x, self.physicsModel.forward(self.rec_params)[0:1].detach(), 'PPM', magnitude=self.opt.representation == 'mag')
 
         return OrderedDict([('real_A', real_A), ('fake_B', fake_B), ('rec_A', rec_A),
                                 ('real_B', real_B), ('fake_A', fake_A), ('rec_B', rec_B)])

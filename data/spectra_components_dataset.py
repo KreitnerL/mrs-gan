@@ -1,3 +1,5 @@
+# @depricated
+
 import functools
 import json
 import os
@@ -19,9 +21,9 @@ class SpectraComponentDataset(BaseDataset):
         self.opt = opt
         self.roi = self.opt.roi
         self.root = opt.dataroot
-        if opt.real:
+        if opt.representation == 'real':
             self.channel_index = slice(0,1)
-        elif opt.imag:
+        elif opt.representation == 'imag':
             self.channel_index = slice(1,2)
         else:
             self.channel_index = slice(None, None)
@@ -56,7 +58,7 @@ class SpectraComponentDataset(BaseDataset):
 
     def innit_transformations(self):
         self.transformations = [lambda A: np.asarray(A).astype(float)]
-        if self.opt.mag:
+        if self.opt.representation == 'mag':
             self.transformations.append(lambda A: np.expand_dims(np.sqrt(A[0,:]**2 + A[1,:]**2), 0))
         self.transformations.append(lambda A: A/np.amax(abs(A)))
         # self.transformations.append(lambda A: A/self.opt.relativator.detach().cpu().numpy())

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from argparse import Namespace
 import random
-from models.auxiliaries.physics_model import PhysicsModel
+from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import torch
 
 # path = '/home/kreitnerl/Datasets/syn_4_real/dataset_spectra.mat'
@@ -57,7 +57,7 @@ def plotIdeal():
     naa = np.squeeze(d['naa'])
     torch.cuda.set_device(7)
     opt = Namespace(**{'roi': crop_range, 'mag': False, 'ppm_range': ppm_range, 'full_data_length': 1024})
-    pm = PhysicsModel(opt).cuda()
+    pm = MRSPhysicsModel(opt).cuda()
 
     plt.figure()
     for index,i in enumerate(indices):
