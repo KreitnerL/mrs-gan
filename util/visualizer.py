@@ -104,7 +104,7 @@ class Visualizer():
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
 
-        plt.legend(('15% error mark', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.physics_model.get_label_names()))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'validation_score.png')
         plt.savefig(path, format='png', bbox_inches='tight')
@@ -132,7 +132,7 @@ class Visualizer():
         for i in range(len(score)):
             plt.plot(x, np.array(self.training_score)[:,i])
 
-        plt.legend(('15% error mark', *self.opt.label_names))
+        plt.legend(('15% error mark', *self.opt.physics_model.get_label_names()))
 
         path = os.path.join(self.opt.checkpoints_dir, self.opt.name, 'training_score.png')
         plt.savefig(path, format='png', bbox_inches='tight')

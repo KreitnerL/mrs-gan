@@ -13,9 +13,7 @@ class BaseOptions():
         self.initialized = False
 
     def initialize(self):
-        self.parser.add_argument('--real', action="store_true", default=False, help='Use only the real portion of the signal')
-        self.parser.add_argument('--imag', action="store_true", default=False, help='Use only the real portion of the signal')
-        self.parser.add_argument('--mag', action="store_true", default=False, help='Use the magnitude of the spectra')
+        self.parser.add_argument('--representation', default='complex', help='Representation of the spectra. [complex | real | imag| mag]')
         self.parser.add_argument('--normalize', action='store_true', default=False, help='Normalize the input data')
         self.parser.add_argument('--standardize', action='store_true', default=False, help='Standardize the input data')
         self.parser.add_argument('--norm_range', type=list, default=[-1, 1], help='Range in which the input data should be normalized')
@@ -27,6 +25,9 @@ class BaseOptions():
         self.parser.add_argument('--display_winsize', type=int, default=256, help='display window size for HTML')
 
         self.parser.add_argument('--dataroot', type=str, required=True, help='path to images (should have subfolders trainA, trainB, valA, valB, etc)')
+        self.parser.add_argument('--dataname', type=str, default='spectra', help='Name of the variable in dataroot containing the spectra')
+        self.parser.add_argument('--val_offset', type=int, required=True, help='Offset of the validation set in the dataset')
+        self.parser.add_argument('--test_offset', type=int, required=True, help='Offset of the test set in the dataset')
         self.parser.add_argument('--batch_size', type=int, default=50, help='input batch size')
         self.parser.add_argument('--loadSize', type=int, default=286, help='scale images to this size')
         self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
@@ -44,7 +45,7 @@ class BaseOptions():
         self.parser.add_argument('--n_downsampling', type=int, default=3, help='Number of down-/upsampling steps in the Generator')
         self.parser.add_argument('--gpu_ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
         self.parser.add_argument('--name', type=str, default='experiment_name', help='name of the experiment. It decides where to store samples and models')
-        self.parser.add_argument('--dataset_mode', type=str, default='spectra_component_dataset', help='chooses how datasets are loaded.  [dicom_spectral_dataset, spectra_component_dataset]')
+        self.parser.add_argument('--dataset_mode', type=str, default='reg_cyclegan_dataset', help='chooses how datasets are loaded.  [reg_cyclegan_dataset | dicom_spectral_dataset | spectra_component_dataset]')
         self.parser.add_argument('--model', type=str, default='cycleGAN_W_REG', help='chooses which model to use. [cycleGAN, cycleGAN_W, cycleGAN_W_REG]')
         self.parser.add_argument('--nThreads', default=0, type=int, help='# threads for loading data')
         self.parser.add_argument('--checkpoints_dir', type=str, default='/home/kreitnerl/mrs-gan/checkpoints', help='model checkpoints are saved here')
@@ -81,10 +82,12 @@ class BaseOptions():
 
         opt.ppm_range = list(map(float, opt.ppm_range.split(',')))
         opt.roi = slice(*list(map(int, opt.roi.split(','))))
-        if any([opt.mag, opt.real, opt.imag]):
-            opt.input_nc = 1
-        else:
+
+        assert opt.representation in ['real', 'imag', 'complex', 'mag']
+        if opt.representation == 'complex':
             opt.input_nc = 2
+        else:
+            opt.input_nc = 1
 
     def parse(self):
         if not self.initialized:

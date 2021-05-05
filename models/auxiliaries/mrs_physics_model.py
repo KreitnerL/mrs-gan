@@ -14,7 +14,8 @@ class MRSPhysicsModel(PhysicsModel):
         self.opt = opt
         self.roi = self.opt.roi
         self.standard_β = -0.000416455078125
-        opt.mrs_physics_model = self
+        self.labels_names = ['cho', 'naa']
+        opt.physics_model = self
 
         self.params = dict()
         dirname = os.path.dirname(__file__)
@@ -45,7 +46,7 @@ class MRSPhysicsModel(PhysicsModel):
         ), dim=0).unsqueeze(0).cuda()
         self.register_buffer('basis_spectra', _export(self.basis_fids, roi=self.roi))
 
-        if self.opt.mag:
+        if self.opt.representation == 'mag':
             index_real = [i%2==0 for i in range(self.basis_spectra.shape[1])]
             index_imag = [i%2==1 for i in range(self.basis_spectra.shape[1])]
             spectrum_real = self.basis_spectra[:,index_real,:]
@@ -115,7 +116,7 @@ class MRSPhysicsModel(PhysicsModel):
             - Tensor of shape (BxCxL) containing ideal spectrum
         """
         parameters = torch.cat([parameters*self.max_per_met+self.min_per_met, self.cre_p.repeat(parameters.shape[0],1)],1)
-        if self.opt.mag:
+        if self.opt.representation == 'mag':
             modulated_basis_spectra = parameters.unsqueeze(-1)*self.basis_spectra
             ideal_spectra = modulated_basis_spectra.sum(1, keepdim=True)
         else:
@@ -135,7 +136,10 @@ class MRSPhysicsModel(PhysicsModel):
         return x.view(*shape)
 
     def get_num_out_channels(self):
-        return 2
+        return len(self.labels_names)
+
+    def get_label_names(self):
+        return self.labels_names
 
     def quantity_to_param(self, quantities: T):
         return (quantities-self.min_per_met) / self.max_per_met
@@ -147,7 +151,7 @@ class MRSPhysicsModel(PhysicsModel):
         import matplotlib.pyplot as plt
         x = np.linspace(self.opt.ppm_range[0], self.opt.ppm_range[-1], self.opt.full_data_length)[self.opt.roi]
         plt.figure()
-        if self.opt.mag:
+        if self.opt.representation == 'mag':
             s = self.basis_spectra[0].detach().cpu().numpy()
             s = s/np.amax(s)
             if plot_sum:
@@ -173,7 +177,7 @@ class MRSPhysicsModel(PhysicsModel):
         plt.legend(labels)
         plt.xlim(x[0], x[-1])
         plt.xlabel('ppm')
-        plt.title('%sBasisspectra'%('Magnitude ' if self.opt.mag else ''))
+        plt.title('%sBasisspectra'%('Magnitude ' if self.opt.representation == 'mag' else ''))
         plt.savefig(path, format='png', bbox_inches='tight')
 
 #################################################################

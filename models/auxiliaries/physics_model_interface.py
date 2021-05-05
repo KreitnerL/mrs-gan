@@ -2,7 +2,7 @@ from abc import abstractclassmethod
 import torch
 import torch.nn as nn
 
-class PhysicsModel(nn.Model):
+class PhysicsModel(nn.Module):
     def __init__(self):
         super(PhysicsModel, self).__init__()
 
@@ -22,9 +22,16 @@ class PhysicsModel(nn.Model):
         raise NotImplementedError()
 
     @abstractclassmethod
-    def get_num_out_channels() -> int:
+    def get_num_out_channels(self) -> int:
         """
         Returns the number of parameters that need to be predicted in order to be used by the physics model
+        """
+        raise NotImplementedError()
+
+    @abstractclassmethod
+    def get_label_names(self) -> list:
+        """
+        Return the variable names of the parameters that need to be predicted in order to be used by the physics model
         """
         raise NotImplementedError()
 

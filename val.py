@@ -36,7 +36,7 @@ for phase, dataset in datasets.items():
     print('Average Relative Error:', list(map(lambda x: round(x, 3), avg_err_rel)))
     print('Average Absolute Error:', list(map(lambda x: round(x, 3), avg_abs_err)))
     print('Coefficient of Determination:', list(map(lambda x: round(x, 3), r2)))
-    save_boxplot(err_rel, opt.results_dir + opt.name + '_' + phase, opt.label_names, 1)
+    save_boxplot(err_rel, opt.results_dir + opt.name + '_' + phase, physicsModel.get_label_names(), 1)
     print('\n')
 
 print('Done. You can find you the generated validaton plot at', opt.results_dir + opt.name)
