@@ -92,8 +92,8 @@ class CustomStopper(tune.Stopper):
             return self.should_stop
 
 search_space = {
-            "lambda_A":  [1.0,15.0],
-            "lambda_B":  [1.0,15.0],
+            "lambda_A":  [5.0,15.0],
+            "lambda_B":  [5.0,15.0],
             "lambda_feat": [1,5],
             "dlr": [0.0001, 0.0003],
             "glr": [0.0001, 0.0003]
