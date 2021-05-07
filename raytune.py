@@ -1,4 +1,3 @@
-import math
 from models.cycleGAN_W_REG import cycleGAN_W_REG
 import os
 from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
@@ -11,7 +10,7 @@ from ray import tune
 from ray.tune.schedulers.pb2 import PB2
 from ray.tune.trial import ExportFormat
 import numpy as np
-import matplotlib.pyplot as plt
+from util.plot_PBT import plotPBT
 
 # tensorboard --logdir ray_results/
 
@@ -93,9 +92,9 @@ class CustomStopper(tune.Stopper):
             return self.should_stop
 
 search_space = {
-            "lambda_A":  [8.0,15.0],
-            "lambda_B":  [1.0,5.0],
-            # "lambda_feat": tune.quniform(1,5,0.2),
+            "lambda_A":  [1.0,15.0],
+            "lambda_B":  [1.0,15.0],
+            "lambda_feat": [1,5],
             "dlr": [0.0001, 0.0003],
             "glr": [0.0001, 0.0003]
         }
@@ -125,24 +124,11 @@ analysis = tune.run(
     mode="min",
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
-    resources_per_trial={"gpu": 0.25},
+    resources_per_trial={"gpu": 0.07},
     keep_checkpoints_num=1,
-    num_samples=8,
+    num_samples=20,
     config={key: tune.uniform(*val) for key, val in search_space.items()},
     raise_on_failed_trial=False
 )
 
-# Plot by wall-clock time
-dfs = analysis.fetch_trial_dataframes()
-# This plots everything on the same plot
-ax = None
-x = 0
-for d in dfs.values():
-    x = max(x,max(d.training_iteration))
-    ax = d.plot("training_iteration", "score", ax=ax, legend=False)
-x = int(math.ceil(x*1.1/10.0))*10
-plt.plot(list(range(x)), [0.15]*x, 'r--')
-plt.legend([*['_nolegend_']*len(dfs), '15% error mark'])
-plt.xlabel("Steps")
-plt.ylabel("Mean Relative Error")
-plt.savefig(init_opt.name+'.png', format='png', bbox_inches='tight')
+plotPBT(os.path.join('ray_results/', init_opt.name))
