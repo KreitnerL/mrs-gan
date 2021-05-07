@@ -24,9 +24,9 @@ opt = merge_options(default_options, train_options, opt)
 # hard-code some parameters for test
 opt.phase = 'val'
 
+physicsModel = MRSPhysicsModel(opt)
 datasets = {phase: CreateDataLoader(opt, phase).load_data() for phase in ['train', 'val', 'test']}
 validator = Validator(opt)
-physicsModel = MRSPhysicsModel(opt)
 model = create_model(opt, physicsModel)      # create a model given opt.model and other options
 model.load_checkpoint(opt.model_path)
 

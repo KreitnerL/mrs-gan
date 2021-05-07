@@ -23,9 +23,9 @@ class RegCycleGANDataset(BaseDataset):
             channel_index = slice(1,2)
         else:
             channel_index = slice(None, None)
-        if opt.phase == 'train':
+        if phase == 'train':
             self.selection = slice(0, opt.val_offset)
-        elif opt.phase == 'val':
+        elif phase == 'val':
             self.selection = slice(opt.val_offset, opt.test_offset)
         else:
             self.selection = slice(opt.test_offset, None)
@@ -42,15 +42,15 @@ class RegCycleGANDataset(BaseDataset):
 
         # Load labels from .mat file
         self.labels = []
-        if self.phase != 'test':
-            for label_name in self.physics_model.get_label_names():
-                if not label_name in all_data:
-                    print('WARNING: ' + label_name + ' not found in dataroot!')
-                    continue
-                self.labels.append(all_data[label_name])
-            self.num_labels = len(self.labels)
-            self.labels = from_numpy(np.transpose(np.concatenate(self.labels, 0)))
-            self.label_sampler = self.labels[self.selection]
+        # if self.phase != 'test':
+        for label_name in self.physics_model.get_label_names():
+            if not label_name in all_data:
+                print('WARNING: ' + label_name + ' not found in dataroot!')
+                continue
+            self.labels.append(all_data[label_name])
+        self.num_labels = len(self.labels)
+        self.labels = from_numpy(np.transpose(np.concatenate(self.labels, 0)))
+        self.label_sampler = self.labels[self.selection]
 
         # Either use random or fixed labels
         # if self.opt.useAlabels:
@@ -70,10 +70,10 @@ class RegCycleGANDataset(BaseDataset):
     def __getitem__(self, index):
         sample: dict = {
             'A': self.dataset[index % self.A_size],
-            'label_A': self.empty_tensor
+            'label_A': self.label_sampler[index % self.A_size]
         }
-        if self.phase != 'test':
-            sample['label_A'] = self.label_sampler[index % self.A_size]
+        # if self.phase != 'test':
+        #     sample['label_A'] = self.label_sampler[index % self.A_size]
         if self.phase == 'train':
             sample['B'] = self.B_sampler(index)
         return sample

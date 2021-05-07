@@ -1,5 +1,6 @@
 import itertools
 from collections import OrderedDict
+from models.auxiliaries.FeatureProfileLoss import FeatureProfileLoss
 import torch
 import numpy as np
 import util.util as util
@@ -41,7 +42,7 @@ class CycleGAN_REG(CycleGAN_W):
 
             self.criterionGAN = networks.GANLoss(gan_mode=opt.gan_mode, tensor=self.Tensor)
             self.criterionCycle = torch.nn.MSELoss()
-            # self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
+            self.criterionEntropy = FeatureProfileLoss(kernel_sizes=(2,3,4,5))
             self.networks.extend([self.netD_B])
 
     def init_optimizers(self, opt):
@@ -88,11 +89,11 @@ class CycleGAN_REG(CycleGAN_W):
         # Backward cycle loss
         self.loss_cycle_B: T = (self.criterionCycle(self.fake_params, self.fake_params) + self.criterionCycle(self.real_style, self.real_style)) * self.opt.lambda_B
         # Feature loss
-        # if self.opt.lambda_feat != 0:
-        #     entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
-        #     self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
-        # else:
-        #     self.loss_feat_A = 0
+        if self.opt.lambda_feat != 0:
+            entropy_loss, content_loss = self.criterionEntropy.forward(self.rec_A, self.real_A)
+            self.loss_feat_A: T = self.opt.lambda_feat * (entropy_loss + content_loss)
+        else:
+            self.loss_feat_A = 0
 
         # combined loss
         self.loss_G: T = self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B # + self.loss_feat_A

@@ -33,7 +33,7 @@ class FeatureProfileLoss(nn.Module):
 
     def forward(self, input, target):
         _, _, entropy_loss, content_loss = self.entropyloss((input, target, self.entropy_loss, self.content_loss))
-        return 100*entropy_loss, content_loss
+        return 10*entropy_loss, content_loss
 
 class Loss(nn.Module):
     def __init__(self, k):
@@ -83,7 +83,7 @@ class Feature(nn.Module):
         temp = input.gather(2, self.index)
         temp = temp.reshape(self.s[0],self.s[1],self.s[2] - self.k + 1,self.k)
 
-        entropy = torch.sum(nn.functional.softmax(temp, dim=3) * nn.functional.log_softmax(temp, dim=3),dim=3)
-        content = torch.sum(temp, dim=3)
+        entropy = torch.mean(nn.functional.softmax(temp, dim=3) * nn.functional.log_softmax(temp, dim=3),dim=3)
+        content = torch.mean(temp, dim=3)
 
         return  entropy, content
