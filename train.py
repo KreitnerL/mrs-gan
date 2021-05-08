@@ -66,22 +66,6 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
             visualizer.plot_current_losses()
             visualizer.save_smooth_loss()
 
-        if total_iters % opt.save_latest_freq == 0:   # cache our latest model every <save_latest_freq> iterations
-            # if opt.val_path:
-            opt.phase = 'val'
-            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set, num_batches=20)
-            visualizer.plot_current_validation_score(avg_err_rel, total_iters)
-            if best_score > sum(avg_err_rel):
-                best_score = sum(avg_err_rel)
-                model.create_checkpoint(best_path)
-
-            avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set, num_batches=20)
-            visualizer.plot_current_training_score(avg_err_rel, total_iters)
-            opt.phase = 'train'
-            print('saving the latest model (epoch %d, total_iters %d)' % (epoch, total_iters))
-            model.create_checkpoint(latest_path)
-            visdom.display_current_results(model.get_current_visuals(), epoch, True)
-
         model.set_input(data)
         iter_data_time = time.time()
 
@@ -92,7 +76,18 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
     if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
         print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
         model.create_checkpoint(latest_path)
-        model.create_checkpoint(os.path.join(model.save_dir, str(epoch)))
+        # model.create_checkpoint(os.path.join(model.save_dir, str(epoch)))
+        opt.phase = 'val'
+        avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set, num_batches=20)
+        visualizer.plot_current_validation_score(avg_err_rel, total_iters)
+        if best_score > sum(avg_err_rel):
+            best_score = sum(avg_err_rel)
+            model.create_checkpoint(best_path)
+
+        avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set, num_batches=20)
+        visualizer.plot_current_training_score(avg_err_rel, total_iters)
+        opt.phase = 'train'
+        visdom.display_current_results(model.get_current_visuals(), epoch, True)
 
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.n_epochs + opt.n_epochs_decay, time.time() - epoch_start_time))

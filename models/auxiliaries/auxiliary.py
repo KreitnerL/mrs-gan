@@ -64,7 +64,7 @@ transpose_conv = {
     1: nn.ConvTranspose1d,
     2: nn.ConvTranspose2d
 }
-def get_conv():
+def get_conv() -> nn.Conv1d:
     return conv[num_dimensions]
 def get_conv_transpose():
     return transpose_conv[num_dimensions]
