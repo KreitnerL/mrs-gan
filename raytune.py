@@ -11,7 +11,9 @@ from ray.tune.schedulers.pb2 import PB2
 from ray.tune.trial import ExportFormat
 import numpy as np
 from util.plot_PBT import plotPBT
-
+import torch
+import random
+SEED = random.randint(0,1e6)
 # tensorboard --logdir ray_results/
 
 def get_score(validator: Validator, dataset, model: cycleGAN_W_REG):
@@ -20,6 +22,7 @@ def get_score(validator: Validator, dataset, model: cycleGAN_W_REG):
     return score
 
 def training_function(config, checkpoint_dir=None):
+    torch.manual_seed(config['seed'])
     opt = update_options(init_opt, config)
 
     physicsModel = MRSPhysicsModel(opt)
@@ -92,9 +95,9 @@ class CustomStopper(tune.Stopper):
             return self.should_stop
 
 search_space = {
-            "lambda_A":  [5.0,15.0],
-            "lambda_B":  [5.0,15.0],
-            "lambda_feat": [1,5],
+            "lambda_A":  [5.,15],
+            "lambda_B":  [0.,10.],
+            "lambda_feat": [0.,10.],
             "dlr": [0.0001, 0.0003],
             "glr": [0.0001, 0.0003]
         }
@@ -113,6 +116,8 @@ stopper = CustomStopper()
 BEST_CHECKPOINT_PATH = os.path.join('ray_results/', init_opt.name, 'best')
 STEPS_TO_NEXT_CHECKPOINT = 10
 
+start_config = {key: tune.uniform(*val) for key, val in search_space.items()}
+start_config.update({'seed': SEED})
 
 analysis = tune.run(
     training_function,
@@ -124,10 +129,10 @@ analysis = tune.run(
     mode="min",
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
-    resources_per_trial={"gpu": 0.07},
+    resources_per_trial={"gpu": 0.16},
     keep_checkpoints_num=1,
     num_samples=20,
-    config={key: tune.uniform(*val) for key, val in search_space.items()},
+    config=start_config,
     raise_on_failed_trial=False
 )
 
