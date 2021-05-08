@@ -17,7 +17,7 @@ def make_dataset(dir, file_ext=[]):
     return paths
 
 def plotPBT(path):
-    name = path.split('/')[-2]
+    name = path.split('/')[-1]
     paths = sorted(make_dataset(path, ['result.json']))
     scores = []
     for i, path in enumerate(paths):
