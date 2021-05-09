@@ -10,7 +10,7 @@ from ray import tune
 from ray.tune.schedulers.pb2 import PB2
 from ray.tune.trial import ExportFormat
 import numpy as np
-from util.plot_PBT import plotPBT
+from util.plot_PBT import plotPBT, plot_pbt_schedule
 import torch
 import random
 SEED = random.randint(0,1e6)
@@ -95,11 +95,11 @@ class CustomStopper(tune.Stopper):
             return self.should_stop
 
 search_space = {
-            "lambda_A":  [5.,15],
-            "lambda_B":  [0.,10.],
-            "lambda_feat": [0.,10.],
-            "dlr": [0.0001, 0.0003],
-            "glr": [0.0001, 0.0003]
+            "lambda_A":  [0.,20],
+            "lambda_B":  [0.,20.],
+            "lambda_feat": [0.,20.],
+            "dlr": [0.0001, 0.0004],
+            "glr": [0.0001, 0.0004]
         }
 
 PBB = PB2(
@@ -137,3 +137,4 @@ analysis = tune.run(
 )
 
 plotPBT(os.path.join('ray_results/', init_opt.name))
+plot_pbt_schedule(os.path.join('ray_results/', init_opt.name, ''))
