@@ -6,7 +6,7 @@ It will load a saved model from '--checkpoints_dir' and save the results to '--r
 It first creates model and dataset given the option. It will hard-code some parameters.
 It then runs inference for '--num_test' images and save results to an HTML file.
 """
-from debugging_scripts.visualize_results import generate_images_of_spectra
+from util.visualize_results import generate_images_of_spectra
 from models.auxiliaries.mrs_physics_model import MRSPhysicsModel
 import os
 from util.util import load_options, merge_options, mkdir, progressbar
