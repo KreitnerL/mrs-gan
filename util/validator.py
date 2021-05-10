@@ -42,6 +42,6 @@ class Validator:
             predictions.append(prediction)
         predictions = np.concatenate(predictions)
         labels = torch.cat(labels).numpy()
-        avg_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, labels)
+        avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = compute_error(predictions, labels)
 
-        return avg_abs_err, err_rel, avg_err_rel, r2
+        return avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err

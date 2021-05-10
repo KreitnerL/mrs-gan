@@ -79,9 +79,9 @@ class Feature(nn.Module):
         """
         if not self.initialized:
             self.initialize(input)
-
-        temp = input.gather(2, self.index)
-        temp = temp.reshape(self.s[0],self.s[1],self.s[2] - self.k + 1,self.k)
+        batch_size = input.shape[0]
+        temp = input.gather(2, self.index[:batch_size])
+        temp = temp.reshape(batch_size,self.s[1],self.s[2] - self.k + 1,self.k)
 
         entropy = torch.mean(nn.functional.softmax(temp, dim=3) * nn.functional.log_softmax(temp, dim=3),dim=3)
         content = torch.mean(temp, dim=3)

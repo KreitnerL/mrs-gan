@@ -244,20 +244,24 @@ def compute_error(predictions: list, y):
             - The Mean Absolute Error (L1) per metabolite. (M) with M=number of metabolites, N=number of test samples
             - The relative error per metabolite per fake. (MxN) with M=number of metabolites, N=number of test samples
             - The Average Relative Error per metabolite. (M) with M=number of metabolites
-            - The Coefficient of Determination (R^2) pre metabolite. (M) with M=number of metabolites
+            - The Coefficient of Determination (R^2) per metabolite. (M) with M=number of metabolites
+            - The Median Relative Error per metabolite. (M) with M=number of metabolites
         """
         avg_abs_err = []
         err_rel = []
         avg_err_rel = []
         r2 = []
+        median_rel_err = []
         for metabolite in range(len(y[0])):
             abs_error = (abs(predictions[:,metabolite] - y[:,metabolite]))
             avg_abs_err.append(np.mean(abs_error))
             err_rel.append(abs_error / (abs(y[:,metabolite])))
             avg_err_rel.append(np.mean(err_rel[metabolite]))
             r2.append(r2_score(predictions[:,metabolite], y[:,metabolite]))
+            median_rel_err.append(np.median(err_rel[metabolite]))
+
         
-        return avg_abs_err, err_rel, avg_err_rel, r2
+        return avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err
 
 
 def save_boxplot(err_rel, path: str, labels: list, max_y = None):

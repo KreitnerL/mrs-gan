@@ -52,16 +52,9 @@ class RegCycleGANDataset(BaseDataset):
         self.labels = from_numpy(np.transpose(np.concatenate(self.labels, 0)))
         self.label_sampler = self.labels[self.selection]
 
-        # Either use random or fixed labels
-        # if self.opt.useAlabels:
-        #     permutation = np.random.permutation(self.A_size)
-        #     self.B_sampler = lambda ind: self.label_sampler[permutation[ind]]
-        # else:
-        self.B_sampler = self.generate_B_sample
-
-    def generate_B_sample(self, index = None):
-        param = torch.rand((1, self.num_labels))
-        return self.physics_model.param_to_quantity(param).squeeze(0)
+    def generate_B_sample(self):
+        param = torch.rand(self.num_labels)
+        return param
 
     def innit_length(self, full_length):
         self.opt.full_data_length = full_length
@@ -72,10 +65,8 @@ class RegCycleGANDataset(BaseDataset):
             'A': self.dataset[index % self.A_size],
             'label_A': self.label_sampler[index % self.A_size]
         }
-        # if self.phase != 'test':
-        #     sample['label_A'] = self.label_sampler[index % self.A_size]
         if self.phase == 'train':
-            sample['B'] = self.B_sampler(index)
+            sample['B'] = self.generate_B_sample()
         return sample
 
     def __len__(self):

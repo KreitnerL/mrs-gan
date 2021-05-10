@@ -91,7 +91,7 @@ class BaselineCreator:
 
         f.write('\n----------- Train Set -----------\n')
         predictions = model.predict(test_set.spectra_train)
-        mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_train)
+        mean_abs_err, err_rel, avg_err_rel, r2, median_rel_err = compute_error(predictions, test_set.param_train)
         f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
         f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
         f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')
@@ -99,7 +99,7 @@ class BaselineCreator:
         
         f.write('\n----------- Val Set -----------\n')
         predictions = model.predict(test_set.spectra_val)
-        mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_val)
+        mean_abs_err, err_rel, avg_err_rel, r2, median_rel_err = compute_error(predictions, test_set.param_val)
         f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
         f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
         f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')
@@ -107,7 +107,7 @@ class BaselineCreator:
 
         f.write('\n----------- Test Set -----------\n')
         predictions = model.predict(test_set.spectra_test)
-        mean_abs_err, err_rel, avg_err_rel, r2 = compute_error(predictions, test_set.param_test)
+        mean_abs_err, err_rel, avg_err_rel, r2, median_rel_err = compute_error(predictions, test_set.param_test)
         f.write('Average Relative Error:' + str(list(map(lambda x: round(x, 2), avg_err_rel))) + '\n')
         f.write('Mean Absolute Error:' + str(list(map(lambda x: round(x, 2), mean_abs_err))) + '\n')
         f.write('Coefficient of Determination:' + str(list(map(lambda x: round(x, 2), r2))) + '\n')

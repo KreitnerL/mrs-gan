@@ -82,7 +82,7 @@ class Visualizer():
         plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
-    def plot_current_validation_score(self, score, total_iters):
+    def plot_current_validation_score(self, score, epoch):
         with open(self.validation_log, 'a') as f:
             f.write(', '.join(map(str, score))+'\n')
 
@@ -94,12 +94,13 @@ class Visualizer():
         else:
             plt.figure(self.figure2.number)
 
-        plt.xlabel('Iteration')
-        plt.ylabel('Mean Relative Error')
+        plt.xlabel('Epoch')
+        plt.ylabel('Median Relative Error')
         plt.title(self.name + ' validation error over time')
         plt.ylim([0,max(1,np.amax(self.validation_score))])
-        step_size = int(total_iters/len(self.validation_score))
-        x = list(range(step_size, total_iters+1, step_size))
+        # step_size = int(total_iters/len(self.validation_score))
+        # x = list(range(step_size, total_iters+1, step_size))
+        x = list(range(epoch))
         plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.validation_score)[:,i])
@@ -110,7 +111,7 @@ class Visualizer():
         plt.savefig(path, format='png', bbox_inches='tight')
         plt.cla()
 
-    def plot_current_training_score(self, score, total_iters):
+    def plot_current_training_score(self, score, epoch):
         with open(self.training_log, 'a') as f:
             f.write(', '.join(map(str, score))+'\n')
 
@@ -122,12 +123,13 @@ class Visualizer():
         else:
             plt.figure(self.figure2.number)
 
-        plt.xlabel('Iteration')
-        plt.ylabel('Mean Relative Error')
+        plt.xlabel('Epoch')
+        plt.ylabel('Median Relative Error')
         plt.title(self.name + ' training error over time')
         plt.ylim([0,max(1,np.amax(self.training_score))])
-        step_size = int(total_iters/len(self.training_score))
-        x = list(range(step_size, total_iters+1, step_size))
+        # step_size = int(total_iters/len(self.training_score))
+        # x = list(range(step_size, total_iters+1, step_size))
+        x = list(range(epoch))
         plt.plot(x, [0.15]*len(x), 'r--')
         for i in range(len(score)):
             plt.plot(x, np.array(self.training_score)[:,i])
@@ -171,7 +173,7 @@ class Visualizer():
             self.figure = plt.figure()
         else:
             plt.figure(self.figure.number)
-        plt.xlabel('Iterations')
+        plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.title(self.name + ' loss over time')
         # plt.yscale('symlog')

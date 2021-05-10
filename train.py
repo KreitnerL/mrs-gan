@@ -78,14 +78,14 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
         model.create_checkpoint(latest_path)
         # model.create_checkpoint(os.path.join(model.save_dir, str(epoch)))
         opt.phase = 'val'
-        avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set, num_batches=20)
-        visualizer.plot_current_validation_score(avg_err_rel, total_iters)
-        if best_score > sum(avg_err_rel):
-            best_score = sum(avg_err_rel)
+        avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = validator.get_validation_score(model, val_set, num_batches=20)
+        visualizer.plot_current_validation_score(median_rel_err, epoch)
+        if best_score > sum(median_rel_err):
+            best_score = sum(median_rel_err)
             model.create_checkpoint(best_path)
 
-        avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set, num_batches=20)
-        visualizer.plot_current_training_score(avg_err_rel, total_iters)
+        avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = validator.get_validation_score(model, train_set, num_batches=20)
+        visualizer.plot_current_training_score(median_rel_err, epoch)
         opt.phase = 'train'
         visdom.display_current_results(model.get_current_visuals(), epoch, True)
 
@@ -94,12 +94,12 @@ for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):
 
 # if opt.val_path:
 opt.phase = 'val'
-avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, val_set)
-visualizer.plot_current_validation_score(avg_abs_err, total_iters)
-if best_score > sum(avg_err_rel):
-    best_score = sum(avg_err_rel)
+avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = validator.get_validation_score(model, val_set)
+visualizer.plot_current_validation_score(median_rel_err, epoch)
+if best_score > sum(median_rel_err):
+    best_score = sum(median_rel_err)
     model.create_checkpoint(best_path)
-avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, train_set)
-visualizer.plot_current_training_score(avg_abs_err, total_iters)
+avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = validator.get_validation_score(model, train_set)
+visualizer.plot_current_training_score(median_rel_err, epoch)
 opt.phase = 'train'
 model.create_checkpoint(latest_path)

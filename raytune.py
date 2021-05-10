@@ -17,8 +17,8 @@ SEED = random.randint(0,1e6)
 # tensorboard --logdir ray_results/
 
 def get_score(validator: Validator, dataset, model: cycleGAN_W_REG):
-    avg_abs_err, err_rel, avg_err_rel, r2 = validator.get_validation_score(model, dataset, 20)
-    score = np.mean(avg_err_rel)
+    avg_abs_err, err_rel, avg_err_rel, r2, median_rel_err = validator.get_validation_score(model, dataset, 20)
+    score = np.mean(median_rel_err)
     return score
 
 def training_function(config, checkpoint_dir=None):
@@ -98,8 +98,8 @@ search_space = {
             "lambda_A":  [0.,20],
             "lambda_B":  [0.,20.],
             "lambda_feat": [0.,20.],
-            "dlr": [0.0001, 0.0004],
-            "glr": [0.0001, 0.0004]
+            # "dlr": [0.0001, 0.0004],
+            # "glr": [0.0001, 0.0004]
         }
 
 PBB = PB2(
@@ -129,7 +129,7 @@ analysis = tune.run(
     mode="min",
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
-    resources_per_trial={"gpu": 0.16},
+    resources_per_trial={"gpu": int(100.0/7)/100.0},
     keep_checkpoints_num=1,
     num_samples=20,
     config=start_config,

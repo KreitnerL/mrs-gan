@@ -39,14 +39,19 @@ def plotPBT(path, save_dir: str = None):
     plt.plot(list(range(x)), [0.15]*x, 'r--')
     plt.legend([*['_nolegend_']*len(scores), '15% error mark'])
     plt.xlabel("Steps")
-    plt.ylabel("Mean Relative Error")
+    plt.ylabel("Median Relative Error")
     plt.ylim(bottom=0)
     plt.savefig(os.path.join(save_dir, '%s.png'%name), format='png', bbox_inches='tight')
 
 
 def plot_pbt_schedule(path: str, save_dir: str = None, file_names: list = ['result.json']):
     if save_dir is None:
-        save_dir = os.path.join(os.getcwd(), 'results',path.split('/')[-2], 'schedule')
+        root_dir = os.path.join(os.getcwd(), 'results', path.split('/')[-2])
+        if not os.path.isdir(root_dir):
+            os.mkdir(root_dir)
+        save_dir = os.path.join(root_dir, 'schedule')
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
     paths = sorted(make_dataset(path, ['result.json']))
     configs = []
     params = None
@@ -59,8 +64,6 @@ def plot_pbt_schedule(path: str, save_dir: str = None, file_names: list = ['resu
                 configs[-1].append(list(step.values()))
                 if params is None:
                     params = list(step.keys())
-    if not os.path.isdir(save_dir):
-        os.mkdir(save_dir)
     max_iter = min(list(map(len, configs)))
     configs = np.array(list(map(lambda x: x[:max_iter], configs)))
     for i, param in enumerate(params):
@@ -80,5 +83,5 @@ def plot_pbt_schedule(path: str, save_dir: str = None, file_names: list = ['resu
     print('Done. You can find the schedules at at', save_dir)
 
 if __name__ == "__main__":
-    plotPBT('/home/kreitnerl/mrs-gan/ray_results/test_feat/')
-    plot_pbt_schedule('/home/kreitnerl/mrs-gan/ray_results/REG_CycleGANv2_3/')
+    # plotPBT('/home/kreitnerl/mrs-gan/ray_results/test_feat/')
+    plot_pbt_schedule('/home/kreitnerl/mrs-gan/ray_results/REG_CycleGANv2_5/')
