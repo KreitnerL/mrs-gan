@@ -61,7 +61,7 @@ def plotIdeal():
 
     plt.figure()
     for index,i in enumerate(indices):
-        params = torch.tensor([[cho[i], naa[i]]]).cuda()/3.6
+        params = torch.tensor([[cho[i], naa[i]]]).cuda()/3.5
         spectrum = np.squeeze(pm.forward(params).detach().cpu().numpy())
         plt.cla()
         plt.plot(x,spectrum.transpose())

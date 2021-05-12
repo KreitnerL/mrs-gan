@@ -29,13 +29,13 @@ pm = MRSPhysicsModel(opt).cuda()
 if args.quantitity_path:
     quantitites = io.loadmat(args.quantitity_path)
     concentrations = []
-    concentrations.append(torch.from_numpy(quantitites['cho'][:,:args.N]/(3.6)))
+    concentrations.append(torch.from_numpy(quantitites['cho'][:,:args.N]/(3.5)))
     concentrations.append(torch.ones((1,args.N), dtype=torch.float64))
-    concentrations.append(torch.from_numpy(quantitites['naa'][:,:args.N]/(3.6)))
+    concentrations.append(torch.from_numpy(quantitites['naa'][:,:args.N]/(3.5)))
     concentrations = torch.cat(concentrations, dim=0).transpose(0,1)
     args.N = concentrations.shape[1]
 else:
-    concentrations = (3.6 - 0.01) * torch.rand(args.N,3) + 0.01
+    concentrations = (3.5 - 0.01) * torch.rand(args.N,3) + 0.01
 
 start_time = time.time()
 spectra_batches = []

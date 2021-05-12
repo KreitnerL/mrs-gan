@@ -34,8 +34,8 @@ class TrainOptions(BaseOptions):
         self.parser.add_argument('--pool_size', type=int, default=50, help='the size of image buffer that stores previously generated images')
         
         self.parser.add_argument('--TTUR', action='store_true', help='Enable the Two Time-scale Update Rule for stabilizing training and reducing the chance of mode collapse')
-        self.parser.add_argument('--n_epochs_gen_decay', type=int, default=5, help='# of iter to linearly decay generator learning rate to zero')
-        self.parser.add_argument('--n_epochs_dis_decay', type=int, default=5, help='# of iter to linearly decay discriminator learning rate to zero')
+        self.parser.add_argument('--n_epochs_gen_decay', type=int, default=20, help='# of iter to linearly decay generator learning rate to zero')
+        self.parser.add_argument('--n_epochs_dis_decay', type=int, default=20, help='# of iter to linearly decay discriminator learning rate to zero')
         self.parser.add_argument('--glr', type=float, default=0.0002, help='initial generator learning rate for adam')
         self.parser.add_argument('--dlr', type=float, default=0.0002, help='initial discriminator learning rate for adam')
 

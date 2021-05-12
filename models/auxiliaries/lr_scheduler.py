@@ -4,6 +4,7 @@ initialized = False
 def setup_for_no_TTUR(opt):
     global initialized 
     initialized = True
+    assert opt.n_epochs_decay == min(opt.n_epochs_gen_decay, opt.n_epochs_dis_decay)
     if not opt.TTUR:
         opt.glr = opt.lr
         opt.dlr = opt.lr
@@ -36,7 +37,7 @@ def get_scheduler(optimizer, opt, n_epochs, n_epochs_decay):
     """
     if opt.lr_policy == 'linear':
         def lambda_rule(epoch):
-            lr_l = 1.0 - max(0, epoch - n_epochs) / float(n_epochs_decay + 1)
+            lr_l = 1.0 - max(0, epoch - n_epochs) / float(n_epochs + n_epochs_decay + 1)
             return lr_l
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
     elif opt.lr_policy == 'step':

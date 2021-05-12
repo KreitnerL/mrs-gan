@@ -94,12 +94,15 @@ class CustomStopper(tune.Stopper):
         def stop_all(self):
             return self.should_stop
 
+def compute_gpu_load(num_trails):
+    return {"gpu": int(100.0/num_trails)/100.0 }
+
 search_space = {
             "lambda_A":  [0.,20],
             "lambda_B":  [0.,20.],
-            "lambda_feat": [0.,20.],
-            # "dlr": [0.0001, 0.0004],
-            # "glr": [0.0001, 0.0004]
+            "lambda_feat": [0.,10.],
+            "dlr": [0.0001, 0.0004],
+            "glr": [0.0001, 0.0004]
         }
 
 PBB = PB2(
@@ -129,7 +132,7 @@ analysis = tune.run(
     mode="min",
     stop=stopper,
     export_formats=[ExportFormat.MODEL],
-    resources_per_trial={"gpu": int(100.0/7)/100.0},
+    resources_per_trial=compute_gpu_load(10),
     keep_checkpoints_num=1,
     num_samples=20,
     config=start_config,

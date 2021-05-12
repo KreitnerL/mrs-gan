@@ -60,7 +60,7 @@ class MLP():
         pred = []
         for spectra, _ in val_dataset:
             self.input.resize_(spectra.size()).copy_(spectra)
-            pred.append((self.network.forward(self.input)*3.6).detach().cpu().numpy())
+            pred.append((self.network.forward(self.input)*3.5).detach().cpu().numpy())
 
         return np.concatenate(pred)
         
@@ -90,7 +90,7 @@ class MLP():
                 total_iters += self.batch_size
                 self.input.resize_(spectra.size()).copy_(spectra)
                 self.label.resize_(labels.size()).copy_(labels)
-                pred = self.network.forward(self.input)*3.6
+                pred = self.network.forward(self.input)*3.5
                 loss.append(self.backward(pred, self.label))
 
                 if total_iters%self.validate_every==0:
